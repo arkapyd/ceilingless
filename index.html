@@ -265,6 +265,7 @@
   const ZONE={ factory:[140,302], school:[380,302], shop:[600,302], college:[600,476], idle:[388,358] };
 
   const ICON={
+    warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     factory:'<path d="M3 21V10l5 3V10l5 3V10l5 3v8z"/><rect x="15.5" y="3.5" width="3" height="4"/><path d="M7 21v-3M12 21v-3M17 21v-3"/>',
     school:'<path d="M12 3.5l9.5 4.2-9.5 4.2-9.5-4.2z"/><path d="M6.5 10v4.6c0 1.6 11 1.6 11 0V10"/><path d="M21.5 7.7v4.3"/>',
     shop:'<path d="M4.5 9.5h15l-1 10.5h-13z"/><path d="M3 9.5l1.8-5h14.4l1.8 5z"/><path d="M9.5 14.5h5v5.5h-5z"/>',
@@ -280,6 +281,7 @@
   function newState(){
     S={
       treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
+      stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{},{}], unlocked:{college:false}, built:{college:false},
       daysSinceCensus:0, maxPop:10, nextId:0,
@@ -353,13 +355,20 @@
       const w=SHOP_WAGE*m, t=w*INCOME_TAX[p.edu];
       sTax+=t; netWages+=w-t;
     });
-   const pop=S.people.length;
-    // Dynamic market price — equilibrium of:
-    //   Demand:  Qd = pop  - DEMAND_SLOPE * P
-    //   Supply:  Qs = prod + SUPPLY_SLOPE * P   (supply intercept = what the town produces)
-    //   Qd = Qs  ->  P = (pop - prod) / (DEMAND_SLOPE + SUPPLY_SLOPE)
-    let price=(pop - prod)/(DEMAND_SLOPE + SUPPLY_SLOPE);
+    const pop=S.people.length;
+
+    let effFlow = S.flowO;
+    if(effFlow > 0 && S.stockO <= 0) effFlow = 0; 
+    
+    let price=(pop - (prod + effFlow))/(DEMAND_SLOPE + SUPPLY_SLOPE);
     if(price<PRICE_FLOOR) price=PRICE_FLOOR;
+
+    if(effFlow < 0 && S.treasury < Math.abs(effFlow)*price) effFlow = 0; 
+    if(effFlow !== S.flowO) {
+        price=(pop - (prod + effFlow))/(DEMAND_SLOPE + SUPPLY_SLOPE);
+        if(price<PRICE_FLOOR) price=PRICE_FLOOR;
+    }
+
     const demand=pop*CONSUME;
     const afford=S.villagerCash/price;
     const consumed=Math.max(0, Math.min(S.goods, demand, afford));
@@ -367,14 +376,21 @@
     const indirect=taxedSales*price*INDIRECT_TAX;
     const spending=consumed*price;
     const incomeTax=fTax+sTax;
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect,effFlow};
   }
 
   function step(dt){
+    function step(dt){
     if(S.over) return;
     const frac=(dt/DAY_MS)*S.speed;
     if(frac<=0) return;
     const r=rates();
+
+    S.stockO -= r.effFlow * frac;
+    S.goods += r.effFlow * frac;
+    S.treasury += r.effFlow * r.price * frac;
+    S.villagerCash -= r.effFlow * r.price * frac;
+    if(S.stockO < 0) S.stockO = 0;
 
     S.goods += r.prod*frac;  S.goods -= r.consumed*frac;  if(S.goods<0)S.goods=0;
     S.villagerCash += r.netWages*frac;  S.villagerCash -= r.spending*frac;  if(S.villagerCash<0)S.villagerCash=0;
@@ -622,7 +638,14 @@
       'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>Each home adds <b>'+money(HOUSE_COST)+'</b> to prosperity',
       '<button class="buildbtn" data-act="build" '+((S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST)?'disabled':'')+'>'+
         (S.houses.length>=MAX_HOUSES?'Housing full':'Build cottage · '+money(HOUSE_COST))+'</button>');
-
+    html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding',
+      Math.floor(S.stockO)+' O in reserve',
+      'Market intervention flow: <b>'+(S.flowO>0?'+':'')+S.flowO+' O/day</b><br>'+
+      (S.flowO>0?'Releasing lowers price &amp; earns '+CUR:S.flowO<0?'Buying raises price &amp; costs '+CUR:'Set flow to buy/release O (goods)'),
+      '<div class="ctrl"><button class="pm" data-act="fdec" '+(S.flowO<=-5?'disabled':'')+'>−</button>'+
+      '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Buy from market'))+'</div>'+
+      '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
+    );
     html+=card('factory',B.factory.color,B.factory.name,B.factory.sub,
       roleCount('factory')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.factory.cap+'</small>',
       'Output <b>'+r.prod.toFixed(1)+'</b> goods/day<br>Wage '+money(FACTORY_WAGE)+'×skill · income tax <b>'+money(r.fTax)+'</b>/day',
@@ -741,6 +764,11 @@
     else if(act==='rem') unassign(role);
     else if(act==='build') buildHouse();
     else if(act==='buildcollege') buildCollege();
+    else if(act==='build') buildHouse();
+    else if(act==='buildcollege') buildCollege();
+    else if(act==='fdec') { S.flowO--; renderCards(); }
+    else if(act==='finc') { S.flowO++; renderCards(); }
+  });
   });
   el('introBtn').addEventListener('click',()=> el('intro').classList.add('hidden'));
   el('restartBtn').addEventListener('click',()=>{
