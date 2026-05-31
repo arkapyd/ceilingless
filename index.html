@@ -251,6 +251,7 @@
 
   const FACTORY_WAGE=15, SHOP_WAGE=12, FACTORY_OUT=2, SHOP_SELL=4;
   const GOOD_PRICE=25, INDIRECT_TAX=0.18, CONSUME=0.45;
+  const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  // dynamic-price coefficients
   const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
   const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
   const START_TREASURY=300, START_GOODS=15, GROW_TARGET=14;
@@ -352,16 +353,21 @@
       const w=SHOP_WAGE*m, t=w*INCOME_TAX[p.edu];
       sTax+=t; netWages+=w-t;
     });
-    const pop=S.people.length;
+   const pop=S.people.length;
+    // Dynamic market price — equilibrium of:
+    //   Demand:  Qd = pop  - DEMAND_SLOPE * P
+    //   Supply:  Qs = prod + SUPPLY_SLOPE * P   (supply intercept = what the town produces)
+    //   Qd = Qs  ->  P = (pop - prod) / (DEMAND_SLOPE + SUPPLY_SLOPE)
+    let price=(pop - prod)/(DEMAND_SLOPE + SUPPLY_SLOPE);
+    if(price<PRICE_FLOOR) price=PRICE_FLOOR;
     const demand=pop*CONSUME;
-    const afford=S.villagerCash/GOOD_PRICE;
+    const afford=S.villagerCash/price;
     const consumed=Math.max(0, Math.min(S.goods, demand, afford));
     const taxedSales=Math.min(consumed, sCap);
-    const indirect=taxedSales*GOOD_PRICE*INDIRECT_TAX;
-    const spending=consumed*GOOD_PRICE;
+    const indirect=taxedSales*price*INDIRECT_TAX;
+    const spending=consumed*price;
     const incomeTax=fTax+sTax;
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,taxTotal:incomeTax+indirect};
-  }
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect};
 
   function step(dt){
     if(S.over) return;
@@ -623,7 +629,7 @@
 
     html+=card('shop',B.shop.color,B.shop.name,B.shop.sub,
       roleCount('shop')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.shop.cap+'</small>',
-      'Taxed sales <b>'+r.taxedSales.toFixed(1)+'</b>/day at <b>'+money(GOOD_PRICE)+'</b> fixed<br>Indirect 18% → <b>'+money(r.indirect)+'</b> · income tax <b>'+money(r.sTax)+'</b>',
+      'Taxed sales <b>'+r.taxedSales.toFixed(1)+'</b>/day at <b>'+money(r.price)+'</b> market<br>Indirect 18% → <b>'+money(r.indirect)+'</b> · income tax <b>'+money(r.sTax)+'</b>',
       stepper('shop'));
 
     const enr=roleCount('school'), nextIn=YEAR_DAYS-S.day+1;
@@ -705,7 +711,7 @@
     el('h-sun').style.background=isNight?'#cfd6ff':'#ffd76a'; el('h-sun').style.boxShadow=isNight?'0 0 6px #aab':'0 0 8px #ffcf5a';
 
     el('ledger').innerHTML=
-      lrow('Good price (fixed)', money(GOOD_PRICE))
+      lrow('Good price (market)', money(r.price))
       +lrow('Produced / day', r.prod.toFixed(1)+' goods')
       +lrow('Consumed / day', r.consumed.toFixed(1)+' goods')
       +lrow('Indirect tax (18%)', '+'+money(r.indirect)+'/day','pos')
