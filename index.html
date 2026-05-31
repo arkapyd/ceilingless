@@ -380,7 +380,6 @@
   }
 
   function step(dt){
-    function step(dt){
     if(S.over) return;
     const frac=(dt/DAY_MS)*S.speed;
     if(frac<=0) return;
@@ -764,12 +763,10 @@
     else if(act==='rem') unassign(role);
     else if(act==='build') buildHouse();
     else if(act==='buildcollege') buildCollege();
-    else if(act==='build') buildHouse();
-    else if(act==='buildcollege') buildCollege();
     else if(act==='fdec') { S.flowO--; renderCards(); }
     else if(act==='finc') { S.flowO++; renderCards(); }
   });
-  });
+
   el('introBtn').addEventListener('click',()=> el('intro').classList.add('hidden'));
   el('restartBtn').addEventListener('click',()=>{
     el('gameover').classList.add('hidden'); B.college.locked=true; newState(); setSpeed(1); renderCards(); lastT=0;
