@@ -368,6 +368,7 @@
     const spending=consumed*price;
     const incomeTax=fTax+sTax;
     return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect};
+  }
 
   function step(dt){
     if(S.over) return;
