@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hearthvale — an economy you grow</title>
+<title>Hearthvale — a village economy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,81 +12,62 @@
     --ink:#3a2c1d; --ink-soft:#6d5b46; --ink-faint:#9b8a72;
     --cream:#f4ead4; --cream-2:#ecdfc4; --cream-3:#e3d3b2;
     --line:#c8b48c; --line-strong:#a98f63;
-    --gold:#d4a13c; --terra:#c87a55; --slate:#6b7a8f; --teal:#4a8a6f; --plum:#8a6a9a; --brick:#b5764f;
+    --gold:#d4a13c; --terra:#c87a55; --slate:#6b7a8f; --plum:#8a6a9a; --brick:#b5764f;
     --good:#5c8a4e; --bad:#bd5a3f;
     --shadow:0 2px 0 rgba(120,96,64,.25), 0 6px 18px rgba(60,44,24,.10);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    font-family:'Outfit',system-ui,sans-serif;
-    color:var(--ink);
-    background:
-      radial-gradient(1200px 700px at 50% -10%, #4a3c2c 0%, #2c2318 55%, #1d160e 100%);
-    min-height:100vh;
-    padding:22px 14px 48px;
-    -webkit-font-smoothing:antialiased;
+    font-family:'Outfit',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 700px at 50% -10%, #4a3c2c 0%, #2c2318 55%, #1d160e 100%);
+    min-height:100vh;padding:22px 14px 48px;-webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:900px;margin:0 auto}
-
   header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
-  .brand h1{
-    font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:.95;margin:0;
-    color:#f2e6cd;letter-spacing:.3px;
-    text-shadow:0 1px 0 rgba(0,0,0,.35);
-  }
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:.95;margin:0;color:#f2e6cd;letter-spacing:.3px;text-shadow:0 1px 0 rgba(0,0,0,.35)}
   .brand p{margin:4px 0 0;color:#c9b896;font-size:13.5px;font-weight:300;letter-spacing:.4px}
   .brand .em{color:var(--gold);font-style:italic;font-family:'Fraunces',serif}
 
   .panel{
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 120px),
+    background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 120px),
       repeating-linear-gradient(135deg, rgba(168,143,99,.05) 0 2px, rgba(168,143,99,0) 2px 7px),
       var(--cream);
-    border:1px solid var(--line-strong);
-    border-radius:16px;
-    box-shadow:var(--shadow);
+    border:1px solid var(--line-strong);border-radius:16px;box-shadow:var(--shadow);
   }
 
-  /* HUD */
-  .hud{display:flex;align-items:center;gap:6px;padding:9px 12px;margin-bottom:12px;flex-wrap:wrap}
-  .chip{display:flex;flex-direction:column;gap:1px;padding:5px 12px;border-radius:10px;min-width:62px}
+  .hud{display:flex;align-items:center;gap:5px;padding:9px 12px;margin-bottom:12px;flex-wrap:wrap}
+  .chip{display:flex;flex-direction:column;gap:1px;padding:5px 11px;border-radius:10px;min-width:60px}
   .chip .lab{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
-  .chip .val{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05}
-  .chip .sub{font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:-1px}
+  .chip .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05}
+  .chip .sub{font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:-1px;color:var(--ink-faint)}
   .sep{width:1px;align-self:stretch;background:var(--line);margin:4px 2px}
-  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .pos{color:var(--good)!important} .neg{color:var(--bad)!important}
   .hud-right{margin-left:auto;display:flex;align-items:center;gap:5px}
   .clock{display:flex;align-items:center;gap:9px;padding:4px 10px;border-radius:10px;background:var(--cream-2);border:1px solid var(--line)}
   .clock .dial{position:relative;width:30px;height:30px;border-radius:50%;background:#2c3a5a;overflow:hidden;border:1px solid var(--line-strong)}
   .clock .sun{position:absolute;width:9px;height:9px;border-radius:50%;background:#ffd76a;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px #ffcf5a}
   .clock .txt{font-size:11px;color:var(--ink-soft);font-weight:500;line-height:1.15}
   .clock .txt b{color:var(--ink);font-size:13px;display:block;font-variant-numeric:tabular-nums}
-
   .sbtn{font-family:'Outfit';font-size:13px;font-weight:600;color:var(--ink);background:var(--cream-2);border:1px solid var(--line-strong);border-radius:9px;padding:6px 10px;cursor:pointer;min-width:34px;transition:transform .08s, background .15s, box-shadow .15s}
   .sbtn:hover{background:#fff7e6;box-shadow:0 2px 0 rgba(120,96,64,.2)}
   .sbtn:active{transform:translateY(1px)}
   .sbtn.on{background:var(--gold);border-color:#b9842a;color:#3a2a0c;box-shadow:inset 0 1px 3px rgba(120,80,0,.3)}
 
-  /* stage */
   .stage{position:relative;padding:8px;margin-bottom:14px;line-height:0}
   canvas{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line-strong);background:#bfe0f0}
-
   .toast-wrap{position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:5}
   .toast{font-size:13px;font-weight:500;color:#fff;background:rgba(58,44,24,.92);border:1px solid rgba(212,161,60,.6);padding:7px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.3);animation:pop .35s ease both}
   .toast .g{color:var(--gold);font-weight:600}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
 
-  /* layout below stage */
   .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;align-items:start}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
-
   .section-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);margin:0 0 9px;display:flex;align-items:center;gap:7px}
   .section-h .ln{flex:1;height:1px;background:var(--line)}
 
   .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:460px){.cards{grid-template-columns:1fr}}
-
   .card{position:relative;background:var(--cream);border:1px solid var(--line);border-left:4px solid var(--c,#c8b48c);border-radius:11px;padding:10px 11px 11px;overflow:hidden}
   .card .ch{display:flex;align-items:center;gap:8px;margin-bottom:7px}
   .card .ico{width:26px;height:26px;flex:none;display:grid;place-items:center;border-radius:7px;background:#fff7e6;border:1px solid var(--line)}
@@ -94,55 +75,52 @@
   .card .nm{font-weight:600;font-size:14px;line-height:1.05}
   .card .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-faint);letter-spacing:.3px}
   .card .badge{margin-left:auto;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--cream-3);border:1px solid var(--line);border-radius:7px;padding:2px 7px;color:var(--ink-soft)}
-  .card .stat{font-size:11.5px;color:var(--ink-soft);line-height:1.5;font-variant-numeric:tabular-nums}
+  .card .stat{font-size:11.5px;color:var(--ink-soft);line-height:1.55;font-variant-numeric:tabular-nums}
   .card .stat b{color:var(--ink);font-weight:600}
   .card .ctrl{display:flex;align-items:center;gap:6px;margin-top:9px}
   .card .ctrl .who{display:flex;gap:3px;flex-wrap:wrap;flex:1;min-height:11px;align-items:center}
   .dot{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.18)}
   .pm{width:28px;height:26px;border-radius:8px;border:1px solid var(--line-strong);background:var(--cream-2);font-size:17px;font-weight:600;line-height:1;color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:transform .07s, background .12s}
-  .pm:hover{background:#fff7e6}
-  .pm:active{transform:translateY(1px)}
+  .pm:hover{background:#fff7e6}.pm:active{transform:translateY(1px)}
   .pm:disabled{opacity:.35;cursor:not-allowed}
   .buildbtn{width:100%;margin-top:9px;font-family:'Outfit';font-weight:600;font-size:13px;color:#3a2a0c;background:var(--gold);border:1px solid #b9842a;border-radius:9px;padding:8px;cursor:pointer;transition:transform .07s, filter .12s}
-  .buildbtn:hover{filter:brightness(1.05)}
-  .buildbtn:active{transform:translateY(1px)}
+  .buildbtn:hover{filter:brightness(1.05)}.buildbtn:active{transform:translateY(1px)}
   .buildbtn:disabled{background:var(--cream-3);color:var(--ink-faint);border-color:var(--line);cursor:not-allowed;filter:none}
-
-  .lock{position:absolute;inset:0;background:rgba(228,211,178,.82);backdrop-filter:saturate(.8);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;gap:4px}
+  .lock{position:absolute;inset:0;background:rgba(228,211,178,.84);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;gap:4px}
   .lock svg{width:20px;height:20px;color:var(--ink-soft)}
   .lock .t{font-weight:600;font-size:13px;color:var(--ink)}
   .lock .r{font-size:11.5px;color:var(--ink-soft);line-height:1.4}
   .lock .bar{width:80%;height:6px;border-radius:4px;background:var(--cream);border:1px solid var(--line);overflow:hidden;margin-top:3px}
   .lock .bar i{display:block;height:100%;background:var(--gold)}
 
-  /* right column */
   .side .panel{padding:13px 14px;margin-bottom:14px}
   .obj{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
   .obj li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.35;color:var(--ink-soft)}
   .obj .mk{flex:none;width:18px;height:18px;border-radius:6px;border:1.5px solid var(--line-strong);display:grid;place-items:center;margin-top:1px;background:var(--cream)}
   .obj .mk svg{width:11px;height:11px;color:#fff;opacity:0}
-  .obj li.done{color:var(--ink)}
-  .obj li.done .mk{background:var(--good);border-color:var(--good)}
-  .obj li.done .mk svg{opacity:1}
-  .obj li.done .o-t{text-decoration:none;font-weight:500}
-  .o-t b{color:var(--ink);font-weight:600}
-
+  .obj li.done{color:var(--ink)} .obj li.done .mk{background:var(--good);border-color:var(--good)} .obj li.done .mk svg{opacity:1}
+  .obj li.done .o-t{font-weight:500} .o-t b{color:var(--ink);font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:9px 14px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
   .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft)}
 
-  .tip{font-size:12px;color:var(--ink-soft);line-height:1.5;background:var(--cream-2);border:1px dashed var(--line-strong);border-radius:10px;padding:10px 12px}
+  .ledger{display:flex;flex-direction:column;gap:7px;font-size:12.5px}
+  .ledger .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .ledger .row .k{color:var(--ink-soft)}
+  .ledger .row .v{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .ledger .row.tot{border-top:1px solid var(--line);padding-top:8px;margin-top:1px}
+  .ledger .row.tot .k{font-weight:600;color:var(--ink)} .ledger .row.tot .v{font-size:15px}
+
+  .tip{font-size:12px;color:var(--ink-soft);line-height:1.55;background:var(--cream-2);border:1px dashed var(--line-strong);border-radius:10px;padding:10px 12px}
   .tip b{color:var(--ink)}
 
-  /* overlays */
   .ov{position:absolute;inset:0;background:rgba(36,28,16,.78);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:10px;padding:18px}
-  .modal{background:var(--cream);border:1px solid var(--line-strong);border-radius:16px;max-width:430px;width:100%;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:left}
+  .modal{background:var(--cream);border:1px solid var(--line-strong);border-radius:16px;max-width:440px;width:100%;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:left}
   .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0 0 4px;color:var(--ink)}
   .modal p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:0 0 12px}
   .modal ul{margin:0 0 16px;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.7}
   .modal ul b{color:var(--ink)}
   .modal .play{font-family:'Outfit';font-weight:600;font-size:15px;color:#3a2a0c;background:var(--gold);border:1px solid #b9842a;border-radius:10px;padding:11px 26px;cursor:pointer;letter-spacing:.3px;transition:transform .08s,filter .12s}
-  .modal .play:hover{filter:brightness(1.06)}
-  .modal .play:active{transform:translateY(1px)}
+  .modal .play:hover{filter:brightness(1.06)}.modal .play:active{transform:translateY(1px)}
   .modal .stat-final{font-family:'Fraunces',serif;font-size:18px;color:var(--gold);margin:2px 0 14px}
   .hidden{display:none!important}
 </style>
@@ -153,23 +131,21 @@
   <header class="top">
     <div class="brand">
       <h1>Hearthvale</h1>
-      <p>An economy you grow — <span class="em">assign, house, educate, expand.</span></p>
+      <p>A village economy — <span class="em">tax, house, feed, and educate your people.</span></p>
     </div>
   </header>
 
-  <!-- HUD -->
   <div class="hud panel">
-    <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">$600</span><span class="sub" id="h-net">+$0/day</span></div>
+    <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
     <div class="sep"></div>
-    <div class="chip"><span class="lab">Goods</span><span class="val" id="h-goods">0</span></div>
-    <div class="chip"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">0 homeless</span></div>
+    <div class="chip"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
+    <div class="chip"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
     <div class="chip"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
-    <div class="chip"><span class="lab">Prosperity</span><span class="val" id="h-prosp">—</span></div>
+    <div class="chip"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
+    <div class="chip"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
     <div class="hud-right">
-      <div class="clock">
-        <div class="dial"><div class="sun" id="h-sun"></div></div>
-        <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div>
-      </div>
+      <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
+        <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
       <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
       <button class="sbtn on" data-spd="1" id="spd1">1×</button>
       <button class="sbtn" data-spd="2" id="spd2">2×</button>
@@ -177,7 +153,6 @@
     </div>
   </div>
 
-  <!-- stage -->
   <div class="stage panel">
     <canvas id="town" width="760" height="480"></canvas>
     <div class="toast-wrap" id="toasts"></div>
@@ -185,35 +160,34 @@
     <div class="ov" id="intro">
       <div class="modal">
         <h2>Welcome, Steward.</h2>
-        <p>Hearthvale begins with <b>10 souls</b> and two cottages. The town runs on one simple loop: the <b>factory</b> turns labour into goods, and the <b>shop</b> sells those goods at a markup. Your treasury pays the wages and keeps the profit.</p>
+        <p>Hearthvale runs entirely on <b>rupees (₹)</b>, and your treasury is funded by <b>one thing only — tax</b>. You spend it on houses and new buildings.</p>
         <ul>
-          <li>Put workers in the <b>Factory</b> &amp; <b>Shop</b> to start earning.</li>
-          <li><b>Build houses</b> so no one is left homeless.</li>
-          <li>Enrol idle workers in the <b>School</b> — every year (30 days) they gain a level of education, and skilled workers produce far more.</li>
-          <li>Hit milestones to unlock the <b>Bank</b> and <b>Community College</b>.</li>
+          <li><b>18% indirect tax</b> on every good sold at the Shop.</li>
+          <li><b>Income tax</b> on educated workers — 12% at Basic, rising with each level.</li>
+          <li>The <b>Factory</b> makes goods; people buy them with their wages.</li>
+          <li>Every <b>5 days a census</b> runs: with enough <b>goods and housing</b>, two babies are born — if either falls short, a villager dies.</li>
+          <li>Educate workers for more output, higher pay, and more tax. Reach <b>5 Intermediate</b> workers to build the College.</li>
         </ul>
-        <p style="margin-bottom:16px">One in-game day passes each real minute. Use the speed buttons up top to fast-forward the years.</p>
+        <p style="margin-bottom:16px">One day passes each real minute. Fast-forward with the speed buttons above.</p>
         <button class="play" id="introBtn">Begin building</button>
       </div>
     </div>
 
     <div class="ov hidden" id="gameover">
       <div class="modal">
-        <h2 id="go-title">The town went quiet.</h2>
-        <p id="go-msg">Hearthvale ran out of money.</p>
+        <h2 id="go-title">Hearthvale emptied out.</h2>
+        <p id="go-msg"></p>
         <div class="stat-final" id="go-stat"></div>
         <button class="play" id="restartBtn">Start over</button>
       </div>
     </div>
   </div>
 
-  <!-- below -->
   <div class="grid">
     <div>
       <h3 class="section-h">Buildings &amp; assignments <span class="ln"></span></h3>
       <div class="cards" id="cards"></div>
     </div>
-
     <div class="side">
       <div class="panel">
         <h3 class="section-h" style="margin-top:0">Objectives <span class="ln"></span></h3>
@@ -221,8 +195,12 @@
         <div class="legend" id="legend"></div>
       </div>
       <div class="panel">
+        <h3 class="section-h" style="margin-top:0">Village ledger <span class="ln"></span></h3>
+        <div class="ledger" id="ledger"></div>
+      </div>
+      <div class="panel">
         <h3 class="section-h" style="margin-top:0">Steward's note <span class="ln"></span></h3>
-        <div class="tip" id="tip">Assign workers to the <b>Factory</b> to make goods, then the <b>Shop</b> to sell them. Watch your <b>net/day</b> — if goods pile up unsold, you're paying wages for nothing.</div>
+        <div class="tip">Your only income is <b>tax</b>: 18% on goods sold at the Shop, plus income tax on educated workers. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census, or villagers will die. The Shop turns goods into taxable sales — without shopkeepers, you still feed people, but you collect no sales tax.</div>
       </div>
     </div>
   </div>
@@ -234,35 +212,31 @@
 
   /* ============ CONFIG ============ */
   const LW=760, LH=480, SKY=112;
-  const DAY_MS=60000, YEAR_DAYS=30;
+  const DAY_MS=60000, YEAR_DAYS=30, CENSUS_DAYS=5, BIRTHS=2;
+  const CUR='₹';
   const EDU=['Uneducated','Basic','Intermediate','Advanced','Highly Skilled'];
   const EDU_COLOR=['#9a8f80','#6fae5f','#4f9fd4','#8a6fd4','#e0b020'];
   const EDU_MULT=[1,1.3,1.7,2.2,3.0];
+  const INCOME_TAX=[0,0.12,0.18,0.24,0.30];
 
-  const FACTORY_WAGE=12, FACTORY_OUT=2;
-  const SHOP_WAGE=10, SHOP_SELL=4, GOOD_VALUE=18, MARKUP=0.35;
-  const STUDENT_COST=4;
-  const HOUSE_CAP=4, HOUSE_COST=150, HOUSE_UPKEEP=1, MAX_HOUSES=7;
-  const BANK_RATE=0.004, BANKER_BONUS=0.0015;
-  const START_TREASURY=600, BANKRUPT_AT=-500;
-  const BANK_UNLOCK=1200, COLLEGE_UNLOCK=5;
+  const FACTORY_WAGE=15, SHOP_WAGE=12, FACTORY_OUT=2, SHOP_SELL=4;
+  const GOOD_PRICE=25, INDIRECT_TAX=0.18, CONSUME=0.45;
+  const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
+  const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
+  const START_TREASURY=300, START_GOODS=15, GROW_TARGET=14;
 
-  // building footprint: cx centre-x, gy ground-y (base sits here), drawn upward
   const B = {
-    factory:{name:'Factory', role:'factory', sub:'Makes goods · pays wages', cx:112, gy:250, w:124, h:88, color:'#6b7a8f', cap:6},
-    school :{name:'School', role:'school', sub:'Teaches up to Intermediate', cx:300, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
-    shop   :{name:'Shop', role:'shop', sub:'Sells goods at a markup', cx:486, gy:250, w:112, h:76, color:'#c87a55', cap:6},
-    bank   :{name:'Bank', role:'bank', sub:'Earns interest on treasury', cx:664, gy:250, w:122, h:80, color:'#4a8a6f', cap:3, locked:true},
-    college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:638, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
+    factory:{name:'Factory', role:'factory', sub:'Makes goods', cx:140, gy:250, w:124, h:88, color:'#6b7a8f', cap:6},
+    school :{name:'School', role:'school', sub:'Teaches to Intermediate', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
+    shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:6},
+    college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
   };
-  // where each role's sprites stand
-  const ZONE={ factory:[112,302], school:[300,302], shop:[486,302], bank:[664,302], college:[600,476], idle:[388,366] };
+  const ZONE={ factory:[140,302], school:[380,302], shop:[600,302], college:[600,476], idle:[388,358] };
 
   const ICON={
     factory:'<path d="M3 21V10l5 3V10l5 3V10l5 3v8z"/><rect x="15.5" y="3.5" width="3" height="4"/><path d="M7 21v-3M12 21v-3M17 21v-3"/>',
     school:'<path d="M12 3.5l9.5 4.2-9.5 4.2-9.5-4.2z"/><path d="M6.5 10v4.6c0 1.6 11 1.6 11 0V10"/><path d="M21.5 7.7v4.3"/>',
     shop:'<path d="M4.5 9.5h15l-1 10.5h-13z"/><path d="M3 9.5l1.8-5h14.4l1.8 5z"/><path d="M9.5 14.5h5v5.5h-5z"/>',
-    bank:'<path d="M3 10.5l9-6 9 6"/><path d="M4.5 10.5v8M19.5 10.5v8M9 10.5v8M15 10.5v8"/><path d="M3 19.5h18"/>',
     college:'<path d="M12 3.2l10 4.4-10 4.4-10-4.4z"/><path d="M6.5 10v4.8c0 1.7 11 1.7 11 0V10"/><path d="M22 7.6v4.6"/><circle cx="22" cy="13" r=".9"/>',
     house:'<path d="M3.5 11.5l8.5-7 8.5 7"/><path d="M5.5 10v9.5h13V10"/><rect x="10" y="14" width="4" height="5.5"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -273,49 +247,43 @@
   let S, lastT, raf;
 
   function newState(){
-    const people=[];
-    let id=0;
-    const add=(edu)=>{ people.push({ id:id++, edu, role:'idle', home:-1,
-      x:ZONE.idle[0]+rnd(-60,60), y:ZONE.idle[1]+rnd(-26,26),
-      ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7 }); };
-    for(let i=0;i<7;i++) add(0);
-    for(let i=0;i<3;i++) add(1);
     S={
-      treasury:START_TREASURY, maxTreasury:START_TREASURY, goods:0,
+      treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
-      houses:[{},{}],
-      unlocked:{bank:false, college:false},
-      people,
-      today:{produced:0, sold:0, revenue:0, costs:0},
+      houses:[{},{}], unlocked:{college:false}, built:{college:false},
+      daysSinceCensus:0, maxPop:10, nextId:0,
+      people:[], today:{indirect:0, income:0},
       smoke:[], spark:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
     };
+    for(let i=0;i<7;i++) addPerson(0);
+    for(let i=0;i<3;i++) addPerson(1);
     reassignHomes();
+  }
+  function addPerson(edu){
+    S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
+      x:ZONE.idle[0]+rnd(-55,55), y:ZONE.idle[1]+rnd(-22,22),
+      ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7 });
   }
 
   /* ============ HELPERS ============ */
   function rnd(a,b){return a+Math.random()*(b-a);}
   function el(id){return document.getElementById(id);}
-  function money(n){const r=Math.round(n);return (r<0?'-$':'$')+Math.abs(r).toLocaleString();}
+  function money(n){const r=Math.round(n);return (r<0?'-'+CUR:CUR)+Math.abs(r).toLocaleString();}
   function idle(){return S.people.filter(p=>p.role==='idle');}
   function roleCount(r){return S.people.filter(p=>p.role===r).length;}
   function roleList(r){return S.people.filter(p=>p.role===r);}
   function housingCap(){return S.houses.length*HOUSE_CAP;}
   function homeless(){return Math.max(0,S.people.length-housingCap());}
-
-  function reassignHomes(){
-    S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; });
-  }
-
+  function reassignHomes(){ S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; }); }
   function capacityOf(role){return B[role]?B[role].cap:0;}
 
   function assign(role){
-    if(role!=='school'&&role!=='college'&&B[role].locked) return;
+    if(role==='college' && !S.built.college) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     if(role==='school') cand=cand.filter(p=>p.edu<2);
-    else if(role==='college'){ if(!S.unlocked.college) return; cand=cand.filter(p=>p.edu>=2&&p.edu<4); }
+    else if(role==='college') cand=cand.filter(p=>p.edu>=2 && p.edu<4);
     if(!cand.length) return;
-    // for work, take the most educated idle worker (max output); for study, the least educated
     cand.sort((a,b)=> (role==='school'||role==='college') ? a.edu-b.edu : b.edu-a.edu);
     cand[0].role=role;
     renderCards();
@@ -327,131 +295,123 @@
     renderCards();
   }
   function buildHouse(){
-    if(S.houses.length>=MAX_HOUSES) return;
-    if(S.treasury<HOUSE_COST) return;
-    S.treasury-=HOUSE_COST;
-    S.houses.push({});
-    reassignHomes();
-    toast('Cottage built — <span class="g">'+housingCap()+'</span> housing capacity');
+    if(S.houses.length>=MAX_HOUSES || S.treasury<HOUSE_COST) return;
+    S.treasury-=HOUSE_COST; S.houses.push({}); reassignHomes();
+    toast('Cottage built — housing now <span class="g">'+housingCap()+'</span>');
+    renderCards();
+  }
+  function buildCollege(){
+    if(!S.unlocked.college || S.built.college || S.treasury<COLLEGE_COST) return;
+    S.treasury-=COLLEGE_COST; S.built.college=true; B.college.locked=false;
+    toast('🎓 The <span class="g">College</span> opens its doors');
     renderCards();
   }
 
   /* ============ ECONOMY ============ */
   function rates(){
-    let prod=0, fWage=0, sCap=0, sWage=0, sCost=0, cCost=0;
-    roleList('factory').forEach(p=>{ const h=p.home<0?0.9:1; prod+=FACTORY_OUT*EDU_MULT[p.edu]*h; fWage+=FACTORY_WAGE; });
-    roleList('shop').forEach(p=>{ const h=p.home<0?0.9:1; sCap+=SHOP_SELL*EDU_MULT[p.edu]*h; sWage+=SHOP_WAGE; });
-    sCost = roleCount('school')*STUDENT_COST;
-    cCost = roleCount('college')*STUDENT_COST;
-    const upkeep = S.houses.length*HOUSE_UPKEEP;
-    const demand = 30 + S.people.length*1.5;
-    const price = GOOD_VALUE*(1+MARKUP);
-    // for display: assume we can sell up to capacity, limited by what's produced + demand
-    const sellable = Math.min(sCap, demand, prod + S.goods);
-    const revenue = sellable*price;
-    let bankRate=0;
-    if(S.unlocked.bank) bankRate = BANK_RATE + roleCount('bank')*BANKER_BONUS;
-    const interest = S.treasury>0 ? S.treasury*bankRate : 0;
-    const costs = fWage+sWage+sCost+cCost+upkeep;
-    return {prod, fWage, sCap, sWage, sCost, cCost, upkeep, demand, price, revenue, interest, bankRate, costs, net:revenue-costs+interest};
+    let prod=0, fTax=0, sTax=0, netWages=0, sCap=0;
+    roleList('factory').forEach(p=>{
+      const h=p.home<0?0.9:1, m=EDU_MULT[p.edu];
+      prod += FACTORY_OUT*m*h;
+      const w=FACTORY_WAGE*m, t=w*INCOME_TAX[p.edu];
+      fTax+=t; netWages+=w-t;
+    });
+    roleList('shop').forEach(p=>{
+      const h=p.home<0?0.9:1, m=EDU_MULT[p.edu];
+      sCap += SHOP_SELL*m*h;
+      const w=SHOP_WAGE*m, t=w*INCOME_TAX[p.edu];
+      sTax+=t; netWages+=w-t;
+    });
+    const pop=S.people.length;
+    const demand=pop*CONSUME;
+    const afford=S.villagerCash/GOOD_PRICE;
+    const consumed=Math.max(0, Math.min(S.goods, demand, afford));
+    const taxedSales=Math.min(consumed, sCap);
+    const indirect=taxedSales*GOOD_PRICE*INDIRECT_TAX;
+    const spending=consumed*GOOD_PRICE;
+    const incomeTax=fTax+sTax;
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,taxTotal:incomeTax+indirect};
   }
 
   function step(dt){
     if(S.over) return;
-    const frac = (dt/DAY_MS)*S.speed;
-    if(frac<=0){ return; }
+    const frac=(dt/DAY_MS)*S.speed;
+    if(frac<=0) return;
     const r=rates();
 
-    // production
-    const made=r.prod*frac; S.goods+=made; S.today.produced+=made;
-    // selling (real, limited by live inventory)
-    const sold=Math.min(S.goods, r.sCap*frac, r.demand*frac);
-    S.goods-=sold; S.today.sold+=sold;
-    const rev=sold*r.price; S.treasury+=rev; S.today.revenue+=rev;
-    if(sold>0 && Math.random()<sold*2) spawnSpark();
-    // costs
-    const cost=r.costs*frac; S.treasury-=cost; S.today.costs+=cost;
-    // interest
-    if(S.treasury>0) S.treasury+=S.treasury*r.bankRate*frac;
+    S.goods += r.prod*frac;  S.goods -= r.consumed*frac;  if(S.goods<0)S.goods=0;
+    S.villagerCash += r.netWages*frac;  S.villagerCash -= r.spending*frac;  if(S.villagerCash<0)S.villagerCash=0;
+    S.treasury += (r.indirect+r.incomeTax)*frac;
+    S.today.indirect += r.indirect*frac;
+    S.today.income += r.incomeTax*frac;
+    if(r.taxedSales>0 && Math.random()<r.taxedSales*frac*4) spawnSpark();
 
-    if(S.treasury>S.maxTreasury) S.maxTreasury=S.treasury;
-    checkUnlocks();
-    if(S.treasury<BANKRUPT_AT){ endGame(); return; }
-
-    // time
     S.elapsed += dt*S.speed;
     while(S.elapsed>=DAY_MS){
-      S.elapsed-=DAY_MS;
-      S.day++;
-      S.today={produced:0,sold:0,revenue:0,costs:0};
+      S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
+      S.today={indirect:0,income:0};
       if(S.day>YEAR_DAYS){ S.day=1; S.year++; advanceYear(); }
+      if(S.daysSinceCensus>=CENSUS_DAYS){ S.daysSinceCensus=0; census(); }
     }
     S.progress=S.elapsed/DAY_MS;
+    checkUnlocks();
   }
 
   function advanceYear(){
     let grew=0;
     roleList('school').forEach(p=>{ if(p.edu<2){ p.edu++; grew++; } if(p.edu>=2){ p.role='idle'; } });
     roleList('college').forEach(p=>{ if(p.edu<4){ p.edu++; grew++; } if(p.edu>=4){ p.role='idle'; } });
-    // gentle immigration when prosperous & roomy
-    if(housingCap()-S.people.length>=2 && S.treasury>300 && prosperity()>=55){
-      const i=S.people.length;
-      S.people.push({id:Date.now()%100000, edu:0, role:'idle', home:-1, x:ZONE.idle[0]+rnd(-50,50), y:ZONE.idle[1]+rnd(-20,20), ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7});
-      reassignHomes();
-      toast('A new worker moved to Hearthvale');
-    }
     if(grew) toast('Year '+S.year+' — <span class="g">'+grew+'</span> graduated a level');
     renderCards();
   }
 
-  function prosperity(){
-    const pop=S.people.length||1;
-    const working=roleCount('factory')+roleCount('shop')+roleCount('bank');
-    const students=roleCount('school')+roleCount('college');
-    const housed=Math.min(1,housingCap()/pop);
-    const empl=(working+students*0.5)/pop;
-    const edu=S.people.reduce((s,p)=>s+p.edu,0)/(pop*4);
-    return Math.round(100*(0.4*housed+0.35*Math.min(1,empl)+0.25*edu));
+  function census(){
+    const pop=S.people.length;
+    const suffGoods=S.goods>=pop, suffHouse=housingCap()>=pop;
+    if(suffGoods && suffHouse){
+      for(let i=0;i<BIRTHS;i++) addPerson(0);
+      reassignHomes();
+      toast('🎉 <span class="g">'+BIRTHS+'</span> children born in Hearthvale');
+    } else {
+      const idx=Math.floor(Math.random()*S.people.length);
+      if(S.people.length){ S.people.splice(idx,1); reassignHomes(); }
+      const why=(!suffHouse&&!suffGoods)?'no homes &amp; no goods':(!suffHouse?'too little housing':'too little food');
+      toast('🕯 A villager died — <span class="g">'+why+'</span>');
+      if(S.people.length<=0){ endGame(); return; }
+    }
+    renderCards();
   }
 
+  function prosperity(){ return S.villagerCash + S.houses.length*HOUSE_COST; }
+
   function checkUnlocks(){
-    if(!S.unlocked.bank && S.maxTreasury>=BANK_UNLOCK){
-      S.unlocked.bank=true; B.bank.locked=false;
-      toast('🏛 The <span class="g">Bank</span> is open — treasury now earns interest');
-      renderCards(); renderObjectives();
-    }
-    const inter=S.people.filter(p=>p.edu>=2).length;
-    if(!S.unlocked.college && inter>=COLLEGE_UNLOCK){
-      S.unlocked.college=true; B.college.locked=false;
-      toast('🎓 <span class="g">Community College</span> unlocked — train Advanced workers');
-      renderCards(); renderObjectives();
+    if(!S.unlocked.college){
+      const inter=S.people.filter(p=>p.edu>=2).length;
+      if(inter>=COLLEGE_UNLOCK){
+        S.unlocked.college=true;
+        toast('🎓 College available to build — <span class="g">'+money(COLLEGE_COST)+'</span>');
+        renderCards(); renderObjectives();
+      }
     }
   }
 
   function endGame(){
     S.over=true; setSpeed(0);
-    el('go-title').textContent='Hearthvale fell into ruin.';
-    el('go-msg').textContent='The treasury sank too deep into debt and the town dispersed. Balance wages against sales — and keep enough shopkeepers to sell what the factory makes.';
-    el('go-stat').textContent='Survived '+(S.year-1)+' year'+(S.year-1===1?'':'s')+' · peak treasury '+money(S.maxTreasury);
+    el('go-title').textContent='Hearthvale emptied out.';
+    el('go-msg').textContent='The last villagers drifted away after too many shortages. Keep both food (goods) and housing ahead of the population at every 5-day census.';
+    el('go-stat').textContent='Survived '+(S.year-1)+' year'+(S.year-1===1?'':'s')+' '+(S.day-1)+'d · peak population '+S.maxPop;
     el('gameover').classList.remove('hidden');
   }
 
-  /* ============ RENDER: CANVAS ============ */
+  /* ============ CANVAS ============ */
   const cv=el('town'), ctx=cv.getContext('2d');
-  function fitCanvas(){
-    const dpr=Math.min(2,window.devicePixelRatio||1);
-    cv.width=LW*dpr; cv.height=LH*dpr;
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
+  function fitCanvas(){ const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=LW*dpr; cv.height=LH*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 
   const SKY_KF=[
-    {t:0.00, top:'#1b2a4a', bot:'#33405e'},
-    {t:0.12, top:'#5a4a6a', bot:'#d9956a'},
-    {t:0.26, top:'#9fcdec', bot:'#dff0f5'},
-    {t:0.50, top:'#86c0ec', bot:'#cfeaf5'},
-    {t:0.72, top:'#e0a262', bot:'#f3d6a6'},
-    {t:0.86, top:'#604a6c', bot:'#c06a5a'},
-    {t:1.00, top:'#1b2a4a', bot:'#33405e'},
+    {t:0.00,top:'#1b2a4a',bot:'#33405e'},{t:0.12,top:'#5a4a6a',bot:'#d9956a'},
+    {t:0.26,top:'#9fcdec',bot:'#dff0f5'},{t:0.50,top:'#86c0ec',bot:'#cfeaf5'},
+    {t:0.72,top:'#e0a262',bot:'#f3d6a6'},{t:0.86,top:'#604a6c',bot:'#c06a5a'},
+    {t:1.00,top:'#1b2a4a',bot:'#33405e'},
   ];
   function lerpC(a,b,t){
     const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
@@ -464,8 +424,7 @@
         const f=(p-SKY_KF[i].t)/(SKY_KF[i+1].t-SKY_KF[i].t);
         return {top:lerpC(SKY_KF[i].top,SKY_KF[i+1].top,f), bot:lerpC(SKY_KF[i].bot,SKY_KF[i+1].bot,f)};
       }
-    }
-    return {top:SKY_KF[0].top, bot:SKY_KF[0].bot};
+    } return {top:SKY_KF[0].top,bot:SKY_KF[0].bot};
   }
   function shade(hex,f){
     const r=Math.min(255,Math.round(parseInt(hex.slice(1,3),16)*f));
@@ -474,280 +433,187 @@
     return 'rgb('+r+','+g+','+b+')';
   }
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-
   function spawnSpark(){ if(S.spark.length>20) return; S.spark.push({x:B.shop.cx+rnd(-22,22), y:B.shop.gy-B.shop.h+rnd(-6,10), life:1}); }
-  function spawnSmoke(x,y){ if(S.smoke.length>40) return; S.smoke.push({x:x+rnd(-2,2), y, vx:rnd(-.2,.4), vy:rnd(-.5,-.8), life:1, r:rnd(3,5)}); }
 
   let tick=0;
   function draw(){
     tick++;
     const p=S.progress;
-    const night=(p<0.16?(0.16-p)/0.16:p>0.84?(p-0.84)/0.16:0); // 0 day .. 1 deep night
+    const night=(p<0.16?(0.16-p)/0.16:p>0.84?(p-0.84)/0.16:0);
     const day=1-night;
-
-    // sky
     const sc=skyColors(p);
-    const sg=ctx.createLinearGradient(0,0,0,SKY+24);
-    sg.addColorStop(0,sc.top); sg.addColorStop(1,sc.bot);
+    const sg=ctx.createLinearGradient(0,0,0,SKY+24); sg.addColorStop(0,sc.top); sg.addColorStop(1,sc.bot);
     ctx.fillStyle=sg; ctx.fillRect(0,0,LW,SKY+24);
 
-    // stars
-    if(night>0.15){
-      ctx.fillStyle='rgba(255,255,240,'+(night*0.8)+')';
-      for(let i=0;i<28;i++){ const sx=(i*97)%LW, sy=(i*53)%(SKY-20)+4; ctx.fillRect(sx,sy, i%4?1:1.6, i%4?1:1.6); }
-    }
-    // sun / moon
+    if(night>0.15){ ctx.fillStyle='rgba(255,255,240,'+(night*0.8)+')';
+      for(let i=0;i<28;i++){ ctx.fillRect((i*97)%LW,(i*53)%(SKY-20)+4, i%4?1:1.6, i%4?1:1.6); } }
     const cx=LW*p, cyc=100-Math.sin(p*Math.PI)*82;
     if(p>0.12 && p<0.88){
-      const rg=ctx.createRadialGradient(cx,cyc,2,cx,cyc,22);
-      rg.addColorStop(0,'rgba(255,236,170,.9)'); rg.addColorStop(1,'rgba(255,210,90,0)');
+      const rg=ctx.createRadialGradient(cx,cyc,2,cx,cyc,22); rg.addColorStop(0,'rgba(255,236,170,.9)'); rg.addColorStop(1,'rgba(255,210,90,0)');
       ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(cx,cyc,22,0,7); ctx.fill();
       ctx.fillStyle='#ffe07a'; ctx.beginPath(); ctx.arc(cx,cyc,11,0,7); ctx.fill();
     } else {
       ctx.fillStyle='#eef0ff'; ctx.beginPath(); ctx.arc(cx,cyc,9,0,7); ctx.fill();
       ctx.fillStyle=sc.top; ctx.beginPath(); ctx.arc(cx+4,cyc-3,8,0,7); ctx.fill();
     }
-    // clouds (day)
-    if(day>0.2){
-      ctx.fillStyle='rgba(255,255,255,'+(day*0.55)+')';
-      S.clouds.forEach(c=>{ c.x+=c.s; if(c.x>LW+50)c.x=-50;
-        const s=18*c.r; ctx.beginPath();
-        ctx.arc(c.x,c.y,s,0,7); ctx.arc(c.x+s*0.9,c.y+4,s*0.8,0,7); ctx.arc(c.x-s*0.9,c.y+4,s*0.75,0,7); ctx.fill(); });
-    }
+    if(day>0.2){ ctx.fillStyle='rgba(255,255,255,'+(day*0.55)+')';
+      S.clouds.forEach(c=>{ c.x+=c.s; if(c.x>LW+50)c.x=-50; const s=18*c.r;
+        ctx.beginPath(); ctx.arc(c.x,c.y,s,0,7); ctx.arc(c.x+s*0.9,c.y+4,s*0.8,0,7); ctx.arc(c.x-s*0.9,c.y+4,s*0.75,0,7); ctx.fill(); }); }
 
-    // ground
-    const gg=ctx.createLinearGradient(0,SKY,0,LH);
-    gg.addColorStop(0,'#9bb877'); gg.addColorStop(1,'#7c9d5c');
+    const gg=ctx.createLinearGradient(0,SKY,0,LH); gg.addColorStop(0,'#9bb877'); gg.addColorStop(1,'#7c9d5c');
     ctx.fillStyle=gg; ctx.fillRect(0,SKY,LW,LH-SKY);
-    // grass speckle
     ctx.fillStyle='rgba(110,140,80,.4)';
-    for(let i=0;i<70;i++){ const gx=(i*131)%LW, gy=SKY+10+((i*71)%(LH-SKY-12)); ctx.fillRect(gx,gy,2,2); }
+    for(let i=0;i<70;i++){ ctx.fillRect((i*131)%LW, SKY+10+((i*71)%(LH-SKY-12)), 2,2); }
 
-    // streets
     ctx.fillStyle='#d8c4a0';
-    rr(20,266,720,22,11); ctx.fill();           // main commercial street
-    rr(372,286,24,82,10); ctx.fill();            // down to plaza
-    rr(40,430,700,20,10); ctx.fill();            // residential lane
-    // street edges
-    ctx.fillStyle='rgba(168,143,99,.35)';
-    rr(20,266,720,3,2); ctx.fill();
+    rr(36,266,690,22,11); ctx.fill();
+    rr(376,286,24,74,10); ctx.fill();
+    rr(40,430,490,20,10); ctx.fill();
+    rr(470,420,180,18,9); ctx.fill();
 
-    // plaza fountain
-    ctx.fillStyle='#cdbd9a'; ctx.beginPath(); ctx.arc(388,366,26,0,7); ctx.fill();
-    ctx.fillStyle='#b9a47c'; ctx.beginPath(); ctx.arc(388,366,26,0,7); ctx.lineWidth=3; ctx.strokeStyle='#a98f63'; ctx.stroke();
-    ctx.fillStyle='#7fc4e0'; ctx.beginPath(); ctx.arc(388,366,17,0,7); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(388,361,5,0,7); ctx.fill();
+    ctx.fillStyle='#cdbd9a'; ctx.beginPath(); ctx.arc(388,358,26,0,7); ctx.fill();
+    ctx.strokeStyle='#a98f63'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(388,358,26,0,7); ctx.stroke();
+    ctx.fillStyle='#7fc4e0'; ctx.beginPath(); ctx.arc(388,358,17,0,7); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(388,353,5,0,7); ctx.fill();
 
-    // houses
     S.houses.forEach((h,i)=> drawHouse(i,night));
-    // buildings
-    ['factory','school','shop','bank','college'].forEach(k=> drawBuilding(k,night,day));
+    ['factory','school','shop','college'].forEach(k=> drawBuilding(k,night));
 
-    // smoke from factory (if running)
-    if(roleCount('factory')>0 && tick%10===0) spawnSmoke(B.factory.cx+B.factory.w/2-22, B.factory.gy-B.factory.h-2);
+    if(roleCount('factory')>0 && tick%10===0) S.smoke.push({x:B.factory.cx+B.factory.w/2-22+rnd(-2,2), y:B.factory.gy-B.factory.h-2, vx:rnd(-.2,.4), vy:rnd(-.5,-.8), life:1, r:rnd(3,5)});
     S.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.life-=0.012; s.r+=0.08; });
     S.smoke=S.smoke.filter(s=>s.life>0);
     S.smoke.forEach(s=>{ ctx.fillStyle='rgba(200,200,195,'+(s.life*0.4)+')'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,7); ctx.fill(); });
 
-    // night ground tint
     if(night>0){ ctx.fillStyle='rgba(22,26,64,'+(night*0.34)+')'; ctx.fillRect(0,SKY,LW,LH-SKY); }
 
-    // people
-    updatePeople();
-    S.people.forEach(drawPerson);
+    updatePeople(); S.people.forEach(drawPerson);
 
-    // shop sparkles
     S.spark.forEach(s=>{ s.y-=0.5; s.life-=0.03; });
     S.spark=S.spark.filter(s=>s.life>0);
-    S.spark.forEach(s=>{ ctx.fillStyle='rgba(255,230,120,'+s.life+')'; star(s.x,s.y,3.2*s.life); });
+    S.spark.forEach(s=>{ ctx.strokeStyle='rgba(255,230,120,'+s.life+')'; ctx.lineWidth=1.4;
+      const r=3.2*s.life; ctx.beginPath(); for(let i=0;i<4;i++){const a=i*Math.PI/2; ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r);} ctx.stroke(); });
   }
 
-  function star(x,y,r){ ctx.beginPath(); for(let i=0;i<4;i++){ const a=i*Math.PI/2; ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);} ctx.lineWidth=1.4; ctx.strokeStyle=ctx.fillStyle; ctx.stroke(); }
-
-  function drawBuilding(key,night,day){
+  function drawBuilding(key,night){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h, locked=b.locked;
-    // shadow
-    ctx.fillStyle='rgba(40,30,15,0.16)'; ctx.beginPath(); ctx.ellipse(b.cx, baseY+5, b.w*0.55, 8, 0,0,7); ctx.fill();
-
+    ctx.fillStyle='rgba(40,30,15,0.16)'; ctx.beginPath(); ctx.ellipse(b.cx,baseY+5,b.w*0.55,8,0,0,7); ctx.fill();
     if(locked){
-      // construction plot
       ctx.fillStyle='rgba(120,100,70,.18)'; rr(x,topY+b.h*0.45,b.w,b.h*0.55,6); ctx.fill();
-      ctx.strokeStyle='rgba(90,70,45,.5)'; ctx.setLineDash([6,5]); ctx.lineWidth=2;
-      rr(x,topY+b.h*0.45,b.w,b.h*0.55,6); ctx.stroke(); ctx.setLineDash([]);
-      // post sign
+      ctx.strokeStyle='rgba(90,70,45,.5)'; ctx.setLineDash([6,5]); ctx.lineWidth=2; rr(x,topY+b.h*0.45,b.w,b.h*0.55,6); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle='#8a6f4a'; ctx.fillRect(b.cx-2,baseY-30,4,30);
       ctx.fillStyle='#e3d3b2'; rr(b.cx-30,baseY-44,60,18,3); ctx.fill();
       ctx.strokeStyle='#a98f63'; ctx.lineWidth=1.5; rr(b.cx-30,baseY-44,60,18,3); ctx.stroke();
-      ctx.fillStyle='#6d5b46'; ctx.font='600 9px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('PLANNED',b.cx,baseY-35);
+      ctx.fillStyle='#6d5b46'; ctx.font='600 9px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('PLANNED',b.cx,baseY-35);
       return;
     }
-
-    const lit = night>0.25;
-    // body
-    const bg=ctx.createLinearGradient(0,topY,0,baseY);
-    bg.addColorStop(0,shade(b.color,1.12)); bg.addColorStop(1,shade(b.color,0.86));
+    const lit=night>0.25;
+    const bg=ctx.createLinearGradient(0,topY,0,baseY); bg.addColorStop(0,shade(b.color,1.12)); bg.addColorStop(1,shade(b.color,0.86));
     ctx.fillStyle=bg; rr(x,topY+12,b.w,b.h-12,4); ctx.fill();
     ctx.strokeStyle=shade(b.color,0.7); ctx.lineWidth=1.5; rr(x,topY+12,b.w,b.h-12,4); ctx.stroke();
+    ctx.fillStyle=shade(b.color,0.6); ctx.beginPath(); ctx.moveTo(x-6,topY+16); ctx.lineTo(b.cx,topY-6); ctx.lineTo(x+b.w+6,topY+16); ctx.closePath(); ctx.fill();
 
-    // roof
-    ctx.fillStyle=shade(b.color,0.6);
-    ctx.beginPath(); ctx.moveTo(x-6,topY+16); ctx.lineTo(b.cx,topY-6); ctx.lineTo(x+b.w+6,topY+16); ctx.closePath(); ctx.fill();
-
-    // type-specific flourishes
     if(key==='factory'){
-      ctx.fillStyle=shade(b.color,0.7); ctx.fillRect(x+b.w-34,topY-14,16,26); // chimney
-      ctx.fillStyle=shade(b.color,0.9);
-      for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(x+22+i*30, topY+34, 9,Math.PI,0); ctx.fill(); } // saw-tooth windows
+      ctx.fillStyle=shade(b.color,0.7); ctx.fillRect(x+b.w-34,topY-14,16,26);
+      ctx.fillStyle=shade(b.color,0.9); for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(x+22+i*30,topY+34,9,Math.PI,0); ctx.fill(); }
     }
     if(key==='shop'){
-      // awning
       for(let i=0;i<6;i++){ ctx.fillStyle=i%2?'#f0e6d2':'#d8633e'; ctx.beginPath();
-        ctx.moveTo(x-2+i*((b.w+4)/6),topY+18); ctx.lineTo(x-2+(i+1)*((b.w+4)/6),topY+18);
-        ctx.lineTo(x-2+(i+0.5)*((b.w+4)/6),topY+30); ctx.closePath(); ctx.fill(); }
+        ctx.moveTo(x-2+i*((b.w+4)/6),topY+18); ctx.lineTo(x-2+(i+1)*((b.w+4)/6),topY+18); ctx.lineTo(x-2+(i+0.5)*((b.w+4)/6),topY+30); ctx.closePath(); ctx.fill(); }
     }
     if(key==='school'||key==='college'){
-      ctx.fillStyle=shade(b.color,0.55); ctx.fillRect(b.cx-2,topY-22,3,22); // flagpole
-      ctx.fillStyle=key==='school'?'#c8e0a0':'#d8b8e8'; ctx.beginPath();
-      ctx.moveTo(b.cx+1,topY-22); ctx.lineTo(b.cx+18,topY-17); ctx.lineTo(b.cx+1,topY-12); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=shade(b.color,0.55); ctx.fillRect(b.cx-2,topY-22,3,22);
+      ctx.fillStyle=key==='school'?'#c8e0a0':'#d8b8e8'; ctx.beginPath(); ctx.moveTo(b.cx+1,topY-22); ctx.lineTo(b.cx+18,topY-17); ctx.lineTo(b.cx+1,topY-12); ctx.closePath(); ctx.fill();
     }
-    if(key==='bank'){
-      ctx.fillStyle=shade(b.color,1.18);
-      for(let i=0;i<4;i++) ctx.fillRect(x+14+i*((b.w-28)/3.3), topY+24, 7, b.h-36); // columns
-    }
-
-    // windows (lit at night)
-    const wy=topY+(key==='factory'?52:34);
-    const cols=key==='college'?5:3;
+    const wy=topY+(key==='factory'?52:34), cols=key==='college'?5:3;
     for(let i=0;i<cols;i++){
-      const wx=x+16+i*((b.w-32)/(cols-1)) - 6;
-      ctx.fillStyle = lit ? '#ffe1a0' : 'rgba(255,255,255,.65)';
-      rr(wx,wy,12,12,2); ctx.fill();
+      const wx=x+16+i*((b.w-32)/(cols-1))-6;
+      ctx.fillStyle=lit?'#ffe1a0':'rgba(255,255,255,.65)'; rr(wx,wy,12,12,2); ctx.fill();
       if(lit){ ctx.fillStyle='rgba(255,225,160,.35)'; rr(wx-2,wy-2,16,16,3); ctx.fill(); }
     }
-    // door
-    ctx.fillStyle=shade(b.color,0.5); rr(b.cx-8, baseY-22, 16, 22, 2); ctx.fill();
-
-    // hanging sign
-    ctx.fillStyle='#3a2c1d'; ctx.font='600 11px Outfit'; ctx.textAlign='center'; ctx.textBaseline='top';
-    const label=key==='college'?'College':b.name;
-    const tw=ctx.measureText(label).width+14;
-    ctx.fillStyle='#f4ead4'; rr(b.cx-tw/2, baseY+10, tw, 16, 4); ctx.fill();
-    ctx.strokeStyle='#a98f63'; ctx.lineWidth=1; rr(b.cx-tw/2, baseY+10, tw, 16, 4); ctx.stroke();
-    ctx.fillStyle='#3a2c1d'; ctx.fillText(label, b.cx, baseY+13);
+    ctx.fillStyle=shade(b.color,0.5); rr(b.cx-8,baseY-22,16,22,2); ctx.fill();
+    ctx.font='600 11px Outfit'; ctx.textAlign='center'; ctx.textBaseline='top';
+    const label=key==='college'?'College':b.name; const tw=ctx.measureText(label).width+14;
+    ctx.fillStyle='#f4ead4'; rr(b.cx-tw/2,baseY+10,tw,16,4); ctx.fill();
+    ctx.strokeStyle='#a98f63'; ctx.lineWidth=1; rr(b.cx-tw/2,baseY+10,tw,16,4); ctx.stroke();
+    ctx.fillStyle='#3a2c1d'; ctx.fillText(label,b.cx,baseY+13);
   }
 
   const ROOFS=['#9c5e3a','#a8694a','#86502f','#b07550','#925539','#a05c44','#8a5236'];
   function drawHouse(i,night){
-    const cx=58+i*70, gy=434, w=54, h=46, topY=gy-h;
-    const lit=night>0.25;
+    const cx=58+i*70, gy=434, w=54, h=46, topY=gy-h; const lit=night>0.25;
     ctx.fillStyle='rgba(40,30,15,0.16)'; ctx.beginPath(); ctx.ellipse(cx,gy+4,w*0.55,6,0,0,7); ctx.fill();
-    // body
     ctx.fillStyle='#e6d2b0'; rr(cx-w/2,topY+12,w,h-12,3); ctx.fill();
     ctx.strokeStyle='#c8b48c'; ctx.lineWidth=1.2; rr(cx-w/2,topY+12,w,h-12,3); ctx.stroke();
-    // roof
-    ctx.fillStyle=ROOFS[i%ROOFS.length];
-    ctx.beginPath(); ctx.moveTo(cx-w/2-4,topY+16); ctx.lineTo(cx,topY-4); ctx.lineTo(cx+w/2+4,topY+16); ctx.closePath(); ctx.fill();
-    // chimney + night smoke
+    ctx.fillStyle=ROOFS[i%ROOFS.length]; ctx.beginPath(); ctx.moveTo(cx-w/2-4,topY+16); ctx.lineTo(cx,topY-4); ctx.lineTo(cx+w/2+4,topY+16); ctx.closePath(); ctx.fill();
     ctx.fillStyle=shade(ROOFS[i%ROOFS.length],0.8); ctx.fillRect(cx+w/2-16,topY-2,7,12);
     if(lit && tick%24===((i*7)%24)) S.smoke.push({x:cx+w/2-12,y:topY-2,vx:rnd(-.1,.2),vy:-.4,life:.7,r:2});
-    // door + window
     ctx.fillStyle='#9c6b44'; rr(cx-6,gy-18,12,18,2); ctx.fill();
-    ctx.fillStyle = lit?'#ffe1a0':'#bcd0dc'; rr(cx+6,topY+18,9,9,1); ctx.fill();
+    ctx.fillStyle=lit?'#ffe1a0':'#bcd0dc'; rr(cx+6,topY+18,9,9,1); ctx.fill();
     if(lit){ ctx.fillStyle='rgba(255,225,160,.3)'; rr(cx+4,topY+16,13,13,2); ctx.fill(); }
   }
 
   function targetFor(p){
-    const work = S.progress>0.18 && S.progress<0.78;
-    if(p.role==='factory'||p.role==='shop'||p.role==='bank'){
-      return work ? ZONE[p.role] : homeSpot(p);
-    }
-    if(p.role==='school') return work ? ZONE.school : homeSpot(p);
-    if(p.role==='college') return work ? ZONE.college : homeSpot(p);
-    // idle
-    return work ? ZONE.idle : homeSpot(p);
+    const work=S.progress>0.18 && S.progress<0.78;
+    if(p.role==='factory'||p.role==='shop') return work?ZONE[p.role]:homeSpot(p);
+    if(p.role==='school') return work?ZONE.school:homeSpot(p);
+    if(p.role==='college') return work?ZONE.college:homeSpot(p);
+    return work?ZONE.idle:homeSpot(p);
   }
-  function homeSpot(p){
-    if(p.home<0) return ZONE.idle;
-    return [58+p.home*70, 434+14];
-  }
-  function updatePeople(){
-    S.people.forEach(p=>{
-      const t=targetFor(p);
-      const tx=t[0]+p.ox, ty=t[1]+p.oy;
-      p.x+=(tx-p.x)*0.045; p.y+=(ty-p.y)*0.045;
-    });
-  }
+  function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
+  function updatePeople(){ S.people.forEach(p=>{ const t=targetFor(p); p.x+=((t[0]+p.ox)-p.x)*0.045; p.y+=((t[1]+p.oy)-p.y)*0.045; }); }
   function drawPerson(p){
-    const moving = Math.abs(p.x-(targetFor(p)[0]+p.ox))>2;
-    const bob = moving? Math.sin(tick*0.25+p.ph)*1.6 : Math.sin(tick*0.08+p.ph)*0.6;
+    const t=targetFor(p); const moving=Math.abs(p.x-(t[0]+p.ox))>2;
+    const bob=moving?Math.sin(tick*0.25+p.ph)*1.6:Math.sin(tick*0.08+p.ph)*0.6;
     const x=p.x, y=p.y+bob;
     ctx.fillStyle='rgba(20,16,8,0.18)'; ctx.beginPath(); ctx.ellipse(x,p.y+7,6,2.3,0,0,7); ctx.fill();
     const c=EDU_COLOR[p.edu];
-    rr(x-4,y-4,8,10,3); ctx.fillStyle=c; ctx.fill();
-    ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.stroke();
+    rr(x-4,y-4,8,10,3); ctx.fillStyle=c; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.stroke();
     ctx.beginPath(); ctx.arc(x,y-7,3.4,0,7); ctx.fillStyle=shade(c,1.15); ctx.fill(); ctx.stroke();
     if(p.role==='school'||p.role==='college'){ ctx.fillStyle='#f4e3b0'; rr(x-3,y-1,6,4,1); ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.stroke(); }
   }
 
-  /* ============ RENDER: DOM ============ */
+  /* ============ DOM RENDER ============ */
   function svg(path,color){ return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" style="color:'+(color||'currentColor')+'">'+path+'</svg>'; }
-
-  function dots(role){
-    return roleList(role).map(p=>'<span class="dot" style="background:'+EDU_COLOR[p.edu]+'" title="'+EDU[p.edu]+'"></span>').join('');
-  }
+  function dots(role){ return roleList(role).map(p=>'<span class="dot" style="background:'+EDU_COLOR[p.edu]+'" title="'+EDU[p.edu]+'"></span>').join(''); }
 
   function renderCards(){
-    const r=rates();
-    const c=el('cards');
-    let html='';
-
-    // Housing card (special)
+    const r=rates(), c=el('cards'); let html='';
     const hl=homeless();
+
     html+=card('house','#b5764f','Housing','Cottages — '+HOUSE_CAP+' people each',
       S.houses.length+'<small style="font-weight:400;color:var(--ink-faint)">/'+MAX_HOUSES+'</small>',
-      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>Upkeep <b>'+money(S.houses.length*HOUSE_UPKEEP)+'</b>/day',
+      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>Each home adds <b>'+money(HOUSE_COST)+'</b> to prosperity',
       '<button class="buildbtn" data-act="build" '+((S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST)?'disabled':'')+'>'+
         (S.houses.length>=MAX_HOUSES?'Housing full':'Build cottage · '+money(HOUSE_COST))+'</button>');
 
-    // Factory
     html+=card('factory',B.factory.color,B.factory.name,B.factory.sub,
       roleCount('factory')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.factory.cap+'</small>',
-      'Output <b>'+(r.prod).toFixed(1)+'</b> goods/day<br>Wages <b>'+money(r.fWage)+'</b>/day · $'+FACTORY_WAGE+' each',
+      'Output <b>'+r.prod.toFixed(1)+'</b> goods/day<br>Wage '+money(FACTORY_WAGE)+'×skill · income tax <b>'+money(r.fTax)+'</b>/day',
       stepper('factory'));
 
-    // Shop
     html+=card('shop',B.shop.color,B.shop.name,B.shop.sub,
       roleCount('shop')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.shop.cap+'</small>',
-      'Sells up to <b>'+(r.sCap).toFixed(1)+'</b>/day at <b>'+money(r.price)+'</b><br>Markup <b>'+money(GOOD_VALUE*MARKUP)+'</b>/good is shopkeeper income',
+      'Taxed sales <b>'+r.taxedSales.toFixed(1)+'</b>/day at <b>'+money(GOOD_PRICE)+'</b> fixed<br>Indirect 18% → <b>'+money(r.indirect)+'</b> · income tax <b>'+money(r.sTax)+'</b>',
       stepper('shop'));
 
-    // School
-    const enrolled=roleCount('school'); const nextIn=YEAR_DAYS-S.day+1;
+    const enr=roleCount('school'), nextIn=YEAR_DAYS-S.day+1;
     html+=card('school',B.school.color,B.school.name,B.school.sub,
-      enrolled+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.school.cap+'</small>',
-      (enrolled?'<b>'+enrolled+'</b> studying · +1 level at year-end<br>Next graduation in <b>'+nextIn+'d</b>':'No students · enrol uneducated or basic workers')+'<br>Stipend <b>'+money(enrolled*STUDENT_COST)+'</b>/day',
+      enr+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.school.cap+'</small>',
+      (enr?'<b>'+enr+'</b> studying · +1 level at year-end<br>Next graduation in <b>'+nextIn+'d</b>':'Enrol Uneducated or Basic workers<br>They gain a level each year'),
       stepper('school',true));
 
-    // Bank
-    if(B.bank.locked){
-      html+=lockedCard('bank',B.bank.color,B.bank.name,B.bank.sub,'Reach <b>'+money(BANK_UNLOCK)+'</b> in the treasury', Math.min(1,S.maxTreasury/BANK_UNLOCK), money(Math.round(S.maxTreasury))+' / '+money(BANK_UNLOCK));
-    } else {
-      html+=card('bank',B.bank.color,B.bank.name,B.bank.sub,
-        roleCount('bank')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.bank.cap+'</small>',
-        'Interest <b>'+(r.bankRate*100).toFixed(2)+'%</b>/day → <b>'+money(r.interest)+'</b>/day<br>Each banker adds +'+(BANKER_BONUS*100).toFixed(2)+'%',
-        stepper('bank'));
-    }
-
-    // College
-    if(B.college.locked){
+    if(!S.unlocked.college){
       const inter=S.people.filter(p=>p.edu>=2).length;
       html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate', Math.min(1,inter/COLLEGE_UNLOCK), inter+' / '+COLLEGE_UNLOCK+' intermediate');
+    } else if(!S.built.college){
+      html+=card('college',B.college.color,'College',B.college.sub,'—',
+        'Milestone reached! Construct the College to train<br>Advanced and Highly Skilled workers.',
+        '<button class="buildbtn" data-act="buildcollege" '+(S.treasury<COLLEGE_COST?'disabled':'')+'>'+(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST))+'</button>');
     } else {
-      const cenr=roleCount('college'); const nIn=YEAR_DAYS-S.day+1;
+      const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
       html+=card('college',B.college.color,'College',B.college.sub,
-        cenr+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
-        (cenr?'<b>'+cenr+'</b> enrolled · +1 level at year-end<br>Next in <b>'+nIn+'d</b>':'Enrol Intermediate/Advanced workers')+'<br>Stipend <b>'+money(cenr*STUDENT_COST)+'</b>/day',
+        ce+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
+        (ce?'<b>'+ce+'</b> enrolled · +1 level at year-end<br>Next graduation in <b>'+nIn+'d</b>':'Enrol Intermediate/Advanced workers'),
         stepper('college',true));
     }
 
@@ -756,100 +622,90 @@
   }
 
   function card(iconKey,color,name,sub,badge,stat,ctrl){
-    return '<div class="card" style="--c:'+color+'">'
-      +'<div class="ch"><div class="ico">'+svg(ICON[iconKey],color)+'</div>'
-      +'<div class="nm">'+name+'<small>'+sub+'</small></div>'
-      +'<div class="badge">'+badge+'</div></div>'
+    return '<div class="card" style="--c:'+color+'"><div class="ch"><div class="ico">'+svg(ICON[iconKey],color)+'</div>'
+      +'<div class="nm">'+name+'<small>'+sub+'</small></div><div class="badge">'+badge+'</div></div>'
       +'<div class="stat">'+stat+'</div>'+ctrl+'</div>';
   }
   function lockedCard(iconKey,color,name,sub,req,frac,detail){
-    return '<div class="card" style="--c:'+color+'">'
-      +'<div class="ch"><div class="ico">'+svg(ICON[iconKey],color)+'</div>'
-      +'<div class="nm">'+name+'<small>'+sub+'</small></div></div>'
-      +'<div class="stat" style="opacity:.4">—</div>'
-      +'<div class="lock">'+svg(ICON.lock)
-      +'<div class="t">Locked</div><div class="r">'+req+'</div>'
+    return '<div class="card" style="--c:'+color+'"><div class="ch"><div class="ico">'+svg(ICON[iconKey],color)+'</div>'
+      +'<div class="nm">'+name+'<small>'+sub+'</small></div></div><div class="stat" style="opacity:.4">—</div>'
+      +'<div class="lock">'+svg(ICON.lock)+'<div class="t">Locked</div><div class="r">'+req+'</div>'
       +'<div class="bar"><i style="width:'+Math.round(frac*100)+'%"></i></div>'
       +'<div class="r" style="font-variant-numeric:tabular-nums">'+detail+'</div></div></div>';
   }
-  function stepper(role,isStudy){
+  function stepper(role){
     const cur=roleCount(role), cap=capacityOf(role);
-    let canAdd=cur<cap && (B[role].locked!==true);
+    let canAdd=cur<cap;
     if(canAdd){
       if(role==='school') canAdd=idle().some(p=>p.edu<2);
-      else if(role==='college') canAdd=idle().some(p=>p.edu>=2&&p.edu<4);
+      else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu>=2&&p.edu<4);
       else canAdd=idle().length>0;
     }
-    return '<div class="ctrl">'
-      +'<button class="pm" data-act="rem" data-b="'+role+'" '+(cur<=0?'disabled':'')+'>−</button>'
+    return '<div class="ctrl"><button class="pm" data-act="rem" data-b="'+role+'" '+(cur<=0?'disabled':'')+'>−</button>'
       +'<div class="who">'+dots(role)+'</div>'
       +'<button class="pm" data-act="add" data-b="'+role+'" '+(canAdd?'':'disabled')+'>+</button></div>';
   }
 
   function renderObjectives(){
-    const pop=S.people.length;
     const objs=[
       {done: homeless()===0, t:'House everyone — <b>no homeless souls</b>'},
       {done: idle().length===0, t:'Give every worker a role — <b>nobody idle</b>'},
-      {done: S.unlocked.bank, t:'Reach <b>'+money(BANK_UNLOCK)+'</b> → unlock the <b>Bank</b>'},
-      {done: S.people.filter(p=>p.edu>=2).length>=COLLEGE_UNLOCK, t:'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate → <b>College</b>'},
+      {done: S.people.length>=GROW_TARGET, t:'Grow the village to <b>'+GROW_TARGET+'</b> people'},
+      {done: S.people.filter(p=>p.edu>=2).length>=COLLEGE_UNLOCK, t:'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate'},
       {done: S.people.some(p=>p.edu>=4), t:'Train a <b>Highly Skilled</b> worker'},
     ];
     el('objectives').innerHTML=objs.map(o=>'<li class="'+(o.done?'done':'')+'"><span class="mk">'+svg(ICON.check,'#fff')+'</span><span class="o-t">'+o.t+'</span></li>').join('');
     el('legend').innerHTML=EDU.map((e,i)=>'<span><span class="dot" style="background:'+EDU_COLOR[i]+'"></span>'+e+'</span>').join('');
   }
 
+  function lrow(k,v,cls){ return '<div class="row"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>'; }
   function updateHUD(){
-    const r=rates();
+    const r=rates(), pop=S.people.length;
+    if(pop>S.maxPop) S.maxPop=pop;
     el('h-treasury').textContent=money(S.treasury);
-    el('h-treasury').className='val '+(S.treasury<0?'neg':'');
-    const net=el('h-net'); net.textContent=(r.net>=0?'+':'')+money(r.net)+'/day'; net.className='sub '+(r.net>=0?'pos':'neg');
+    el('h-net').textContent='+'+money(r.taxTotal)+'/day';
     el('h-goods').textContent=Math.floor(S.goods).toLocaleString();
-    el('h-pop').textContent=S.people.length;
+    el('h-goods').className='val '+(S.goods>=pop?'':'neg');
+    el('h-goods-sub').textContent=(S.goods>=pop?'surplus':'need '+pop);
+    el('h-goods-sub').className='sub '+(S.goods>=pop?'pos':'neg');
+    el('h-pop').textContent=pop;
     const hl=homeless(); const hs=el('h-house');
-    hs.textContent= hl>0? hl+' homeless':'all housed'; hs.className='sub '+(hl>0?'neg':'pos');
+    hs.textContent=hl>0?hl+' homeless':'all housed'; hs.className='sub '+(hl>0?'neg':'pos');
     el('h-idle').textContent=idle().length;
-    el('h-prosp').textContent=prosperity();
+    el('h-prosp').textContent=money(prosperity());
+    el('h-census').textContent=(CENSUS_DAYS-S.daysSinceCensus)+'d';
+    const ok=S.goods>=pop && housingCap()>=pop;
+    el('h-census-s').textContent=ok?'+'+BIRTHS+' due':'−1 risk';
+    el('h-census-s').className='sub '+(ok?'pos':'neg');
     el('h-date').textContent='Y'+S.year+' · Day '+S.day;
     const p=S.progress;
-    el('h-time').textContent = p<0.16?'Dawn':p<0.45?'Morning':p<0.6?'Midday':p<0.8?'Evening':'Night';
-    // sun dot in dial
-    const ang=p*Math.PI*2 - Math.PI/2;
-    el('h-sun').style.left=(50+Math.cos(ang)*32)+'%';
-    el('h-sun').style.top=(50+Math.sin(ang)*32)+'%';
-    const isNight = p<0.16||p>0.84;
-    el('h-sun').style.background=isNight?'#cfd6ff':'#ffd76a';
-    el('h-sun').style.boxShadow=isNight?'0 0 6px #aab':'0 0 8px #ffcf5a';
+    el('h-time').textContent=p<0.16?'Dawn':p<0.45?'Morning':p<0.6?'Midday':p<0.8?'Evening':'Night';
+    const ang=p*Math.PI*2-Math.PI/2; const isNight=p<0.16||p>0.84;
+    el('h-sun').style.left=(50+Math.cos(ang)*32)+'%'; el('h-sun').style.top=(50+Math.sin(ang)*32)+'%';
+    el('h-sun').style.background=isNight?'#cfd6ff':'#ffd76a'; el('h-sun').style.boxShadow=isNight?'0 0 6px #aab':'0 0 8px #ffcf5a';
+
+    el('ledger').innerHTML=
+      lrow('Good price (fixed)', money(GOOD_PRICE))
+      +lrow('Produced / day', r.prod.toFixed(1)+' goods')
+      +lrow('Consumed / day', r.consumed.toFixed(1)+' goods')
+      +lrow('Indirect tax (18%)', '+'+money(r.indirect)+'/day','pos')
+      +lrow('Income tax', '+'+money(r.incomeTax)+'/day','pos')
+      +lrow('Net wages held', '+'+money(r.netWages-r.spending)+'/day', (r.netWages-r.spending)>=0?'pos':'neg')
+      +'<div class="row tot"><span class="k">Prosperity</span><span class="v">'+money(prosperity())+'</span></div>';
   }
 
   let toastN=0;
   function toast(msg){
-    const w=el('toasts'); const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg;
-    w.appendChild(d); const me=++toastN;
-    setTimeout(()=>{ d.style.transition='opacity .4s,transform .4s'; d.style.opacity='0'; d.style.transform='translateY(-8px)'; setTimeout(()=>d.remove(),400); }, 2600);
-    // cap
+    const w=el('toasts'); const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; w.appendChild(d);
+    setTimeout(()=>{ d.style.transition='opacity .4s,transform .4s'; d.style.opacity='0'; d.style.transform='translateY(-8px)'; setTimeout(()=>d.remove(),400); },2600);
     while(w.children.length>3) w.firstChild.remove();
   }
 
-  /* ============ LOOP ============ */
-  function loop(t){
-    if(!lastT) lastT=t;
-    let dt=t-lastT; lastT=t;
-    if(dt>200) dt=200;
-    step(dt);
-    draw();
-    updateHUD();
-    raf=requestAnimationFrame(loop);
-  }
+  /* ============ LOOP / INPUT ============ */
+  function loop(t){ if(!lastT) lastT=t; let dt=t-lastT; lastT=t; if(dt>200)dt=200; step(dt); draw(); updateHUD(); raf=requestAnimationFrame(loop); }
+  function setSpeed(s){ S.speed=s; [0,1,2,4].forEach(v=>el('spd'+v).classList.toggle('on', v===s)); }
 
-  /* ============ INPUT ============ */
-  function setSpeed(s){
-    S.speed=s;
-    [0,1,2,4].forEach(v=>{ el('spd'+v).classList.toggle('on', v===s); });
-  }
-  document.querySelectorAll('[data-spd]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ if(S.over) return; setSpeed(parseInt(btn.dataset.spd,10)); });
-  });
+  document.querySelectorAll('[data-spd]').forEach(btn=> btn.addEventListener('click',()=>{ if(S.over)return; setSpeed(parseInt(btn.dataset.spd,10)); }));
   el('cards').addEventListener('click',e=>{
     if(S.over) return;
     const b=e.target.closest('[data-act]'); if(!b) return;
@@ -857,21 +713,16 @@
     if(act==='add') assign(role);
     else if(act==='rem') unassign(role);
     else if(act==='build') buildHouse();
+    else if(act==='buildcollege') buildCollege();
   });
-  el('introBtn').addEventListener('click',()=>{ el('intro').classList.add('hidden'); });
+  el('introBtn').addEventListener('click',()=> el('intro').classList.add('hidden'));
   el('restartBtn').addEventListener('click',()=>{
-    el('gameover').classList.add('hidden');
-    B.bank.locked=true; B.college.locked=true;
-    newState(); setSpeed(1); renderCards(); lastT=0;
+    el('gameover').classList.add('hidden'); B.college.locked=true; newState(); setSpeed(1); renderCards(); lastT=0;
   });
   window.addEventListener('resize',fitCanvas);
 
   /* ============ BOOT ============ */
-  fitCanvas();
-  newState();
-  setSpeed(1);
-  renderCards();
-  raf=requestAnimationFrame(loop);
+  fitCanvas(); newState(); setSpeed(1); renderCards(); raf=requestAnimationFrame(loop);
 })();
 </script>
 </body>
