@@ -20,31 +20,14 @@
   html,body{margin:0;padding:0}
   body{
     font-family:'Outfit',system-ui,sans-serif;color:var(--ink);
-    background:radial-gradient(1200px 700px at 50% -10%, #4a3c2c 0%, #2c2318 55%, #1d160e 100%);
-    min-height:100vh;padding:22px 14px 48px;-webkit-font-smoothing:antialiased;
+    background:#1d160e;
+    height:100vh;margin:0;padding:0;overflow:hidden;-webkit-font-smoothing:antialiased;
   }
   .wrap{
-    max-width:2400px;margin:0 auto;
-    display:grid;column-gap:14px;row-gap:0;align-items:start;
-    grid-template-columns:minmax(280px,360px) minmax(0,1fr) minmax(280px,360px);
-    grid-template-areas:
-      "head head head"
-      "hud  hud  hud"
-      "cards stage side";
+    display:flex;flex-direction:column;height:100vh;width:100vw;
   }
-  header.top{grid-area:head}
-  .hud{grid-area:hud}
-  .stage{grid-area:stage}
-  .col-cards{grid-area:cards;min-width:0}
-  .side{grid-area:side;min-width:0}
-  @media(max-width:1180px){
-    .wrap{grid-template-columns:1fr;grid-template-areas:"head" "hud" "stage" "cards" "side";}
-  }
-  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
-  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:.95;margin:0;color:#f2e6cd;letter-spacing:.3px;text-shadow:0 1px 0 rgba(0,0,0,.35)}
-  .brand p{margin:4px 0 0;color:#c9b896;font-size:13.5px;font-weight:300;letter-spacing:.4px}
-  .brand .em{color:var(--gold);font-style:italic;font-family:'Fraunces',serif}
-
+  header.top{display:none;}
+  
   .panel{
     background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 120px),
       repeating-linear-gradient(135deg, rgba(168,143,99,.05) 0 2px, rgba(168,143,99,0) 2px 7px),
@@ -52,7 +35,13 @@
     border:1px solid var(--line-strong);border-radius:16px;box-shadow:var(--shadow);
   }
 
-  .hud{display:flex;align-items:center;gap:5px;padding:9px 12px;margin-bottom:12px;flex-wrap:wrap}
+  .ribbon{
+    flex:none;background:var(--cream);border-top:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;gap:16px;z-index:20;box-shadow:0 -4px 18px rgba(0,0,0,.3);
+  }
+  
+  .hud{display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap;}
   .chip{display:flex;flex-direction:column;gap:1px;padding:5px 11px;border-radius:10px;min-width:60px}
   .chip .lab{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
   .chip .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05}
@@ -70,9 +59,26 @@
   .sbtn:active{transform:translateY(1px)}
   .sbtn.on{background:var(--gold);border-color:#b9842a;color:#3a2a0c;box-shadow:inset 0 1px 3px rgba(120,80,0,.3)}
 
-  .stage{position:relative;padding:8px;margin-bottom:14px;line-height:0}
-  canvas{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line-strong);background:#bfe0f0}
-  .toast-wrap{position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:5}
+  .ribbon-tools{display:flex;gap:10px;align-items:center;}
+  .r-btn{display:flex;align-items:center;gap:6px;font-family:'Outfit';font-weight:600;font-size:14px;color:#3a2a0c;background:var(--gold);border:1px solid #b9842a;border-radius:10px;padding:8px 14px;cursor:pointer;transition:all .1s;box-shadow:0 2px 4px rgba(0,0,0,.15);}
+  .r-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.2);}
+  .r-btn:active{transform:translateY(1px);box-shadow:none;}
+  .r-btn svg{width:18px;height:18px;}
+
+  .stage{flex:1;position:relative;background:#1d160e;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
+  canvas{display:block;width:100%;height:100%;object-fit:contain;background:#bfe0f0;}
+  
+  .ui-popup{
+    position:absolute;bottom:16px;background:var(--cream);border:1px solid var(--line-strong);
+    border-radius:14px;padding:16px;width:340px;max-height:calc(100vh - 120px);overflow-y:auto;
+    z-index:15;box-shadow:0 12px 48px rgba(0,0,0,.6);
+    opacity:0;transform:translateY(20px);pointer-events:none;transition:all .2s ease;
+  }
+  .ui-popup.active{opacity:1;transform:translateY(0);pointer-events:auto;}
+  #pop-build{right:16px;}
+  #pop-ledger{right:370px;}
+
+  .toast-wrap{position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:25}
   .toast{font-size:13px;font-weight:500;color:#fff;background:rgba(58,44,24,.92);border:1px solid rgba(212,161,60,.6);padding:7px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.3);animation:pop .35s ease both}
   .toast .g{color:var(--gold);font-weight:600}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
@@ -140,33 +146,7 @@
 </head>
 <body>
 <div class="wrap">
-
-  <header class="top">
-    <div class="brand">
-      <h1>tawalpur</h1>
-      <p>gram sabha — <span class="em">tax, house, feed, and educate your people.</span></p>
-    </div>
-  </header>
-
-  <div class="hud panel">
-    <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
-    <div class="sep"></div>
-    <div class="chip"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
-    <div class="chip"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
-    <div class="chip"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
-    <div class="chip"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
-    <div class="chip"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
-    <div class="hud-right">
-      <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
-        <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
-      <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
-      <button class="sbtn on" data-spd="1" id="spd1">1×</button>
-      <button class="sbtn" data-spd="2" id="spd2">2×</button>
-      <button class="sbtn" data-spd="4" id="spd4">4×</button>
-    </div>
-  </div>
-
-  <div class="stage panel">
+  <div class="stage">
     <canvas id="town" width="760" height="480"></canvas>
     <div class="toast-wrap" id="toasts"></div>
 
@@ -194,31 +174,64 @@
         <button class="play" id="restartBtn">Start over</button>
       </div>
     </div>
-  </div>
 
-  <div class="col-cards">
+    <div class="ui-popup" id="pop-build">
       <h3 class="section-h">Buildings &amp; assignments <span class="ln"></span></h3>
       <div class="cards" id="cards"></div>
     </div>
-    <div class="side">
-      <div class="panel">
-        <h3 class="section-h" style="margin-top:0">Village ledger <span class="ln"></span></h3>
-        <div class="ledger" id="ledger"></div>
-      </div>
-      <div class="panel">
-        <h3 class="section-h" style="margin-top:0">Steward's note <span class="ln"></span></h3>
-        <div class="tip">Your only income is <b>tax</b>: 18% on goods sold at the Shop, plus income tax on educated workers. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census, or villagers will die. The Shop turns goods into taxable sales — without shopkeepers, you still feed people, but you collect no sales tax.</div>
-        <div class="legend">
-          <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
-          <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
-          <span><span class="dot" style="background:#4f9fd4"></span>Intermediate</span>
-          <span><span class="dot" style="background:#8a6fd4"></span>Advanced</span>
-          <span><span class="dot" style="background:#e0b020"></span>Highly Skilled</span>
+
+    <div class="ui-popup" id="pop-ledger">
+      <div class="side">
+        <div class="panel">
+          <h3 class="section-h" style="margin-top:0">Village ledger <span class="ln"></span></h3>
+          <div class="ledger" id="ledger"></div>
+        </div>
+        <div class="panel">
+          <h3 class="section-h" style="margin-top:0">Steward's note <span class="ln"></span></h3>
+          <div class="tip">Your only income is <b>tax</b>: 18% on goods sold at the Shop, plus income tax on educated workers. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census, or villagers will die. The Shop turns goods into taxable sales — without shopkeepers, you still feed people, but you collect no sales tax.</div>
+          <div class="legend">
+            <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
+            <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
+            <span><span class="dot" style="background:#4f9fd4"></span>Intermediate</span>
+            <span><span class="dot" style="background:#8a6fd4"></span>Advanced</span>
+            <span><span class="dot" style="background:#e0b020"></span>Highly Skilled</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <div class="ribbon">
+    <div class="hud">
+      <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
+      <div class="sep"></div>
+      <div class="chip"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
+      <div class="chip"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
+      <div class="chip"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
+      <div class="chip"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
+      <div class="chip"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
+      <div class="hud-right">
+        <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
+          <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
+        <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
+        <button class="sbtn on" data-spd="1" id="spd1">1×</button>
+        <button class="sbtn" data-spd="2" id="spd2">2×</button>
+        <button class="sbtn" data-spd="4" id="spd4">4×</button>
+      </div>
+    </div>
+
+    <div class="ribbon-tools">
+      <button class="r-btn" id="btn-toggle-ledger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Stats &amp; Note
+      </button>
+      <button class="r-btn" id="btn-toggle-build">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Build &amp; Assign
+      </button>
+    </div>
+  </div>
+</div>
 <script>
 (function(){
   'use strict';
@@ -723,7 +736,15 @@
     el('gameover').classList.add('hidden'); B.college.locked=true; newState(); setSpeed(1); renderCards(); lastT=0;
   });
   window.addEventListener('resize',fitCanvas);
-
+/* ============ UI TOGGLES ============ */
+  document.getElementById('btn-toggle-build').addEventListener('click', () => {
+    document.getElementById('pop-build').classList.toggle('active');
+    document.getElementById('pop-ledger').classList.remove('active');
+  });
+  document.getElementById('btn-toggle-ledger').addEventListener('click', () => {
+    document.getElementById('pop-ledger').classList.toggle('active');
+    document.getElementById('pop-build').classList.remove('active');
+  });
   /* ============ BOOT ============ */
   fitCanvas(); newState(); setSpeed(1); renderCards(); raf=requestAnimationFrame(loop);
 })();
