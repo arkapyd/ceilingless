@@ -23,7 +23,23 @@
     background:radial-gradient(1200px 700px at 50% -10%, #4a3c2c 0%, #2c2318 55%, #1d160e 100%);
     min-height:100vh;padding:22px 14px 48px;-webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:900px;margin:0 auto}
+  .wrap{
+    max-width:2400px;margin:0 auto;
+    display:grid;column-gap:14px;row-gap:0;align-items:start;
+    grid-template-columns:minmax(280px,360px) minmax(0,1fr) minmax(280px,360px);
+    grid-template-areas:
+      "head head head"
+      "hud  hud  hud"
+      "cards stage side";
+  }
+  header.top{grid-area:head}
+  .hud{grid-area:hud}
+  .stage{grid-area:stage}
+  .col-cards{grid-area:cards;min-width:0}
+  .side{grid-area:side;min-width:0}
+  @media(max-width:1180px){
+    .wrap{grid-template-columns:1fr;grid-template-areas:"head" "hud" "stage" "cards" "side";}
+  }
   header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
   .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:.95;margin:0;color:#f2e6cd;letter-spacing:.3px;text-shadow:0 1px 0 rgba(0,0,0,.35)}
   .brand p{margin:4px 0 0;color:#c9b896;font-size:13.5px;font-weight:300;letter-spacing:.4px}
@@ -61,13 +77,10 @@
   .toast .g{color:var(--gold);font-weight:600}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
 
-  .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;align-items:start}
-  @media(max-width:760px){.grid{grid-template-columns:1fr}}
   .section-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);margin:0 0 9px;display:flex;align-items:center;gap:7px}
   .section-h .ln{flex:1;height:1px;background:var(--line)}
 
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media(max-width:460px){.cards{grid-template-columns:1fr}}
+  .cards{display:grid;grid-template-columns:1fr;gap:10px}
   .card{position:relative;background:var(--cream);border:1px solid var(--line);border-left:4px solid var(--c,#c8b48c);border-radius:11px;padding:10px 11px 11px;overflow:hidden}
   .card .ch{display:flex;align-items:center;gap:8px;margin-bottom:7px}
   .card .ico{width:26px;height:26px;flex:none;display:grid;place-items:center;border-radius:7px;background:#fff7e6;border:1px solid var(--line)}
@@ -183,17 +196,11 @@
     </div>
   </div>
 
-  <div class="grid">
-    <div>
+  <div class="col-cards">
       <h3 class="section-h">Buildings &amp; assignments <span class="ln"></span></h3>
       <div class="cards" id="cards"></div>
     </div>
     <div class="side">
-      <div class="panel">
-        <h3 class="section-h" style="margin-top:0">Objectives <span class="ln"></span></h3>
-        <ul class="obj" id="objectives"></ul>
-        <div class="legend" id="legend"></div>
-      </div>
       <div class="panel">
         <h3 class="section-h" style="margin-top:0">Village ledger <span class="ln"></span></h3>
         <div class="ledger" id="ledger"></div>
@@ -201,10 +208,16 @@
       <div class="panel">
         <h3 class="section-h" style="margin-top:0">Steward's note <span class="ln"></span></h3>
         <div class="tip">Your only income is <b>tax</b>: 18% on goods sold at the Shop, plus income tax on educated workers. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census, or villagers will die. The Shop turns goods into taxable sales — without shopkeepers, you still feed people, but you collect no sales tax.</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
+          <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
+          <span><span class="dot" style="background:#4f9fd4"></span>Intermediate</span>
+          <span><span class="dot" style="background:#8a6fd4"></span>Advanced</span>
+          <span><span class="dot" style="background:#e0b020"></span>Highly Skilled</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
 <script>
 (function(){
@@ -646,17 +659,7 @@
       +'<button class="pm" data-act="add" data-b="'+role+'" '+(canAdd?'':'disabled')+'>+</button></div>';
   }
 
-  function renderObjectives(){
-    const objs=[
-      {done: homeless()===0, t:'House everyone — <b>no homeless souls</b>'},
-      {done: idle().length===0, t:'Give every worker a role — <b>nobody idle</b>'},
-      {done: S.people.length>=GROW_TARGET, t:'Grow the village to <b>'+GROW_TARGET+'</b> people'},
-      {done: S.people.filter(p=>p.edu>=2).length>=COLLEGE_UNLOCK, t:'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate'},
-      {done: S.people.some(p=>p.edu>=4), t:'Train a <b>Highly Skilled</b> worker'},
-    ];
-    el('objectives').innerHTML=objs.map(o=>'<li class="'+(o.done?'done':'')+'"><span class="mk">'+svg(ICON.check,'#fff')+'</span><span class="o-t">'+o.t+'</span></li>').join('');
-    el('legend').innerHTML=EDU.map((e,i)=>'<span><span class="dot" style="background:'+EDU_COLOR[i]+'"></span>'+e+'</span>').join('');
-  }
+  function renderObjectives(){}
 
   function lrow(k,v,cls){ return '<div class="row"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>'; }
   function updateHUD(){
