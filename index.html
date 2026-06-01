@@ -139,6 +139,16 @@
   .modal .play{font-family:'Outfit';font-weight:600;font-size:15px;color:#3a2a0c;background:var(--gold);border:1px solid #b9842a;border-radius:10px;padding:11px 26px;cursor:pointer;letter-spacing:.3px;transition:transform .08s,filter .12s}
   .modal .play:hover{filter:brightness(1.06)}.modal .play:active{transform:translateY(1px)}
   .modal .stat-final{font-family:'Fraunces',serif;font-size:18px;color:var(--gold);margin:2px 0 14px}
+  /* ===== chapter cards (Book One) + concept animations ===== */
+  .modal .eyebrow{font-weight:600;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin:0 0 6px;animation:riseIn .5s ease both}
+  .modal .chapter-title{font-family:'Fraunces',serif;font-weight:600;color:var(--ink);font-size:14px;letter-spacing:1px;text-transform:uppercase;line-height:1.1;margin:0 0 14px;animation:riseIn .5s .04s ease both}
+  .modal .chapter-title span{display:block;font-size:25px;letter-spacing:0;text-transform:none;margin-top:4px}
+  .anim-stage{position:relative;background:radial-gradient(120% 120% at 50% 0%,#fbf3df,var(--cream-2));border:1px solid var(--line);border-radius:12px;padding:8px 10px 6px;margin:0 0 14px;overflow:hidden;animation:riseIn .5s .08s ease both}
+  .anim-stage svg{display:block;width:100%;height:auto}
+  .anim-cap{font-size:11px;color:var(--ink-soft);text-align:center;margin-top:2px;line-height:1.4}
+  .modal .lead{font-size:14px;color:var(--ink);line-height:1.6;margin:0 0 12px;animation:riseIn .5s .12s ease both}
+  .modal .lead b{font-weight:600}
+  @keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .hidden{display:none!important}
 </style>
 </head>
@@ -149,8 +159,39 @@
     <div class="toast-wrap" id="toasts"></div>
     <div class="ov" id="intro">
       <div class="modal">
-        <h2>Swaagat, Sarpanchji.</h2>
-        <p>As <b>sarpanch</b> of the gram panchayat, you run the village of <b>Tawapur</b> on <b>rupees (₹)</b>. Your treasury is funded by <b>one thing only — tax</b>, which you spend on houses and new buildings.</p>
+        <div class="eyebrow">Book One · The Basics</div>
+        <div class="chapter-title">Chapter One<span>The Laws of Demand &amp; Supply</span></div>
+        <div class="anim-stage">
+          <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg">
+            <line x1="36" y1="12" x2="36" y2="126" stroke="#a98f63" stroke-width="1.5"/>
+            <line x1="36" y1="126" x2="246" y2="126" stroke="#a98f63" stroke-width="1.5"/>
+            <text x="12" y="20" fill="#9b8a72" font-family="Outfit,sans-serif" font-size="9" font-weight="600">₹</text>
+            <text x="214" y="140" fill="#9b8a72" font-family="Outfit,sans-serif" font-size="9" font-weight="600">qty</text>
+            <line x1="52" y1="118" x2="234" y2="24" stroke="#6b7a8f" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="200" y="32" fill="#6b7a8f" font-family="Outfit,sans-serif" font-size="9" font-weight="700">supply</text>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0; 16 0; 0 0" keyTimes="0;0.5;1" dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
+              <line x1="52" y1="28" x2="234" y2="122" stroke="#c87a55" stroke-width="2.5" stroke-linecap="round"/>
+              <text x="52" y="24" fill="#c87a55" font-family="Outfit,sans-serif" font-size="9" font-weight="700">demand</text>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0; 0 -22; 0 0" keyTimes="0;0.5;1" dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
+              <line x1="36" y1="78" x2="206" y2="78" stroke="#d4a13c" stroke-width="1.5" stroke-dasharray="3 3"/>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0; 26 -22; 0 0" keyTimes="0;0.5;1" dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
+              <circle cx="138" cy="78" r="5.5" fill="#d4a13c" stroke="#fff" stroke-width="1.5"/>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0; 0 -22; 0 0" keyTimes="0;0.5;1" dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/>
+              <rect x="150" y="64" width="58" height="24" rx="7"><animate attributeName="fill" values="#5c8a4e;#bd5a3f;#5c8a4e" keyTimes="0;0.5;1" dur="4.2s" repeatCount="indefinite"/></rect>
+              <text x="179" y="80" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">LOW<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.35;0.5;0.85;1" dur="4.2s" repeatCount="indefinite"/></text>
+              <text x="179" y="80" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">HIGH<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.35;0.5;0.85;1" dur="4.2s" repeatCount="indefinite"/></text>
+            </g>
+          </svg>
+          <div class="anim-cap">Buyers outnumber the grain &rarr; price climbs. Grain is plentiful &rarr; price falls.</div>
+        </div>
+        <p class="lead">Welcome, Sarpanchji. Grain has no fixed price in <b>Tawapur</b> — it is set by <b>demand and supply</b>. When buyers outnumber the grain on the market the price <b>climbs</b>; when grain is plentiful it <b>falls</b>. Read that balance, and your treasury — funded by <b>tax alone</b> — will grow.</p>
         <ul>
           <li><b>18% indirect tax</b> on every good sold at the Shop.</li>
           <li><b>Income tax</b> on educated workers — 12% at Basic, rising with each level.</li>
@@ -158,7 +199,7 @@
           <li>Every <b>5 days a census</b> runs: with enough <b>goods and housing</b>, two babies are born — if either falls short, a villager dies.</li>
           <li>The <b>School</b> needs <b>2–5 Basic teachers</b> (5 students each) to lift workers a level each year. Reach <b>5 Intermediate</b> to build the College.</li>
         </ul>
-        <p style="margin-bottom:16px">One day passes each real minute. Fast-forward with the speed buttons below.</p>
+        <p style="margin-bottom:16px">One day passes each real minute, and the village keeps living even in a background tab. Press <b>space</b> to pause or resume, and click the village to close an open panel.</p>
         <button class="play" id="introBtn">Begin building</button>
       </div>
     </div>
@@ -168,6 +209,54 @@
         <p id="go-msg"></p>
         <div class="stat-final" id="go-stat"></div>
         <button class="play" id="restartBtn">Start over</button>
+      </div>
+    </div>
+    <div class="ov hidden" id="chapter2">
+      <div class="modal">
+        <div class="eyebrow">Book One · The Basics</div>
+        <div class="chapter-title">Chapter Two<span>Government Intervention</span></div>
+        <div class="anim-stage">
+          <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
+            <line x1="10" y1="128" x2="270" y2="128" stroke="#a98f63" stroke-width="1.5"/>
+            <g>
+              <rect x="26" y="78" width="74" height="46" rx="2" fill="#b08a5a"/>
+              <polygon points="20,78 63,57 106,78" fill="#7c2d2d"/>
+              <rect x="52" y="96" width="22" height="28" fill="#5b4326"/>
+              <text x="63" y="142" fill="#6d5b46" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">Godown</text>
+            </g>
+            <g>
+              <rect x="186" y="86" width="64" height="38" rx="2" fill="#e3cfb0"/>
+              <rect x="182" y="80" width="72" height="8" fill="#9a3b2e"/>
+              <ellipse cx="200" cy="120" rx="8" ry="6" fill="#c9a86a" stroke="#8a6a3a"/>
+              <ellipse cx="216" cy="121" rx="8" ry="6" fill="#c9a86a" stroke="#8a6a3a"/>
+              <text x="218" y="142" fill="#6d5b46" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">Market</text>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0;0 0;120 0;120 0;120 0" keyTimes="0;0.06;0.4;0.46;1" dur="6s" repeatCount="indefinite"/>
+              <ellipse cx="92" cy="108" rx="7" ry="6" fill="#c9a86a" stroke="#8a6a3a"><animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.4;0.46;1" dur="6s" repeatCount="indefinite"/></ellipse>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0;0 0;-120 0;-120 0;-120 0" keyTimes="0;0.56;0.9;0.96;1" dur="6s" repeatCount="indefinite"/>
+              <ellipse cx="200" cy="108" rx="7" ry="6" fill="#c9a86a" stroke="#8a6a3a"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.5;0.56;0.9;0.96;1" dur="6s" repeatCount="indefinite"/></ellipse>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 -8;0 -8;0 8" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/>
+              <rect x="112" y="18" width="58" height="24" rx="7"><animate attributeName="fill" values="#5c8a4e;#5c8a4e;#bd5a3f;#bd5a3f;#5c8a4e" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></rect>
+              <text x="141" y="34" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">price &darr;<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></text>
+              <text x="141" y="34" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">price &uarr;<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></text>
+            </g>
+          </svg>
+          <div class="anim-cap">Release grain &rarr; price falls (treasury earns). Procure grain &rarr; price rises (treasury pays).</div>
+        </div>
+        <p class="lead">A new lever is yours, Sarpanchji: the <b>Panchayat Godown</b>, a public grain reserve. With it you can lean against the very market Chapter One set in motion.</p>
+        <ul>
+          <li><b>Release</b> grain (flow up): you sell from the reserve onto the market. Supply rises, the <b>price falls</b>, and the sale <b>earns</b> your treasury <b>₹</b>.</li>
+          <li><b>Procure</b> grain (flow down): you buy from the market into the reserve. Supply tightens, the <b>price rises</b>, and it <b>costs</b> the treasury <b>₹</b>.</li>
+          <li>You cannot release from an <b>empty</b> reserve, nor procure with an <b>empty</b> treasury.</li>
+          <li>Use the <b>− / +</b> on the Godown card to set the daily flow; hold at zero to let the free market be.</li>
+        </ul>
+        <p style="margin-bottom:16px">The <b>Panchayat Godown</b> now sits in your <b>Build &amp; Assign</b> panel.</p>
+        <button class="play" id="ch2Btn">Take control</button>
       </div>
     </div>
     <div class="ui-popup" id="pop-build">
@@ -247,6 +336,7 @@
   const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  // dynamic-price coefficients
   const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
   const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
+  const CH2_UNLOCK_DAY=10;  // Chapter Two (Panchayat Godown) unlocks on this game-day
   const START_TREASURY=300, START_GOODS=15, GROW_TARGET=14;
 
   const B = {
@@ -276,7 +366,7 @@
       treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
-      houses:[{},{}], unlocked:{college:false}, built:{college:false},
+     houses:[{},{}], unlocked:{college:false}, built:{college:false}, godownUnlocked:false, shownCh2:false,
       daysSinceCensus:0, maxPop:10, nextId:0,
       people:[], today:{indirect:0, income:0},
       smoke:[], spark:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
@@ -481,6 +571,14 @@
   function prosperity(){ return S.villagerCash + S.houses.length*HOUSE_COST; }
 
   function checkUnlocks(){
+    if(!S.godownUnlocked){
+      const dayCount=(S.year-1)*YEAR_DAYS+S.day;
+      if(dayCount>=CH2_UNLOCK_DAY){
+        S.godownUnlocked=true; S.shownCh2=true;
+        setSpeed(0); el('chapter2').classList.remove('hidden');
+        renderCards();
+      }
+    }
     if(!S.unlocked.college){
       const inter=S.people.filter(p=>p.edu>=2).length;
       if(inter>=COLLEGE_UNLOCK){
@@ -809,14 +907,16 @@
       'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>Each home adds <b>'+money(HOUSE_COST)+'</b> to prosperity',
       '<button class="buildbtn" data-act="build" '+((S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST)?'disabled':'')+'>'+
         (S.houses.length>=MAX_HOUSES?'Housing full':'Build cottage · '+money(HOUSE_COST))+'</button>');
-    html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding',
-      Math.floor(S.stockO)+' O in reserve',
-      'Market intervention flow: <b>'+(S.flowO>0?'+':'')+S.flowO+' O/day</b><br>'+
-      (S.flowO>0?'Releasing lowers price &amp; earns '+CUR:S.flowO<0?'Buying raises price &amp; costs '+CUR:'Set flow to buy/release O (goods)'),
-      '<div class="ctrl"><button class="pm" data-act="fdec" '+(S.flowO<=-5?'disabled':'')+'>−</button>'+
-      '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Buy from market'))+'</div>'+
-      '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
-    );
+   if(S.godownUnlocked){
+      html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding · Chapter Two',
+        Math.floor(S.stockO)+' kg in reserve',
+        'Market intervention flow: <b>'+(S.flowO>0?'+':'')+S.flowO+' kg/day</b><br>'+
+        (S.flowO>0?'Releasing lowers price &amp; earns '+CUR:S.flowO<0?'Procuring raises price &amp; costs '+CUR:'Set flow to release or procure grain'),
+        '<div class="ctrl"><button class="pm" data-act="fdec" '+(S.flowO<=-5?'disabled':'')+'>−</button>'+
+        '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Procure from market'))+'</div>'+
+        '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
+      );
+    }
     html+=card('factory',B.factory.color,B.factory.name,B.factory.sub,
       roleCount('factory')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.factory.cap+'</small>',
       'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Wage '+money(FACTORY_WAGE)+'×skill · income tax <b>'+money(r.fTax)+'</b>/day',
@@ -986,6 +1086,7 @@
   });
 
   el('introBtn').addEventListener('click',()=> el('intro').classList.add('hidden'));
+  el('ch2Btn').addEventListener('click',()=>{ el('chapter2').classList.add('hidden'); if(!S.over) setSpeed(lastPlaySpeed||1); });
   el('restartBtn').addEventListener('click',()=>{
     el('gameover').classList.add('hidden'); B.college.locked=true; newState(); setSpeed(1); renderCards(); lastT=0;
   });
@@ -1003,8 +1104,8 @@
   // Spacebar = play / pause (ignored while the intro modal is up so it can't be hijacked)
   document.addEventListener('keydown', e=>{
     if(e.code==='Space' || e.key===' '){
-      const intro=el('intro');
-      if(intro && !intro.classList.contains('hidden')) return;
+      const intro=el('intro'), ch2=el('chapter2');
+      if((intro && !intro.classList.contains('hidden')) || (ch2 && !ch2.classList.contains('hidden'))) return;
       e.preventDefault();
       togglePause();
     }
