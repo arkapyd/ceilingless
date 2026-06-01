@@ -17,6 +17,15 @@
     --shadow:0 2px 0 rgba(120,96,64,.25), 0 6px 18px rgba(60,44,24,.10);
   }
   *{box-sizing:border-box}
+  /* themed scrollbars + keyboard focus, page-wide */
+  html{scrollbar-width:thin;scrollbar-color:var(--line-strong) var(--cream-2);}
+  *{scrollbar-width:thin;scrollbar-color:var(--line-strong) var(--cream-2);}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-track{background:var(--cream-2);border-radius:10px}
+  ::-webkit-scrollbar-thumb{background:var(--line-strong);border:2px solid var(--cream-2);border-radius:10px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+  ::-webkit-scrollbar-corner{background:var(--cream-2)}
+  button:focus-visible,.sbtn:focus-visible,.r-btn:focus-visible,.pm:focus-visible,.buildbtn:focus-visible,.play:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   html,body{margin:0;padding:0}
   body{
     font-family:'Outfit',system-ui,sans-serif;color:var(--ink);
@@ -122,8 +131,8 @@
   .tip{font-size:12px;color:var(--ink-soft);line-height:1.55;background:var(--cream-2);border:1px dashed var(--line-strong);border-radius:10px;padding:10px 12px}
   .tip b{color:var(--ink)}
   .ov{position:absolute;inset:0;background:rgba(36,28,16,.78);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:10px;padding:18px}
-  .modal{background:var(--cream);border:1px solid var(--line-strong);border-radius:16px;max-width:440px;width:100%;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:left}
-  .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0 0 4px;color:var(--ink)}
+  .modal{background:var(--cream);border:1px solid var(--line-strong);border-radius:16px;max-width:440px;width:100%;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:left;max-height:calc(100vh - 120px);overflow-y:auto}
+  .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:24px;line-height:1.25;margin:0 0 14px;color:var(--ink)}
   .modal p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:0 0 12px}
   .modal ul{margin:0 0 16px;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.7}
   .modal ul b{color:var(--ink)}
@@ -923,8 +932,45 @@
   }
 
   /* ============ LOOP / INPUT ============ */
-  function loop(t){ if(!lastT) lastT=t; let dt=t-lastT; lastT=t; if(dt>200)dt=200; step(dt); draw(); updateHUD(); raf=requestAnimationFrame(loop); }
-  function setSpeed(s){ S.speed=s; [0,1,2,4].forEach(v=>el('spd'+v).classList.toggle('on', v===s)); }
+  // Real-time driver: requestAnimationFrame while the tab is visible (smooth 60fps),
+  // setInterval while it is hidden, so the village keeps living in a background tab.
+  let bgId=null, lastPlaySpeed=1;
+  const FG_MAX_DT=200;     // clamp per visible frame, keeps animation smooth
+  const BG_MAX_DT=60000;   // background catch-up cap (=1 real-time day) bounds work per tick
+
+  function frame(now){
+    if(now==null) now=performance.now();
+    if(!lastT) lastT=now;
+    let dt=now-lastT; lastT=now;
+    if(dt<0) dt=0; if(dt>FG_MAX_DT) dt=FG_MAX_DT;
+    step(dt); draw(); updateHUD();
+    raf=requestAnimationFrame(frame);
+  }
+  function bgTick(){
+    const now=performance.now();
+    if(!lastT) lastT=now;
+    let dt=now-lastT; lastT=now;
+    if(dt<0) dt=0; if(dt>BG_MAX_DT) dt=BG_MAX_DT;
+    step(dt);
+    // advance positions enough that shop trips still resolve (shop service is position-gated),
+    // proportional to elapsed time but bounded so a long gap can't stall the loop.
+    let iter=Math.min(240, Math.max(1, Math.round(dt/16)));
+    for(let i=0;i<iter;i++) updatePeople();
+  }
+  function goForeground(){
+    if(bgId){ clearInterval(bgId); bgId=null; }
+    lastT=performance.now();
+    if(raf==null) raf=requestAnimationFrame(frame);
+  }
+  function goBackground(){
+    if(raf!=null){ cancelAnimationFrame(raf); raf=null; }
+    lastT=performance.now();
+    if(bgId==null) bgId=setInterval(bgTick, 250);  // browsers may throttle to >=1s; dt math keeps pace
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) goBackground(); else goForeground(); });
+
+  function setSpeed(s){ S.speed=s; if(s>0) lastPlaySpeed=s; [0,1,2,4].forEach(v=>el('spd'+v).classList.toggle('on', v===s)); }
+  function togglePause(){ if(S.over) return; setSpeed(S.speed===0 ? lastPlaySpeed : 0); }
 
   document.querySelectorAll('[data-spd]').forEach(btn=> btn.addEventListener('click',()=>{ if(S.over)return; setSpeed(parseInt(btn.dataset.spd,10)); }));
   el('cards').addEventListener('click',e=>{
@@ -953,8 +999,28 @@
     document.getElementById('pop-ledger').classList.toggle('active');
     document.getElementById('pop-build').classList.remove('active');
   });
+
+  // Spacebar = play / pause (ignored while the intro modal is up so it can't be hijacked)
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space' || e.key===' '){
+      const intro=el('intro');
+      if(intro && !intro.classList.contains('hidden')) return;
+      e.preventDefault();
+      togglePause();
+    }
+  });
+
+  // Click anywhere in the village (not the ribbon, not inside the panel) to close an open panel
+  document.addEventListener('pointerdown', e=>{
+    if(e.target && e.target.closest && e.target.closest('.ribbon')) return;
+    const build=el('pop-build'), ledger=el('pop-ledger');
+    if(build.classList.contains('active') && !build.contains(e.target)) build.classList.remove('active');
+    if(ledger.classList.contains('active') && !ledger.contains(e.target)) ledger.classList.remove('active');
+  });
+
   /* ============ BOOT ============ */
-  fitCanvas(); newState(); setSpeed(1); renderCards(); raf=requestAnimationFrame(loop);
+  fitCanvas(); newState(); setSpeed(1); renderCards();
+  if(document.hidden) goBackground(); else goForeground();
 
 })();
 </script>
