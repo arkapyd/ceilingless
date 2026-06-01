@@ -27,20 +27,17 @@
     display:flex;flex-direction:column;height:100vh;width:100vw;
   }
   header.top{display:none;}
-  
   .panel{
     background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 120px),
       repeating-linear-gradient(135deg, rgba(168,143,99,.05) 0 2px, rgba(168,143,99,0) 2px 7px),
       var(--cream);
     border:1px solid var(--line-strong);border-radius:16px;box-shadow:var(--shadow);
   }
-
   .ribbon{
     flex:none;background:var(--cream);border-top:1px solid var(--line-strong);
     display:flex;align-items:center;justify-content:space-between;
     padding:10px 16px;gap:16px;z-index:20;box-shadow:0 -4px 18px rgba(0,0,0,.3);
   }
-  
   .hud{display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap;}
   .chip{display:flex;flex-direction:column;gap:1px;padding:5px 11px;border-radius:10px;min-width:60px}
   .chip .lab{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
@@ -58,16 +55,13 @@
   .sbtn:hover{background:#fff7e6;box-shadow:0 2px 0 rgba(120,96,64,.2)}
   .sbtn:active{transform:translateY(1px)}
   .sbtn.on{background:var(--gold);border-color:#b9842a;color:#3a2a0c;box-shadow:inset 0 1px 3px rgba(120,80,0,.3)}
-
   .ribbon-tools{display:flex;gap:10px;align-items:center;}
   .r-btn{display:flex;align-items:center;gap:6px;font-family:'Outfit';font-weight:600;font-size:14px;color:#3a2a0c;background:var(--gold);border:1px solid #b9842a;border-radius:10px;padding:8px 14px;cursor:pointer;transition:all .1s;box-shadow:0 2px 4px rgba(0,0,0,.15);}
   .r-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.2);}
   .r-btn:active{transform:translateY(1px);box-shadow:none;}
   .r-btn svg{width:18px;height:18px;}
-
   .stage{flex:1;position:relative;background:#1d160e;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;width:100%;height:100%;object-fit:contain;background:#12100c;}
-  
   .ui-popup{
     position:absolute;bottom:16px;background:var(--cream);border:1px solid var(--line-strong);
     border-radius:14px;padding:16px;width:340px;max-height:calc(100vh - 120px);overflow-y:auto;
@@ -75,21 +69,16 @@
     opacity:0;transform:translateY(20px);pointer-events:none;transition:all .2s ease;
     line-height:1.5;
   }
-  .ui-popup .panel {
-    flex-shrink:0;
-  }
+  .ui-popup .panel { flex-shrink:0; }
   .ui-popup.active{opacity:1;transform:translateY(0);pointer-events:auto;}
   #pop-build{right:16px;}
   #pop-ledger{right:370px;}
-
   .toast-wrap{position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:25}
   .toast{font-size:13px;font-weight:500;color:#fff;background:rgba(58,44,24,.92);border:1px solid rgba(212,161,60,.6);padding:7px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.3);animation:pop .35s ease both}
   .toast .g{color:var(--gold);font-weight:600}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
-
   .section-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--ink);margin:0 0 9px;display:flex;align-items:center;gap:7px}
   .section-h .ln{flex:1;height:1px;background:var(--line)}
-
   .cards{display:grid;grid-template-columns:1fr;gap:10px}
   .card{position:relative;background:var(--cream);border:1px solid var(--line);border-left:4px solid var(--c,#c8b48c);border-radius:11px;padding:10px 11px 11px;overflow:hidden}
   .card .ch{display:flex;align-items:center;gap:8px;margin-bottom:7px}
@@ -115,7 +104,6 @@
   .lock .r{font-size:11.5px;color:var(--ink-soft);line-height:1.4}
   .lock .bar{width:80%;height:6px;border-radius:4px;background:var(--cream);border:1px solid var(--line);overflow:hidden;margin-top:3px}
   .lock .bar i{display:block;height:100%;background:var(--gold)}
-
   .side .panel{padding:13px 14px;margin-bottom:14px}
   .obj{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
   .obj li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.35;color:var(--ink-soft)}
@@ -125,17 +113,14 @@
   .obj li.done .o-t{font-weight:500} .o-t b{color:var(--ink);font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:9px 14px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
   .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft)}
-
   .ledger{display:flex;flex-direction:column;gap:7px;font-size:12.5px}
   .ledger .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   .ledger .row .k{color:var(--ink-soft)}
   .ledger .row .v{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
   .ledger .row.tot{border-top:1px solid var(--line);padding-top:8px;margin-top:1px}
   .ledger .row.tot .k{font-weight:600;color:var(--ink)} .ledger .row.tot .v{font-size:15px}
-
   .tip{font-size:12px;color:var(--ink-soft);line-height:1.55;background:var(--cream-2);border:1px dashed var(--line-strong);border-radius:10px;padding:10px 12px}
   .tip b{color:var(--ink)}
-
   .ov{position:absolute;inset:0;background:rgba(36,28,16,.78);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:10px;padding:18px}
   .modal{background:var(--cream);border:1px solid var(--line-strong);border-radius:16px;max-width:440px;width:100%;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:left}
   .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0 0 4px;color:var(--ink)}
@@ -153,7 +138,6 @@
   <div class="stage">
     <canvas id="town" width="760" height="480"></canvas>
     <div class="toast-wrap" id="toasts"></div>
-
     <div class="ov" id="intro">
       <div class="modal">
         <h2>Swaagat, Sarpanchji.</h2>
@@ -161,15 +145,14 @@
         <ul>
           <li><b>18% indirect tax</b> on every good sold at the Shop.</li>
           <li><b>Income tax</b> on educated workers — 12% at Basic, rising with each level.</li>
-          <li>The <b>Factory</b> makes goods; people buy them with their wages.</li>
+          <li>The <b>Factory</b> makes goods. Villagers eat from a personal store and restock at the <b>Shop</b> (2 keepers, 3 customers each) — staff it, or they go hungry.</li>
           <li>Every <b>5 days a census</b> runs: with enough <b>goods and housing</b>, two babies are born — if either falls short, a villager dies.</li>
-          <li>Educate workers for more output, higher pay, and more tax. Reach <b>5 Intermediate</b> workers to build the College.</li>
+          <li>The <b>School</b> needs <b>2–5 Basic teachers</b> (5 students each) to lift workers a level each year. Reach <b>5 Intermediate</b> to build the College.</li>
         </ul>
         <p style="margin-bottom:16px">One day passes each real minute. Fast-forward with the speed buttons below.</p>
         <button class="play" id="introBtn">Begin building</button>
       </div>
     </div>
-
     <div class="ov hidden" id="gameover">
       <div class="modal">
         <h2 id="go-title">Tawapur emptied out.</h2>
@@ -178,12 +161,10 @@
         <button class="play" id="restartBtn">Start over</button>
       </div>
     </div>
-
     <div class="ui-popup" id="pop-build">
       <h3 class="section-h">Buildings &amp; assignments <span class="ln"></span></h3>
       <div class="cards" id="cards"></div>
     </div>
-
     <div class="ui-popup" id="pop-ledger">
       <div class="side">
         <div class="panel">
@@ -192,7 +173,7 @@
         </div>
         <div class="panel">
           <h3 class="section-h" style="margin-top:0">Sarpanch's note <span class="ln"></span></h3>
-          <div class="tip">Your only income is <b>tax</b>: 18% on goods sold at the Shop, plus income tax on educated workers. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census, or villagers will die. The Shop turns goods into taxable sales — without shopkeepers, you still feed people, but you collect no sales tax.</div>
+          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more, so it must be staffed or they go hungry. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> (5 students each) to run. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
           <div class="legend">
             <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
             <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
@@ -204,7 +185,6 @@
       </div>
     </div>
   </div>
-
   <div class="ribbon">
     <div class="hud">
       <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
@@ -223,7 +203,6 @@
         <button class="sbtn" data-spd="4" id="spd4">4×</button>
       </div>
     </div>
-
     <div class="ribbon-tools">
       <button class="r-btn" id="btn-toggle-ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -252,6 +231,10 @@
   const FACTORY_WAGE=15, SHOP_WAGE=12, FACTORY_OUT=2, SHOP_SELL=4;
   const GOOD_PRICE=25, INDIRECT_TAX=0.18;
   const CONSUME_UNEDU=0.5, CONSUME_BASIC=0.7, CONSUME_DAYS=3;  // grain (kg) eaten over 3 days
+  const CONSUME_RATE=[CONSUME_UNEDU/CONSUME_DAYS, CONSUME_BASIC/CONSUME_DAYS, 0, 0, 0];  // kg/day eaten, by edu level
+  const SHOP_KEEPERS_MAX=2, SERVE_PER_KEEPER=3, SERVE_MS=4000;  // shop: max keepers; customers each tends at once; sim-ms per sale
+  const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       // school: teacher band + students each teacher handles
+  const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       // per-person food: starting kg, restock trigger, restock size
   const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  // dynamic-price coefficients
   const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
   const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
@@ -260,10 +243,10 @@
   const B = {
     factory:{name:'Factory', role:'factory', sub:'Makes goods', cx:140, gy:250, w:124, h:88, color:'#6b7a8f', cap:6},
     school :{name:'School', role:'school', sub:'Teaches to Intermediate', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
-    shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:6},
+    shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
     college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
   };
-  const ZONE={ factory:[140,302], school:[380,302], shop:[600,302], college:[600,476], idle:[388,358] };
+  const ZONE={ factory:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] };
 
   const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
@@ -296,7 +279,8 @@
   function addPerson(edu){
     S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
       x:ZONE.idle[0]+rnd(-55,55), y:ZONE.idle[1]+rnd(-22,22),
-      ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7 });
+      ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
+      kg:PERSON_KG_START, buyT:0, needFood:false });
   }
 
   /* ============ HELPERS ============ */
@@ -309,13 +293,18 @@
   function housingCap(){return S.houses.length*HOUSE_CAP;}
   function homeless(){return Math.max(0,S.people.length-housingCap());}
   function reassignHomes(){ S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; }); }
-  function capacityOf(role){return B[role]?B[role].cap:0;}
+  function capacityOf(role){
+    if(role==='teacher') return TEACH_MAX;
+    if(role==='school'){ const t=roleCount('teacher'); return t>=TEACH_MIN ? t*STUDENTS_PER_TEACHER : 0; }
+    return B[role]?B[role].cap:0;
+  }
 
   function assign(role){
     if(role==='college' && !S.built.college) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     if(role==='school') cand=cand.filter(p=>p.edu<2);
+    else if(role==='teacher') cand=cand.filter(p=>p.edu===1);
     else if(role==='college') cand=cand.filter(p=>p.edu>=2 && p.edu<4);
     if(!cand.length) return;
     cand.sort((a,b)=> (role==='school'||role==='college') ? a.edu-b.edu : b.edu-a.edu);
@@ -370,16 +359,15 @@
         if(price<PRICE_FLOOR) price=PRICE_FLOOR;
     }
 
-    const nUnedu=S.people.filter(p=>p.edu===0).length;
-    const nBasic=S.people.filter(p=>p.edu===1).length;
-    const demand=(CONSUME_UNEDU*nUnedu + CONSUME_BASIC*nBasic)/CONSUME_DAYS;
-    const afford=S.villagerCash/price;
-    const consumed=Math.max(0, Math.min(S.goods, demand, afford));
-    const taxedSales=Math.min(consumed, sCap);
+    const demand=S.people.reduce((s,p)=>s+(CONSUME_RATE[p.edu]||0),0);  // kg eaten per day, summed per-person
+    const keepers=roleCount('shop');
+    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*BUY_AMOUNT;  // max kg/day the counter can move
+    const consumed=demand;
+    const taxedSales=Math.min(consumed, shopThroughput);
     const indirect=taxedSales*price*INDIRECT_TAX;
     const spending=consumed*price;
     const incomeTax=fTax+sTax;
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect,effFlow};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers};
   }
 
   function step(dt){
@@ -388,18 +376,57 @@
     if(frac<=0) return;
     const r=rates();
 
+    // production into the village stock
+    S.goods += r.prod*frac;
+
+    // Panchayat Godown open-market flow
     S.stockO -= r.effFlow * frac;
     S.goods += r.effFlow * frac;
     S.treasury += r.effFlow * r.price * frac;
     S.villagerCash -= r.effFlow * r.price * frac;
     if(S.stockO < 0) S.stockO = 0;
 
-    S.goods += r.prod*frac;  S.goods -= r.consumed*frac;  if(S.goods<0)S.goods=0;
-    S.villagerCash += r.netWages*frac;  S.villagerCash -= r.spending*frac;  if(S.villagerCash<0)S.villagerCash=0;
-    S.treasury += (r.indirect+r.incomeTax)*frac;
-    S.today.indirect += r.indirect*frac;
+    // wages paid to villagers
+    S.villagerCash += r.netWages*frac;  if(S.villagerCash<0) S.villagerCash=0;
+
+    // per-person: eat from personal store; flag who must restock
+    for(const p of S.people){
+      const rate=CONSUME_RATE[p.edu]||0;
+      if(rate>0){ p.kg-=rate*frac; if(p.kg<0)p.kg=0; }
+      p.needFood = p.kg < BUY_THRESHOLD;
+    }
+    // shop service: keepers*SERVE_PER_KEEPER customers fit at the counter at once
+    const slots=r.keepers*SERVE_PER_KEEPER;
+    if(slots>0){
+      let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
+      let free=Math.max(0, slots-occupied);
+      if(free>0){
+        const waiting=S.people.filter(p=>p.needFood && p.buyT<=0 && atShop(p)).sort((a,b)=>a.kg-b.kg);
+        for(const p of waiting){ if(free<=0) break; p.buyT=SERVE_MS; free--; }
+      }
+    }
+    // advance in-progress purchases; complete when the service timer elapses
+    for(const p of S.people){
+      if(p.buyT>0){
+        p.buyT-=dt*S.speed;
+        if(p.buyT<=0){
+          p.buyT=0;
+          if(S.goods>=BUY_AMOUNT && S.villagerCash>=r.price*BUY_AMOUNT){
+            S.goods-=BUY_AMOUNT; p.kg+=BUY_AMOUNT;
+            S.villagerCash-=r.price*BUY_AMOUNT;
+            const ind=r.price*BUY_AMOUNT*INDIRECT_TAX;
+            S.treasury+=ind; S.today.indirect+=ind;
+            spawnSpark();
+          }
+          p.needFood = p.kg < BUY_THRESHOLD;
+        }
+      }
+    }
+    if(S.goods<0) S.goods=0;
+
+    // income tax accrues continuously
+    S.treasury += r.incomeTax*frac;
     S.today.income += r.incomeTax*frac;
-    if(r.taxedSales>0 && Math.random()<r.taxedSales*frac*4) spawnSpark();
 
     S.elapsed += dt*S.speed;
     while(S.elapsed>=DAY_MS){
@@ -414,7 +441,12 @@
 
   function advanceYear(){
     let grew=0;
-    roleList('school').forEach(p=>{ if(p.edu<2){ p.edu++; grew++; } if(p.edu>=2){ p.role='idle'; } });
+    const teachers=roleCount('teacher');
+    if(teachers>=TEACH_MIN){
+      roleList('school').forEach(p=>{ if(p.edu<2){ p.edu++; grew++; } if(p.edu>=2){ p.role='idle'; } });
+    } else if(roleCount('school')>0){
+      toast('⚠ School idle — needs <span class="g">'+TEACH_MIN+'</span> teachers to hold class');
+    }
     roleList('college').forEach(p=>{ if(p.edu<4){ p.edu++; grew++; } if(p.edu>=4){ p.role='idle'; } });
     if(grew) toast('Year '+S.year+' — <span class="g">'+grew+'</span> graduated a level');
     renderCards();
@@ -426,7 +458,7 @@
     if(suffGoods && suffHouse){
       for(let i=0;i<BIRTHS;i++) addPerson(0);
       reassignHomes();
-      toast(BIRTHS+' new immigrants arrive at Tawapur');
+      toast('🎉 <span class="g">'+BIRTHS+'</span> new immigrants arrive at Tawapur');
     } else {
       const idx=Math.floor(Math.random()*S.people.length);
       if(S.people.length){ S.people.splice(idx,1); reassignHomes(); }
@@ -457,8 +489,7 @@
     el('go-stat').textContent='Survived '+(S.year-1)+' year'+(S.year-1===1?'':'s')+' '+(S.day-1)+'d · peak population '+S.maxPop;
     el('gameover').classList.remove('hidden');
   }
-
-  /* ============ CANVAS ============ */
+/* ============ CANVAS ============ */
   const cv=el('town'), ctx=cv.getContext('2d');
   function fitCanvas(){ const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=LW*dpr; cv.height=LH*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 
@@ -725,9 +756,13 @@
     ctx.strokeStyle='rgba(40,30,18,.4)'; ctx.lineWidth=0.8; ctx.stroke();
   }
 
+  function shopOpen(){ return S.progress>0.18 && S.progress<0.78; }
+  function atShop(p){ if(!shopOpen()) return false; return Math.abs(p.x-ZONE.shop[0])<48 && Math.abs(p.y-ZONE.shop[1])<42; }
   function targetFor(p){
     const work=S.progress>0.18 && S.progress<0.78;
+    if(work && p.needFood && roleCount('shop')>0) return ZONE.shop;  // hungry villagers walk to the Shop
     if(p.role==='factory'||p.role==='shop') return work?ZONE[p.role]:homeSpot(p);
+    if(p.role==='teacher') return work?ZONE.teacher:homeSpot(p);
     if(p.role==='school') return work?ZONE.school:homeSpot(p);
     if(p.role==='college') return work?ZONE.college:homeSpot(p);
     return work?ZONE.idle:homeSpot(p);
@@ -749,7 +784,9 @@
     ctx.fillStyle='#c79a6b'; ctx.beginPath(); ctx.arc(x,y-9,3,0,7); ctx.fill();
     ctx.fillStyle='#3a2c1f'; ctx.beginPath(); ctx.arc(x,y-10.5,3,Math.PI,0); ctx.fill();
     if(p.role==='school'||p.role==='college'){ ctx.fillStyle='#e9d8a6'; rr(x+2,y-5,5,4,1); ctx.fill(); ctx.strokeStyle='rgba(60,40,20,.5)'; ctx.lineWidth=0.6; ctx.stroke(); }
+    if(p.needFood){ ctx.fillStyle='#d8643c'; ctx.beginPath(); ctx.arc(x,y-19,1.7,0,7); ctx.fill(); }
   }
+
   /* ============ DOM RENDER ============ */
   function svg(path,color){ return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" style="color:'+(color||'currentColor')+'">'+path+'</svg>'; }
   function dots(role){ return roleList(role).map(p=>'<span class="dot" style="background:'+EDU_COLOR[p.edu]+'" title="'+EDU[p.edu]+'"></span>').join(''); }
@@ -776,16 +813,19 @@
       'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Wage '+money(FACTORY_WAGE)+'×skill · income tax <b>'+money(r.fTax)+'</b>/day',
       stepper('factory'));
 
-    html+=card('shop',B.shop.color,B.shop.name,B.shop.sub,
-      roleCount('shop')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.shop.cap+'</small>',
-      'Taxed sales <b>'+r.taxedSales.toFixed(1)+'</b> kg/day at <b>'+money(r.price)+'</b>/kg<br>Indirect 18% → <b>'+money(r.indirect)+'</b> · income tax <b>'+money(r.sTax)+'</b>',
+    const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
+    html+=card('shop',B.shop.color,B.shop.name,'Sells goods · '+SERVE_PER_KEEPER+' customers per keeper',
+      keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
+      'Serves <b>'+slots+'</b> at once · <b>'+hungry+'</b> need food now<br>Taxed sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/day at <b>'+money(r.price)+'</b>/kg → indirect <b>'+money(r.indirect)+'</b>',
       stepper('shop'));
 
-    const enr=roleCount('school'), nextIn=YEAR_DAYS-S.day+1;
-    html+=card('school',B.school.color,B.school.name,B.school.sub,
-      enr+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.school.cap+'</small>',
-      (enr?'<b>'+enr+'</b> studying · +1 level at year-end<br>Next graduation in <b>'+nextIn+'d</b>':'Enrol Uneducated or Basic workers<br>They gain a level each year'),
-      stepper('school',true));
+    const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
+    html+=card('school',B.school.color,B.school.name,'Basic teachers school the unschooled',
+      stu+'<small style="font-weight:400;color:var(--ink-faint)">/'+(scap||'—')+'</small>',
+      'Teachers <b>'+tc+'</b>/'+TEACH_MAX+' (need '+TEACH_MIN+', '+STUDENTS_PER_TEACHER+' students each)<br>'+
+        (schoolOpen ? (stu?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol uneducated or basic students') : '<b style="color:var(--bad)">closed</b> — assign '+TEACH_MIN+' Basic teachers'),
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers · Basic</div>'+stepper('teacher')+
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
 
     if(!S.unlocked.college){
       const inter=S.people.filter(p=>p.edu>=2).length;
@@ -823,6 +863,7 @@
     let canAdd=cur<cap;
     if(canAdd){
       if(role==='school') canAdd=idle().some(p=>p.edu<2);
+      else if(role==='teacher') canAdd=idle().some(p=>p.edu===1);
       else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu>=2&&p.edu<4);
       else canAdd=idle().length>0;
     }
@@ -859,10 +900,15 @@
     el('h-sun').style.left=(50+Math.cos(ang)*32)+'%'; el('h-sun').style.top=(50+Math.sin(ang)*32)+'%';
     el('h-sun').style.background=isNight?'#cfd6ff':'#ffd76a'; el('h-sun').style.boxShadow=isNight?'0 0 6px #aab':'0 0 8px #ffcf5a';
 
+    const hungry=S.people.filter(p=>p.needFood).length;
+    const avgKg=S.people.length? S.people.reduce((s,p)=>s+p.kg,0)/S.people.length : 0;
     el('ledger').innerHTML=
       lrow('Good price (₹/kg)', money(r.price))
       +lrow('Produced / day', r.prod.toFixed(1)+' kg')
-      +lrow('Consumed / day', r.consumed.toFixed(1)+' kg')
+      +lrow('Eaten / day', r.consumed.toFixed(1)+' kg')
+      +lrow('Avg food / person', avgKg.toFixed(1)+' kg', avgKg>=BUY_THRESHOLD?'pos':'neg')
+      +lrow('Villagers hungry', hungry+(hungry?' ⚠':''), hungry?'neg':'pos')
+      +lrow('Shop capacity', r.shopThroughput.toFixed(0)+' kg/day')
       +lrow('Indirect tax (18%)', '+'+money(r.indirect)+'/day','pos')
       +lrow('Income tax', '+'+money(r.incomeTax)+'/day','pos')
       +lrow('Net wages held', '+'+money(r.netWages-r.spending)+'/day', (r.netWages-r.spending)>=0?'pos':'neg')
@@ -909,6 +955,7 @@
   });
   /* ============ BOOT ============ */
   fitCanvas(); newState(); setSpeed(1); renderCards(); raf=requestAnimationFrame(loop);
+
 })();
 </script>
 </body>
