@@ -472,7 +472,7 @@
     const indirect=taxedSales*retailPrice*INDIRECT_TAX;
     const spending=consumed*retailPrice;
 
-    // Financial Distributions (No fixed base wages for farmers/shopkeepers)
+    // shopkeepers earn only from retail markup; farmers earn via wholesale purchases
     const farmShopRev = taxedSales * price;
     const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
     const totalFarmRev = farmShopRev + farmGovRev;
@@ -504,8 +504,9 @@
     const incomeTax = fTax + sTax + tTax;
     const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev};
   }
+  
   function step(dt){
     if(S.over) return;
     const frac=(dt/DAY_MS)*S.speed;
@@ -514,13 +515,17 @@
 
     S.goods += r.prod*frac;
 
-    S.stockO -= r.effFlow * frac;
-    S.goods += r.effFlow * frac;
-    S.treasury += r.effFlow * r.price * frac;
-    S.villagerCash -= r.effFlow * r.price * frac;
+    if (r.effFlow !== 0) {
+      S.stockO -= r.effFlow * frac;
+      S.goods += r.effFlow * frac;
+      S.treasury += r.effFlow * r.price * frac;
+    }
     if(S.stockO < 0) S.stockO = 0;
 
     S.villagerCash += r.netWages*frac;  if(S.villagerCash<0) S.villagerCash=0;
+
+    // teachers get paid their base wage directly out of public treasury funds
+    S.treasury -= r.totalTeachRev * frac;
 
     for(const p of S.people){
       const rate=CONSUME_RATE[p.edu]||0;
@@ -564,7 +569,6 @@
       S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
       S.today={indirect:0,income:0};
       
-      // Increment daily continuous homelessness tracking metrics
       S.people.forEach(p => {
         if (p.home === -1) {
           p.homelessDays = (p.homelessDays || 0) + 1;
@@ -579,51 +583,6 @@
     S.progress=S.elapsed/DAY_MS;
     checkUnlocks();
   }
-  
-  // shop service: keepers*SERVE_PER_KEEPER customers fit at the counter at once
-    const slots=r.keepers*SERVE_PER_KEEPER;
-    if(slots>0){
-      let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
-      let free=Math.max(0, slots-occupied);
-      if(free>0){
-        const waiting=S.people.filter(p=>p.needFood && p.buyT<=0 && atShop(p)).sort((a,b)=>a.kg-b.kg);
-        for(const p of waiting){ if(free<=0) break; p.buyT=SERVE_MS; free--; }
-      }
-    }
-    // advance in-progress purchases; complete when the service timer elapses
-    for(const p of S.people){
-      if(p.buyT>0){
-        p.buyT-=dt*S.speed;
-        if(p.buyT<=0){
-          p.buyT=0;
-          if(S.goods>=BUY_AMOUNT && S.villagerCash>=r.price*BUY_AMOUNT){
-            S.goods-=BUY_AMOUNT; p.kg+=BUY_AMOUNT;
-            S.villagerCash-=r.price*BUY_AMOUNT;
-            const ind=r.price*BUY_AMOUNT*INDIRECT_TAX;
-            S.treasury+=ind; S.today.indirect+=ind;
-            spawnSpark();
-          }
-          p.needFood = p.kg < BUY_THRESHOLD;
-        }
-      }
-    }
-    if(S.goods<0) S.goods=0;
-
-    // income tax accrues continuously
-    S.treasury += r.incomeTax*frac;
-    S.today.income += r.incomeTax*frac;
-
-    S.elapsed += dt*S.speed;
-    while(S.elapsed>=DAY_MS){
-      S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
-      S.today={indirect:0,income:0};
-      if(S.day>YEAR_DAYS){ S.day=1; S.year++; advanceYear(); }
-      if(S.daysSinceCensus>=CENSUS_DAYS){ S.daysSinceCensus=0; census(); }
-    }
-    S.progress=S.elapsed/DAY_MS;
-    checkUnlocks();
-  }
-
   function advanceYear(){
     let grew=0;
     const teachers=roleCount('teacher');
