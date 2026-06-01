@@ -319,6 +319,7 @@
       <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
       <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
       <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
+      <div class="hud-right">
         <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
           <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
         <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
@@ -371,7 +372,8 @@
     shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
     college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] };  const ICON={
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] };
+  const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
     school:'<path d="M12 3.5l9.5 4.2-9.5 4.2-9.5-4.2z"/><path d="M6.5 10v4.6c0 1.6 11 1.6 11 0V10"/><path d="M21.5 7.7v4.3"/>',
@@ -772,6 +774,7 @@
     /* smoke */
     if(roleCount('farm')>0 && tick%9===0) S.smoke.push({x:B.farm.cx+B.farm.w/2-14+rnd(-2,2), y:B.farm.gy-B.farm.h-2, vx:rnd(-.15,.45), vy:rnd(-.45,-.8), life:1, r:rnd(3,5)});
     S.smoke=S.smoke.filter(s=>s.life>0);
+    S.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.life-=0.011; s.r+=0.09; });
     S.smoke.forEach(s=>{ ctx.fillStyle='rgba(120,116,110,'+(s.life*0.32)+')'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,7); ctx.fill(); });
 
     updatePeople(); S.people.forEach(drawPerson);
@@ -1116,7 +1119,6 @@
       +lrow('Net wages held', '+'+money(r.netWages-r.spending)+'/day', (r.netWages-r.spending)>=0?'pos':'neg')
       +'<div class="row tot"><span class="k">Prosperity</span><span class="v">'+money(prosperity())+'</span></div>';
 
-    const netFlow = r.taxTotal - r.totalTeachRev;
     el('hud-ledger-treasury').innerHTML = 
       lrow('Current Cash Holdings', money(S.treasury))
       + lrow('(+) Income Tax Revenue', '+' + money(r.incomeTax) + '/day', 'pos')
@@ -1151,7 +1153,7 @@
       + lrow('Current Housing Target', pop + ' beds required')
       + lrow('Evaluation Forecast', censusOk ? 'immigrants arrive (+2)' : 'mortality shortage risk (−1)', censusOk ? 'pos' : 'neg');
   }
-      }
+
   let toastN=0;
   function toast(msg){
     const w=el('toasts'); const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; w.appendChild(d);
