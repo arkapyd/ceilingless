@@ -1049,7 +1049,12 @@
     const r=rates(), pop=S.people.length;
     if(pop>S.maxPop) S.maxPop=pop;
     el('h-treasury').textContent=money(S.treasury);
-    el('h-net').textContent='+'+money(r.taxTotal)+'/day';
+    
+    // calculate actual net flow by subtracting teacher overhead from gross taxes
+    const netFlow = r.taxTotal - r.totalTeachRev;
+    el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
+    el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
+
     el('h-goods').textContent=Math.floor(S.goods).toLocaleString()+' kg';
     el('h-goods').className='val '+(S.goods>=pop?'':'neg');
     el('h-goods-sub').textContent=(S.goods>=pop?'surplus':'need '+pop+' kg');
