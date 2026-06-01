@@ -1151,7 +1151,7 @@
       + lrow('Current Housing Target', pop + ' beds required')
       + lrow('Evaluation Forecast', censusOk ? 'immigrants arrive (+2)' : 'mortality shortage risk (−1)', censusOk ? 'pos' : 'neg');
   }
-
+      }
   let toastN=0;
   function toast(msg){
     const w=el('toasts'); const d=document.createElement('div'); d.className='toast'; d.innerHTML=msg; w.appendChild(d);
@@ -1260,14 +1260,6 @@
       e.preventDefault();
       togglePause();
     }
-  });
-
-  // Click anywhere in the village (not the ribbon, not inside the panel) to close an open panel
-  document.addEventListener('pointerdown', e=>{
-    if(e.target && e.target.closest && e.target.closest('.ribbon')) return;
-    const build=el('pop-build'), ledger=el('pop-ledger');
-    if(build.classList.contains('active') && !build.contains(e.target)) build.classList.remove('active');
-    if(ledger.classList.contains('active') && !ledger.contains(e.target)) ledger.classList.remove('active');
   });
 
   /* ============ BOOT ============ */
