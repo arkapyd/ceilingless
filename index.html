@@ -48,7 +48,13 @@
     padding:10px 16px;gap:16px;z-index:20;box-shadow:0 -4px 18px rgba(0,0,0,.3);
   }
   .hud{display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap;}
-  .chip{display:flex;flex-direction:column;gap:1px;padding:5px 11px;border-radius:10px;min-width:60px}
+  .chip{display:flex;flex-direction:column;gap:1px;padding:5px 11px;border-radius:10px;min-width:60px;cursor:pointer;transition:background .15s;}
+  .chip:hover{background:var(--cream-2);}
+  
+  #pop-hud-treasury{left:16px;bottom:76px;}
+  #pop-hud-goods{left:120px;bottom:76px;}
+  #pop-hud-people{left:260px;bottom:76px;}
+  #pop-hud-census{left:480px;bottom:76px;}
   .chip .lab{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
   .chip .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.05}
   .chip .sub{font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:-1px;color:var(--ink-faint)}
@@ -282,17 +288,37 @@
         </div>
       </div>
     </div>
+    
+    <div class="ui-popup" id="pop-hud-treasury">
+      <h3 class="section-h">Treasury Balance <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-treasury"></div>
+    </div>
+
+    <div class="ui-popup" id="pop-hud-goods">
+      <h3 class="section-h">Grain Supply Balance <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-goods"></div>
+    </div>
+
+    <div class="ui-popup" id="pop-hud-people">
+      <h3 class="section-h">Demographics &amp; Labor <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-people"></div>
+    </div>
+
+    <div class="ui-popup" id="pop-hud-census">
+      <h3 class="section-h">Census Requirements <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-census"></div>
+    </div>
   </div>
-  <div class="ribbon">
+  
+ <div class="ribbon">
     <div class="hud">
-      <div class="chip"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
+      <div class="chip" id="chip-treasury"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
       <div class="sep"></div>
-      <div class="chip"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
-      <div class="chip"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
-      <div class="chip"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
-      <div class="chip"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
-      <div class="chip"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
-      <div class="hud-right">
+      <div class="chip" id="chip-goods"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
+      <div class="chip" id="chip-people"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
+      <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
+      <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
+      <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
         <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
           <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
         <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
@@ -1089,6 +1115,41 @@
       +lrow('Income tax', '+'+money(r.incomeTax)+'/day','pos')
       +lrow('Net wages held', '+'+money(r.netWages-r.spending)+'/day', (r.netWages-r.spending)>=0?'pos':'neg')
       +'<div class="row tot"><span class="k">Prosperity</span><span class="v">'+money(prosperity())+'</span></div>';
+
+    const netFlow = r.taxTotal - r.totalTeachRev;
+    el('hud-ledger-treasury').innerHTML = 
+      lrow('Current Cash Holdings', money(S.treasury))
+      + lrow('(+) Income Tax Revenue', '+' + money(r.incomeTax) + '/day', 'pos')
+      + lrow('(+) Indirect Retail Tax', '+' + money(r.indirect) + '/day', 'pos')
+      + lrow('(−) Teacher Salaries Base', '−' + money(r.totalTeachRev) + '/day', 'neg')
+      + '<div class="row tot"><span class="k">Net Balance Flow</span><span class="v '+(netFlow >= 0 ? 'pos':'neg')+'">'+(netFlow >= 0 ? '+': '')+money(netFlow)+'/day</span></div>';
+
+    el('hud-ledger-goods').innerHTML = 
+      lrow('Village Stockpile', Math.floor(S.goods) + ' kg')
+      + lrow('(+) Farm Output Harvest', r.prod.toFixed(1) + ' kg/day', 'pos')
+      + lrow('(±) Godown Intervention', (r.effFlow !== 0 ? (r.effFlow > 0 ? '+' : '') + r.effFlow.toFixed(1) : '0.0') + ' kg/day')
+      + lrow('(−) Total Eaten / Day', '−' + r.consumed.toFixed(1) + ' kg/day', 'neg');
+
+    const unedu = S.people.filter(p=>p.edu===0).length;
+    const basic = S.people.filter(p=>p.edu===1).length;
+    const inter = S.people.filter(p=>p.edu===2).length;
+    const adv = S.people.filter(p=>p.edu===3).length;
+    const high = S.people.filter(p=>p.edu===4).length;
+    el('hud-ledger-people').innerHTML = 
+      lrow('Total Population', pop + ' villagers')
+      + lrow('Active Idle Labor Pool', idle().length + ' workers')
+      + lrow('Uneducated Tiers', unedu)
+      + lrow('Basic Literacy Tiers', basic)
+      + lrow('Intermediate Tiers', inter)
+      + lrow('Advanced Technical Tiers', adv)
+      + lrow('Highly Skilled Tiers', high);
+
+    const censusOk = S.goods >= pop && housingCap() >= pop;
+    el('hud-ledger-census').innerHTML = 
+      lrow('Days Until Evaluation', (CENSUS_DAYS - S.daysSinceCensus) + ' days')
+      + lrow('Current Supply Target', pop + ' kg required')
+      + lrow('Current Housing Target', pop + ' beds required')
+      + lrow('Evaluation Forecast', censusOk ? 'immigrants arrive (+2)' : 'mortality shortage risk (−1)', censusOk ? 'pos' : 'neg');
   }
 
   let toastN=0;
@@ -1159,13 +1220,36 @@
   });
   window.addEventListener('resize',fitCanvas);
 /* ============ UI TOGGLES ============ */
-  document.getElementById('btn-toggle-build').addEventListener('click', () => {
-    document.getElementById('pop-build').classList.toggle('active');
-    document.getElementById('pop-ledger').classList.remove('active');
-  });
-  document.getElementById('btn-toggle-ledger').addEventListener('click', () => {
-    document.getElementById('pop-ledger').classList.toggle('active');
-    document.getElementById('pop-build').classList.remove('active');
+  const popups = ['pop-build', 'pop-ledger', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-census'];
+  
+  function togglePopup(targetId) {
+    popups.forEach(id => {
+      const elNode = el(id);
+      if (id === targetId) {
+        elNode.classList.toggle('active');
+      } else {
+        elNode.classList.remove('active');
+      }
+    });
+  }
+
+  el('btn-toggle-build').addEventListener('click', () => togglePopup('pop-build'));
+  el('btn-toggle-ledger').addEventListener('click', () => togglePopup('pop-ledger'));
+  
+  el('chip-treasury').addEventListener('click', () => togglePopup('pop-hud-treasury'));
+  el('chip-prosp').addEventListener('click', () => togglePopup('pop-hud-treasury'));
+  el('chip-goods').addEventListener('click', () => togglePopup('pop-hud-goods'));
+  el('chip-people').addEventListener('click', () => togglePopup('pop-hud-people'));
+  el('chip-idle').addEventListener('click', () => togglePopup('pop-hud-people'));
+  el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
+
+  document.addEventListener('pointerdown', e => {
+    if (e.target && e.target.closest && e.target.closest('.ribbon')) return;
+    if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
+    popups.forEach(id => {
+      const node = el(id);
+      if(node) node.classList.remove('active');
+    });
   });
 
   // Spacebar = play / pause (ignored while the intro modal is up so it can't be hijacked)
