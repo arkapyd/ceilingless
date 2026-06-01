@@ -326,27 +326,26 @@
   const EDU_MULT=[1,1.3,1.7,2.2,3.0];
   const INCOME_TAX=[0,0.12,0.18,0.24,0.30];
 
-  const FARM_WAGE=15, SHOP_WAGE=12, FARM_OUT=2, SHOP_SELL=4;
-  const GOOD_PRICE=25, INDIRECT_TAX=0.18;
-  const CONSUME_UNEDU=0.5, CONSUME_BASIC=0.7, CONSUME_DAYS=3;  // grain (kg) eaten over 3 days
-  const CONSUME_RATE=[CONSUME_UNEDU/CONSUME_DAYS, CONSUME_BASIC/CONSUME_DAYS, 0, 0, 0];  // kg/day eaten, by edu level
-  const SHOP_KEEPERS_MAX=2, SERVE_PER_KEEPER=3, SERVE_MS=4000;  // shop: max keepers; customers each tends at once; sim-ms per sale
-  const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       // school: teacher band + students each teacher handles
-  const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       // per-person food: starting kg, restock trigger, restock size
-  const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  // dynamic-price coefficients
+  const FARM_OUT=1.5, SHOP_SELL=4;
+  const INDIRECT_TAX=0.18, SHOP_MARKUP=0.20; // 20% retail markup
+  const CONSUME_UNEDU=0.5, CONSUME_BASIC=0.7, CONSUME_DAYS=3;  
+  const CONSUME_RATE=[CONSUME_UNEDU/CONSUME_DAYS, CONSUME_BASIC/CONSUME_DAYS, 0, 0, 0];  
+  const SHOP_KEEPERS_MAX=2, SERVE_PER_KEEPER=3, SERVE_MS=4000;  
+  const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       
+  const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       
+  const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  
   const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
   const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
-  const CH2_UNLOCK_DAY=10;  // Chapter Two (Panchayat Godown) unlocks on this game-day
+  const CH2_UNLOCK_DAY=10;  
   const START_TREASURY=300, START_GOODS=15, GROW_TARGET=14;
 
- const B = {
+  const B = {
     farm   :{name:'Farm', role:'farm', sub:'Harvests grain', cx:140, gy:250, w:124, h:88, color:'#5c8a4e', cap:6},
     school :{name:'School', role:'school', sub:'Teaches to Intermediate', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
     shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
     college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] };
-  const ICON={
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] };  const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
     school:'<path d="M12 3.5l9.5 4.2-9.5 4.2-9.5-4.2z"/><path d="M6.5 10v4.6c0 1.6 11 1.6 11 0V10"/><path d="M21.5 7.7v4.3"/>',
@@ -378,9 +377,8 @@
     S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
       x:ZONE.idle[0]+rnd(-55,55), y:ZONE.idle[1]+rnd(-22,22),
       ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
-      kg:PERSON_KG_START, buyT:0, needFood:false });
+      kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0 });
   }
-
   /* ============ HELPERS ============ */
   function rnd(a,b){return a+Math.random()*(b-a);}
   function el(id){return document.getElementById(id);}
@@ -390,7 +388,16 @@
   function roleList(r){return S.people.filter(p=>p.role===r);}
   function housingCap(){return S.houses.length*HOUSE_CAP;}
   function homeless(){return Math.max(0,S.people.length-housingCap());}
-  function reassignHomes(){ S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; }); }
+  function reassignHomes(){ S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; if(p.home !== -1) p.homelessDays = 0; }); }
+
+  function getHomelessMultiplier(p) {
+    if (p.home >= 0) return 1;
+    const d = p.homelessDays || 0;
+    if (d < 3) return 0.9;
+    if (d < 6) return 0.7;
+    if (d < 8) return 0.5;
+    return 0;
+  }
   function capacityOf(role){
     if(role==='teacher') return TEACH_MAX;
     if(role==='school'){ const t=roleCount('teacher'); return t>=TEACH_MIN ? t*STUDENTS_PER_TEACHER : 0; }
@@ -430,19 +437,17 @@
 
   /* ============ ECONOMY ============ */
   function rates(){
-    let prod=0, fTax=0, sTax=0, netWages=0, sCap=0;
+    let prod=0, fTax=0, sTax=0, tTax=0;
+    
     roleList('farm').forEach(p=>{
-      const h=p.home<0?0.9:1, m=EDU_MULT[p.edu];
-      prod += FARM_OUT*m*h;
-      const w=FARM_WAGE*m, t=w*INCOME_TAX[p.edu];
-      fTax+=t; netWages+=w-t;
+      prod += FARM_OUT * EDU_MULT[p.edu] * getHomelessMultiplier(p);
     });
+    
+    let sCap=0;
     roleList('shop').forEach(p=>{
-      const h=p.home<0?0.9:1, m=EDU_MULT[p.edu];
-      sCap += SHOP_SELL*m*h;
-      const w=SHOP_WAGE*m, t=w*INCOME_TAX[p.edu];
-      sTax+=t; netWages+=w-t;
+      sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p);
     });
+    
     const pop=S.people.length;
 
     let effFlow = S.flowO;
@@ -457,43 +462,125 @@
         if(price<PRICE_FLOOR) price=PRICE_FLOOR;
     }
 
-    const demand=S.people.reduce((s,p)=>s+(CONSUME_RATE[p.edu]||0),0);  // kg eaten per day, summed per-person
+    const demand=S.people.reduce((s,p)=>s+(CONSUME_RATE[p.edu]||0),0);  
     const keepers=roleCount('shop');
-    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*BUY_AMOUNT;  // max kg/day the counter can move
+    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*BUY_AMOUNT;  
     const consumed=demand;
     const taxedSales=Math.min(consumed, shopThroughput);
-    const indirect=taxedSales*price*INDIRECT_TAX;
-    const spending=consumed*price;
-    const incomeTax=fTax+sTax;
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers};
-  }
+    
+    const retailPrice = price * (1 + SHOP_MARKUP);
+    const indirect=taxedSales*retailPrice*INDIRECT_TAX;
+    const spending=consumed*retailPrice;
 
+    // Financial Distributions (No fixed base wages for farmers/shopkeepers)
+    const farmShopRev = taxedSales * price;
+    const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
+    const totalFarmRev = farmShopRev + farmGovRev;
+    const totalShopRev = taxedSales * price * SHOP_MARKUP;
+    const totalTeachRev = roleCount('teacher') * 15;
+
+    let farmSumM = 0; 
+    roleList('farm').forEach(p => farmSumM += EDU_MULT[p.edu]);
+    if(farmSumM > 0) {
+      roleList('farm').forEach(p => {
+        const share = totalFarmRev * (EDU_MULT[p.edu] / farmSumM);
+        fTax += share * INCOME_TAX[p.edu];
+      });
+    }
+
+    let shopSumM = 0; 
+    roleList('shop').forEach(p => shopSumM += EDU_MULT[p.edu]);
+    if(shopSumM > 0) {
+      roleList('shop').forEach(p => {
+        const share = totalShopRev * (EDU_MULT[p.edu] / shopSumM);
+        sTax += share * INCOME_TAX[p.edu];
+      });
+    }
+
+    roleList('teacher').forEach(p => {
+      tTax += 15 * INCOME_TAX[p.edu];
+    });
+
+    const incomeTax = fTax + sTax + tTax;
+    const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
+
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers};
+  }
   function step(dt){
     if(S.over) return;
     const frac=(dt/DAY_MS)*S.speed;
     if(frac<=0) return;
     const r=rates();
 
-    // production into the village stock
     S.goods += r.prod*frac;
 
-    // Panchayat Godown open-market flow
     S.stockO -= r.effFlow * frac;
     S.goods += r.effFlow * frac;
     S.treasury += r.effFlow * r.price * frac;
     S.villagerCash -= r.effFlow * r.price * frac;
     if(S.stockO < 0) S.stockO = 0;
 
-    // wages paid to villagers
     S.villagerCash += r.netWages*frac;  if(S.villagerCash<0) S.villagerCash=0;
 
-    // per-person: eat from personal store; flag who must restock
     for(const p of S.people){
       const rate=CONSUME_RATE[p.edu]||0;
       if(rate>0){ p.kg-=rate*frac; if(p.kg<0)p.kg=0; }
       p.needFood = p.kg < BUY_THRESHOLD;
     }
-    // shop service: keepers*SERVE_PER_KEEPER customers fit at the counter at once
+    
+    const slots=r.keepers*SERVE_PER_KEEPER;
+    if(slots>0){
+      let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
+      let free=Math.max(0, slots-occupied);
+      if(free>0){
+        const waiting=S.people.filter(p=>p.needFood && p.buyT<=0 && atShop(p)).sort((a,b)=>a.kg-b.kg);
+        for(const p of waiting){ if(free<=0) break; p.buyT=SERVE_MS; free--; }
+      }
+    }
+
+    for(const p of S.people){
+      if(p.buyT>0){
+        p.buyT-=dt*S.speed;
+        if(p.buyT<=0){
+          p.buyT=0;
+          if(S.goods>=BUY_AMOUNT && S.villagerCash>=r.retailPrice*BUY_AMOUNT){
+            S.goods-=BUY_AMOUNT; p.kg+=BUY_AMOUNT;
+            S.villagerCash-=r.retailPrice*BUY_AMOUNT;
+            const ind=r.retailPrice*BUY_AMOUNT*INDIRECT_TAX;
+            S.treasury+=ind; S.today.indirect+=ind;
+            spawnSpark();
+          }
+          p.needFood = p.kg < BUY_THRESHOLD;
+        }
+      }
+    }
+    if(S.goods<0) S.goods=0;
+
+    S.treasury += r.incomeTax*frac;
+    S.today.income += r.incomeTax*frac;
+
+    S.elapsed += dt*S.speed;
+    while(S.elapsed>=DAY_MS){
+      S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
+      S.today={indirect:0,income:0};
+      
+      // Increment daily continuous homelessness tracking metrics
+      S.people.forEach(p => {
+        if (p.home === -1) {
+          p.homelessDays = (p.homelessDays || 0) + 1;
+        } else {
+          p.homelessDays = 0;
+        }
+      });
+
+      if(S.day>YEAR_DAYS){ S.day=1; S.year++; advanceYear(); }
+      if(S.daysSinceCensus>=CENSUS_DAYS){ S.daysSinceCensus=0; census(); }
+    }
+    S.progress=S.elapsed/DAY_MS;
+    checkUnlocks();
+  }
+  
+  // shop service: keepers*SERVE_PER_KEEPER customers fit at the counter at once
     const slots=r.keepers*SERVE_PER_KEEPER;
     if(slots>0){
       let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
@@ -934,13 +1021,13 @@
     }
     html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
       roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-      'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Wage '+money(FARM_WAGE)+'×skill · income tax <b>'+money(r.fTax)+'</b>/day',
+      'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
       stepper('farm'));
 
     const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
-    html+=card('shop',B.shop.color,B.shop.name,'Sells goods · '+SERVE_PER_KEEPER+' customers per keeper',
+    html+=card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
       keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
-      'Serves <b>'+slots+'</b> at once · <b>'+hungry+'</b> need food now<br>Taxed sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/day at <b>'+money(r.price)+'</b>/kg → indirect <b>'+money(r.indirect)+'</b>',
+      'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
       stepper('shop'));
 
     const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
@@ -1026,8 +1113,9 @@
 
     const hungry=S.people.filter(p=>p.needFood).length;
     const avgKg=S.people.length? S.people.reduce((s,p)=>s+p.kg,0)/S.people.length : 0;
-    el('ledger').innerHTML=
-      lrow('Good price (₹/kg)', money(r.price))
+   el('ledger').innerHTML=
+      lrow('Wholesale Price', money(r.price)+'/kg')
+      +lrow('Shop Retail Price (20% markup)', money(r.retailPrice)+'/kg')
       +lrow('Produced / day', r.prod.toFixed(1)+' kg')
       +lrow('Eaten / day', r.consumed.toFixed(1)+' kg')
       +lrow('Avg food / person', avgKg.toFixed(1)+' kg', avgKg>=BUY_THRESHOLD?'pos':'neg')
