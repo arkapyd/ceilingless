@@ -402,10 +402,11 @@
     reassignHomes();
   }
   function addPerson(edu){
+    const sx=ZONE.idle[0]+rnd(-55,55), sy=ZONE.idle[1]+rnd(-22,22);
     S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
-      x:ZONE.idle[0]+rnd(-55,55), y:ZONE.idle[1]+rnd(-22,22),
-      ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
-      kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0 });
+      x:sx, y:sy, ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
+      kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0,
+      wx:sx, wy:sy, wt:Math.floor(Math.random()*180) });
   }
   /* ============ HELPERS ============ */
   function rnd(a,b){return a+Math.random()*(b-a);}
@@ -953,22 +954,58 @@
     ctx.strokeStyle='rgba(40,30,18,.4)'; ctx.lineWidth=0.8; ctx.stroke();
   }
 
-  function shopOpen(){ return S.progress>0.18 && S.progress<0.78; }
+  /* ---- daily schedule (progress 0..1 maps to midnight..midnight; noon = 0.5) ---- */
+  const TEACH_START=8/24, TEACH_END=16/24;       // teachers + their students: 8am – 4pm
+  const SHOP_AM_START=7/24, SHOP_AM_END=12/24;   // shop morning shift:        7am – 12pm
+  const SHOP_PM_START=16/24, SHOP_PM_END=21/24;  // shop evening shift:        4pm – 9pm
+  const FARM_BLOCKS=12;                          // farmers flip work/rest at random through the day
+
+  function hash01(n){ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
+  function teacherWorking(){ return S.progress>=TEACH_START && S.progress<TEACH_END; }
+  function shopWorking(){ return (S.progress>=SHOP_AM_START && S.progress<SHOP_AM_END) || (S.progress>=SHOP_PM_START && S.progress<SHOP_PM_END); }
+  function farmerWorking(p){ const blk=Math.floor(S.progress*FARM_BLOCKS); return hash01(p.id*7.13 + S.day*3.7 + blk*1.9) > 0.45; }
+
+  function shopOpen(){ return shopWorking(); }
   function atShop(p){ if(!shopOpen()) return false; return Math.abs(p.x-ZONE.shop[0])<48 && Math.abs(p.y-ZONE.shop[1])<42; }
-  function targetFor(p){
-    const work=S.progress>0.18 && S.progress<0.78;
-    if(work && p.needFood && roleCount('shop')>0) return ZONE.shop;  // hungry villagers walk to the Shop
-    if(p.role==='farm'||p.role==='shop') return work?ZONE[p.role]:homeSpot(p);
-    if(p.role==='teacher') return work?ZONE.teacher:homeSpot(p);
-    if(p.role==='school') return work?ZONE.school:homeSpot(p);
-    if(p.role==='college') return work?ZONE.college:homeSpot(p);
-    return work?ZONE.idle:homeSpot(p);
+
+  // a worker's on-shift destination (lightly scattered), or null when off duty
+  function workTarget(p){
+    if(p.role==='farm')    return farmerWorking(p) ? [ZONE.farm[0]+p.ox,    ZONE.farm[1]+p.oy]    : null;
+    if(p.role==='shop')    return shopWorking()    ? [ZONE.shop[0]+p.ox,    ZONE.shop[1]+p.oy]    : null;
+    if(p.role==='teacher') return teacherWorking() ? [ZONE.teacher[0]+p.ox, ZONE.teacher[1]+p.oy] : null;
+    if(p.role==='school')  return teacherWorking() ? [ZONE.school[0]+p.ox,  ZONE.school[1]+p.oy]  : null;
+    if(p.role==='college') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
+    return null; // idle villagers are never on shift
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
-  function updatePeople(){ S.people.forEach(p=>{ const t=targetFor(p); p.x+=((t[0]+p.ox)-p.x)*0.045; p.y+=((t[1]+p.oy)-p.y)*0.045; }); }
+
+  // somewhere to amble to: now and then gather at the well to socialise, else a random spot on the village ground
+  function pickRoam(){
+    if(Math.random()<0.25) return [388+rnd(-26,26), 360+rnd(-14,14)];
+    return [rnd(70,700), rnd(322,452)];
+  }
+  function targetFor(p){
+    if(p.needFood && shopOpen() && roleCount('shop')>0) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; // hungry -> Shop while it trades
+    const w=workTarget(p);
+    if(w) return w;            // on shift -> at work
+    return [p.wx, p.wy];       // off shift -> wandering / socialising
+  }
+  function updatePeople(){
+    S.people.forEach(p=>{
+      if(p.wx===undefined){ p.wx=p.x; p.wy=p.y; p.wt=0; }
+      const hungryBound = p.needFood && shopOpen() && roleCount('shop')>0;
+      if(!hungryBound && workTarget(p)===null){           // currently roaming
+        p.wt=(p.wt||0)-1;
+        const dx=p.wx-p.x, dy=p.wy-p.y;
+        if(p.wt<=0 || (dx*dx+dy*dy)<36){ const sp=pickRoam(); p.wx=sp[0]; p.wy=sp[1]; p.wt=120+Math.floor(Math.random()*240); }
+      }
+      const t=targetFor(p);
+      p.x+=(t[0]-p.x)*0.045; p.y+=(t[1]-p.y)*0.045;
+    });
+  }
 
   function drawPerson(p){
-    const t=targetFor(p); const moving=Math.abs(p.x-(t[0]+p.ox))>2;
+    const t=targetFor(p); const moving=Math.abs(p.x-t[0])>2 || Math.abs(p.y-t[1])>2;
     const bob=moving?Math.abs(Math.sin(tick*0.25+p.ph))*1.4:Math.sin(tick*0.07+p.ph)*0.5;
     const x=p.x, y=p.y-bob;
     const garment=lerpC(EDU_COLOR[p.edu],'#6f665a',0.18);
