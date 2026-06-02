@@ -375,7 +375,6 @@
     {name:'Cottage', cap:4, build:3},                    
   ];
   
-  // NEW MECHANICS CONSTANTS
   const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_DAYS=5; 
   const COLLEGE_TEACHER_PAY=50, COLLEGE_STAFF_PAY=15;
   const FARM_UPGRADES = {
@@ -417,6 +416,7 @@
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], collegeBuild:0,
       unlocked:{college:false}, built:{college:false}, godownUnlocked:false, shownCh2:false,
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
+      allowImmigration:true,
       daysSinceCensus:0, maxPop:10, nextId:0,
       people:[], today:{indirect:0, income:0},
       smoke:[], spark:[], rupees:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
@@ -431,6 +431,7 @@
     S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
       x:sx, y:sy, ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
       kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0,
+      morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), // Guaranteed ~25% equal function distribution
       wx:sx, wy:sy, wt:Math.floor(Math.random()*180) });
   }
   /* ============ HELPERS ============ */
@@ -612,7 +613,10 @@
     const incomeTax = fTax + sTax + tTax;
     const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev};
+    let totalMorale = S.people.reduce((sum, p) => sum + p.morale, 0);
+    let avgMorale = S.people.length ? totalMorale / S.people.length : 0;
+
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale};
   }
   
   function step(dt){
@@ -639,6 +643,37 @@
       if(rate>0){ p.kg-=rate*frac; if(p.kg<0)p.kg=0; }
       p.needFood = p.kg < BUY_THRESHOLD;
     }
+
+    // Dynamic Heterogeneous Morale Function Updates
+    S.people.forEach(p => {
+      let drift = 0;
+      const isEmployed = p.role !== 'idle';
+      const isHoused = p.home !== -1;
+      const isFed = p.kg >= BUY_THRESHOLD;
+
+      if (p.moraleType === 0) { // Profile 0: Food Centric
+        drift += isFed ? 12 : -24;
+        drift += isEmployed ? 2 : -2;
+        drift += isHoused ? 3 : -6;
+      } else if (p.moraleType === 1) { // Profile 1: Workaholic
+        drift += isEmployed ? 22 : -20;
+        drift += isFed ? 4 : -12;
+        drift += isHoused ? 2 : -4;
+      } else if (p.moraleType === 2) { // Profile 2: Homebody
+        drift += isHoused ? 18 : -28;
+        drift += isFed ? 4 : -10;
+        drift += isEmployed ? 1 : -2;
+      } else { // Profile 3: Fully Balanced Utility
+        let score = (isFed ? 1 : 0) + (isEmployed ? 1 : 0) + (isHoused ? 1 : 0);
+        if (score === 3) drift += 16;
+        else if (score === 2) drift += 3;
+        else if (score === 1) drift += -8;
+        else drift += -26;
+      }
+      p.morale += drift * frac;
+      if (p.morale < 0) p.morale = 0;
+      if (p.morale > 100) p.morale = 100;
+    });
     
     const slots=r.keepers*SERVE_PER_KEEPER;
     if(slots>0){
@@ -723,9 +758,13 @@
     const pop=S.people.length;
     const suffGoods=S.goods>=pop, suffHouse=housingCap()>=pop;
     if(suffGoods && suffHouse){
-      for(let i=0;i<BIRTHS;i++) addPerson(0);
-      reassignHomes();
-      toast('🎉 <span class="g">'+BIRTHS+'</span> new immigrants arrive at Tawapur');
+      if (S.allowImmigration) {
+        for(let i=0;i<BIRTHS;i++) addPerson(0);
+        reassignHomes();
+        toast('🎉 <span class="g">'+BIRTHS+'</span> new immigrants arrive at Tawapur');
+      } else {
+        toast('🚫 Census cleared, but Immigration is BLOCKED by decree.');
+      }
     } else {
       const idx=Math.floor(Math.random()*S.people.length);
       if(S.people.length){ S.people.splice(idx,1); reassignHomes(); }
@@ -768,7 +807,6 @@
   const cv=el('town'), ctx=cv.getContext('2d');
   function fitCanvas(){ const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=LW*dpr; cv.height=LH*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 
-  // muted, hazy, golden-hour sky
   const SKY_KF=[
     {t:0.00,top:'#10141f',bot:'#222a3a'},
     {t:0.10,top:'#2b2740',bot:'#6a5566'},
@@ -1094,7 +1132,7 @@
     ctx.strokeStyle='rgba(40,30,18,.4)'; ctx.lineWidth=0.8; ctx.stroke();
   }
 
-  /* ---- daily schedule (progress 0..1 maps to midnight..midnight; noon = 0.5) ---- */
+  /* ---- daily schedule ---- */
   const TEACH_START=8/24, TEACH_END=16/24;       
   const SHOP_AM_START=7/24, SHOP_AM_END=12/24;   
   const SHOP_PM_START=16/24, SHOP_PM_END=21/24;  
@@ -1248,7 +1286,7 @@
           '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
       } else if (key === 'college') {
         if(!S.unlocked.college){
-           const inter=S.people.filter(p=>p.edu>=1).length;
+           const inter = S.people.filter(p=>p.edu>=1).length;
            html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
         } else if(S.collegeBuild>0){
            const pct=Math.round((COLLEGE_BUILD_DAYS-S.collegeBuild)/COLLEGE_BUILD_DAYS*100);
@@ -1339,7 +1377,7 @@
       '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
 
     if(!S.unlocked.college){
-      const inter=S.people.filter(p=>p.edu>=1).length;
+      const inter = S.people.filter(p=>p.edu>=1).length;
       html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
     } else if(S.collegeBuild>0){
       const pct=Math.round((COLLEGE_BUILD_DAYS-S.collegeBuild)/COLLEGE_BUILD_DAYS*100);
@@ -1438,6 +1476,7 @@
       +lrow('Shop Retail Price (20% markup)', money(r.retailPrice)+'/kg')
       +lrow('Produced / day', r.prod.toFixed(1)+' kg')
       +lrow('Eaten / day', r.consumed.toFixed(1)+' kg')
+      +lrow('Avg Village Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg')
       +lrow('Avg food / person', avgKg.toFixed(1)+' kg', avgKg>=BUY_THRESHOLD?'pos':'neg')
       +lrow('Villagers hungry', hungry+(hungry?' ⚠':''), hungry?'neg':'pos')
       +lrow('Shop capacity', r.shopThroughput.toFixed(0)+' kg/day')
@@ -1466,6 +1505,7 @@
     const high = S.people.filter(p=>p.edu===4).length;
     el('hud-ledger-people').innerHTML = 
       lrow('Total Population', pop + ' villagers')
+      + lrow('Village General Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg')
       + lrow('Active Idle Labor Pool', idle().length + ' workers')
       + lrow('Uneducated Tiers', unedu)
       + lrow('Basic Literacy Tiers', basic)
@@ -1473,12 +1513,13 @@
       + lrow('Advanced Technical Tiers', adv)
       + lrow('Highly Skilled Tiers', high);
 
-    const censusOk = S.goods >= pop && housingCap() >= pop;
     el('hud-ledger-census').innerHTML = 
       lrow('Days Until Evaluation', (CENSUS_DAYS - S.daysSinceCensus) + ' days')
       + lrow('Current Supply Target', pop + ' kg required')
       + lrow('Current Housing Target', pop + ' beds required')
-      + lrow('Evaluation Forecast', censusOk ? 'immigrants arrive (+2)' : 'mortality shortage risk (−1)', censusOk ? 'pos' : 'neg');
+      + lrow('Immigration Policy', S.allowImmigration ? 'ALLOW ALL' : 'BLOCKED', S.allowImmigration ? 'pos' : 'neg')
+      + '<button class="buildbtn" data-act="toggle_immigration">' + (S.allowImmigration ? 'Halt Immigration' : 'Allow Immigration') + '</button>'
+      + lrow('Evaluation Forecast', ok ? (S.allowImmigration ? 'immigrants arrive (+2)' : 'growth capped') : 'mortality shortage risk (−1)', ok ? 'pos' : 'neg');
   }
 
   let toastN=0;
@@ -1541,6 +1582,11 @@
     else if(act==='upcottage') upgradeHouse(2);
     else if(act==='upcottage_idx') upgradeHouse(2, idx !== undefined ? parseInt(idx) : undefined);
     else if(act==='buildcollege') buildCollege();
+    else if(act==='toggle_immigration') {
+       S.allowImmigration = !S.allowImmigration;
+       toast('⚖ Immigration policies modified.');
+       renderCards();
+    }
     else if(act==='buy_upg') {
        const upg = b.dataset.upg;
        if (!S.farmUpgrades[upg] && S.treasury >= FARM_UPGRADES[upg].cost) {
