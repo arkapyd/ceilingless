@@ -431,8 +431,9 @@
     S.people.push({ id:S.nextId++, edu, role:'idle', home:-1,
       x:sx, y:sy, ox:rnd(-24,24), oy:rnd(-14,14), ph:Math.random()*7,
       kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0,
-      morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), // Guaranteed ~25% equal function distribution
-      wx:sx, wy:sy, wt:Math.floor(Math.random()*180) });
+      morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), 
+      wx:sx, wy:sy, wt:Math.floor(Math.random()*180),
+      hidden: false });
   }
   /* ============ HELPERS ============ */
   function rnd(a,b){return a+Math.random()*(b-a);}
@@ -651,19 +652,19 @@
       const isHoused = p.home !== -1;
       const isFed = p.kg >= BUY_THRESHOLD;
 
-      if (p.moraleType === 0) { // Profile 0: Food Centric
+      if (p.moraleType === 0) { 
         drift += isFed ? 12 : -24;
         drift += isEmployed ? 2 : -2;
         drift += isHoused ? 3 : -6;
-      } else if (p.moraleType === 1) { // Profile 1: Workaholic
+      } else if (p.moraleType === 1) { 
         drift += isEmployed ? 22 : -20;
         drift += isFed ? 4 : -12;
         drift += isHoused ? 2 : -4;
-      } else if (p.moraleType === 2) { // Profile 2: Homebody
+      } else if (p.moraleType === 2) { 
         drift += isHoused ? 18 : -28;
         drift += isFed ? 4 : -10;
         drift += isEmployed ? 1 : -2;
-      } else { // Profile 3: Fully Balanced Utility
+      } else { 
         let score = (isFed ? 1 : 0) + (isEmployed ? 1 : 0) + (isHoused ? 1 : 0);
         if (score === 3) drift += 16;
         else if (score === 2) drift += 3;
@@ -1183,10 +1184,20 @@
       const t=targetFor(p);
       const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);   
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
+      
+      // Dynamic rendering filter:
+      // if destination is work while at work OR destination is home while at home, fade character logic
+      if ((workTarget(p) !== null && d < 5) || (workTarget(p) === null && p.home >= 0 && dx*dx+dy*dy < 100)) {
+         p.hidden = true;
+      } else {
+         p.hidden = false;
+      }
     });
   }
 
   function drawPerson(p){
+    if (p.hidden) return; // Do not render if absorbed by a building
+    
     const t=targetFor(p); const moving=Math.abs(p.x-t[0])>2 || Math.abs(p.y-t[1])>2;
     const bob=moving?Math.abs(Math.sin(tick*0.25+p.ph))*1.4:Math.sin(tick*0.07+p.ph)*0.5;
     const x=p.x, y=p.y-bob;
@@ -1569,6 +1580,14 @@
   /* ============ GLOBAL EVENT SYSTEM ============ */
   document.addEventListener('click', e => {
     if(S.over) return;
+    
+    // Check speed controls FIRST so they bypass standard action routing
+    const speedBtn = e.target.closest('[data-spd]');
+    if(speedBtn) {
+        setSpeed(parseInt(speedBtn.dataset.spd, 10));
+        return;
+    }
+
     const b = e.target.closest('[data-act]');
     if(!b) return;
     const act = b.dataset.act, role = b.dataset.b, idx = b.dataset.idx;
