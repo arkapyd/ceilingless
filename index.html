@@ -281,7 +281,7 @@
         </div>
         <div class="panel">
           <h3 class="section-h" style="margin-top:0">Sarpanch's note <span class="ln"></span></h3>
-          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> to run. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
+          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more. Cottages allow <b>1 kg</b> extra home storage. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> to run. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
           <div class="legend">
             <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
             <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
@@ -313,6 +313,7 @@
     <div class="ui-popup" id="pop-hud-census">
       <h3 class="section-h">Census Requirements <span class="ln"></span></h3>
       <div class="ledger" id="hud-ledger-census"></div>
+      <button class="buildbtn" id="btn-toggle-immigration" data-act="toggle_immigration" style="margin-top:10px;"></button>
     </div>
   </div>
   
@@ -521,7 +522,7 @@
     if(!h) return;
     
     S.treasury-=cost;
-    h.build=HOUSE_TIERS[toTier].build; h.pendingTier=toTier;      
+    h.build=HOUSE_TIERS[toTier].build; h.pendingTier=toTier;       
     toast('🏗 Upgrading a '+HOUSE_TIERS[toTier-1].name.toLowerCase()+' to a <span class="g">'+HOUSE_TIERS[toTier].name+'</span> — '+HOUSE_TIERS[toTier].build+' days');
     spawnRupee(58 + S.houses.indexOf(h)*70, 434 - 44);
     renderCards();
@@ -571,7 +572,13 @@
 
     const demand=S.people.reduce((s,p)=>s+(CONSUME_RATE[p.edu]||0),0);  
     const keepers=roleCount('shop');
-    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*BUY_AMOUNT;  
+    
+    let avgBuyAmount = 1;
+    if (S.people.length > 0) {
+       avgBuyAmount = S.people.reduce((s, p) => s + ((p.home >= 0 && S.houses[p.home].tier === 2) ? 2 : 1), 0) / S.people.length;
+    }
+    
+    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*avgBuyAmount;  
     const consumed=demand;
     const taxedSales=Math.min(consumed, shopThroughput);
     
@@ -651,6 +658,7 @@
       const isEmployed = p.role !== 'idle';
       const isHoused = p.home !== -1;
       const isFed = p.kg >= BUY_THRESHOLD;
+      const inCottage = isHoused && S.houses[p.home].tier === 2;
 
       if (p.moraleType === 0) { 
         drift += isFed ? 12 : -24;
@@ -671,6 +679,7 @@
         else if (score === 1) drift += -8;
         else drift += -26;
       }
+      if (inCottage) drift += 10;
       p.morale += drift * frac;
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
@@ -691,10 +700,11 @@
         p.buyT-=dt*S.speed;
         if(p.buyT<=0){
           p.buyT=0;
-          if(S.goods>=BUY_AMOUNT && S.villagerCash>=r.retailPrice*BUY_AMOUNT){
-            S.goods-=BUY_AMOUNT; p.kg+=BUY_AMOUNT;
-            S.villagerCash-=r.retailPrice*BUY_AMOUNT;
-            const ind=r.retailPrice*BUY_AMOUNT*INDIRECT_TAX;
+          const buyAmt = (p.home >= 0 && S.houses[p.home].tier === 2) ? 2 : 1;
+          if(S.goods>=buyAmt && S.villagerCash>=r.retailPrice*buyAmt){
+            S.goods-=buyAmt; p.kg+=buyAmt;
+            S.villagerCash-=r.retailPrice*buyAmt;
+            const ind=r.retailPrice*buyAmt*INDIRECT_TAX;
             S.treasury+=ind; S.today.indirect+=ind;
             spawnSpark();
           }
@@ -1255,7 +1265,7 @@
                upBtn = '<div class="stat" style="margin-top:8px"><i>Further upgrades locked.</i></div>';
              }
            } else {
-             upBtn = '<div class="stat" style="margin-top:8px"><i>Fully upgraded.</i></div>';
+             upBtn = '<div class="stat" style="margin-top:8px"><i>Fully upgraded. Residents get +morale and +1kg home storage.</i></div>';
            }
 
            html += card('house', '#b5764f', tierData.name, 'Level '+(h.tier+1)+' Home', occ+'<small style="font-weight:400;color:var(--ink-faint)">/'+tierData.cap+'</small>',
@@ -1529,8 +1539,9 @@
       + lrow('Current Supply Target', pop + ' kg required')
       + lrow('Current Housing Target', pop + ' beds required')
       + lrow('Immigration Policy', S.allowImmigration ? 'ALLOW ALL' : 'BLOCKED', S.allowImmigration ? 'pos' : 'neg')
-      + '<button class="buildbtn" data-act="toggle_immigration">' + (S.allowImmigration ? 'Halt Immigration' : 'Allow Immigration') + '</button>'
       + lrow('Evaluation Forecast', ok ? (S.allowImmigration ? 'immigrants arrive (+2)' : 'growth capped') : 'mortality shortage risk (−1)', ok ? 'pos' : 'neg');
+    
+    el('btn-toggle-immigration').textContent = S.allowImmigration ? 'Halt Immigration' : 'Allow Immigration';
   }
 
   let toastN=0;
@@ -1675,6 +1686,10 @@
       } else {
          el('pop-building-info').classList.remove('active');
          S.selectedEntity = null;
+         popups.forEach(id => {
+           const node = el(id);
+           if(node) node.classList.remove('active');
+         });
       }
   });
 
