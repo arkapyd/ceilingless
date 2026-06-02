@@ -361,10 +361,17 @@
   const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       
   const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       
   const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  
-  const HOUSE_CAP=4, HOUSE_COST=150, MAX_HOUSES=7;
-  const COLLEGE_COST=500, COLLEGE_UNLOCK=5;
-  const CH2_UNLOCK_DAY=10;  
-  const START_TREASURY=300, START_GOODS=15, GROW_TARGET=14;
+  const HOUSE_COST=150, MAX_HOUSES=7;                   // HOUSE_COST = raise a new shack on a plot
+  const HUT_UPGRADE_COST=75, COTTAGE_UPGRADE_COST=150;  // shack->hut ; hut->cottage (cottage needs Chapter Two)
+  const HOUSE_TIERS=[                                    // a house grows: shack -> hut -> cottage
+    {name:'Shack',   cap:2, build:1},                   // raised in 1 day
+    {name:'Hut',     cap:3, build:2},                   // upgraded in 2 days
+    {name:'Cottage', cap:3, build:3},                   // upgraded in 3 days (Chapter Two)
+  ];
+  const COLLEGE_COST=500, COLLEGE_UNLOCK=5, COLLEGE_BUILD_DAYS=5;  // College takes 5 days to raise
+  const NONRES_BUILD_DAYS=5;                             // shop / farm / school build time (they start pre-built)
+  const CH2_UNLOCK_DAY=20;                               // Chapter Two unlocks after 20 days
+  const START_TREASURY=5000, START_GOODS=15, GROW_TARGET=14;  // ₹5,000 district-office grant
 
   const B = {
     farm   :{name:'Farm', role:'farm', sub:'Harvests grain', cx:140, gy:250, w:124, h:88, color:'#5c8a4e', cap:6},
@@ -392,7 +399,8 @@
       treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
-     houses:[{},{}], unlocked:{college:false}, built:{college:false}, godownUnlocked:false, shownCh2:false,
+     houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], collegeBuild:0,
+     unlocked:{college:false}, built:{college:false}, godownUnlocked:false, shownCh2:false,
       daysSinceCensus:0, maxPop:10, nextId:0,
       people:[], today:{indirect:0, income:0},
       smoke:[], spark:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
@@ -415,9 +423,13 @@
   function idle(){return S.people.filter(p=>p.role==='idle');}
   function roleCount(r){return S.people.filter(p=>p.role===r).length;}
   function roleList(r){return S.people.filter(p=>p.role===r);}
-  function housingCap(){return S.houses.length*HOUSE_CAP;}
+  function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }   // tier -1 = bare plot under construction
+  function housingCap(){ return S.houses.reduce((s,h)=>s+houseCap(h),0); }
   function homeless(){return Math.max(0,S.people.length-housingCap());}
-  function reassignHomes(){ S.people.forEach((p,i)=>{ p.home = i<housingCap()? Math.floor(i/HOUSE_CAP) : -1; if(p.home !== -1) p.homelessDays = 0; }); }
+  function reassignHomes(){
+    const slots=[]; S.houses.forEach((h,i)=>{ const c=houseCap(h); for(let k=0;k<c;k++) slots.push(i); });
+    S.people.forEach((p,idx)=>{ if(idx<slots.length){ p.home=slots[idx]; p.homelessDays=0; } else { p.home=-1; } });
+  }
 
   function getHomelessMultiplier(p) {
     if (p.home >= 0) return 1;
@@ -451,16 +463,28 @@
     list[list.length-1].role='idle';
     renderCards();
   }
-  function buildHouse(){
+  function buildHouse(){   // raise a new shack on an empty plot
     if(S.houses.length>=MAX_HOUSES || S.treasury<HOUSE_COST) return;
-    S.treasury-=HOUSE_COST; S.houses.push({}); reassignHomes();
-    toast('Cottage built — housing now <span class="g">'+housingCap()+'</span>');
+    S.treasury-=HOUSE_COST;
+    S.houses.push({tier:-1, build:HOUSE_TIERS[0].build, pendingTier:0});
+    toast('🏗 Shack plot started — ready in <span class="g">'+HOUSE_TIERS[0].build+' day</span>');
+    renderCards();
+  }
+  function upgradeHouse(toTier){   // shack->hut (toTier 1) or hut->cottage (toTier 2)
+    if(toTier===2 && !S.godownUnlocked) return;
+    const cost = toTier===1 ? HUT_UPGRADE_COST : COTTAGE_UPGRADE_COST;
+    if(S.treasury<cost) return;
+    const h=S.houses.find(h=>h.tier===toTier-1 && h.build<=0);   // a finished house one tier below, not already upgrading
+    if(!h) return;
+    S.treasury-=cost;
+    h.build=HOUSE_TIERS[toTier].build; h.pendingTier=toTier;      // keeps its current beds until the upgrade finishes
+    toast('🏗 Upgrading a '+HOUSE_TIERS[toTier-1].name.toLowerCase()+' to a <span class="g">'+HOUSE_TIERS[toTier].name+'</span> — '+HOUSE_TIERS[toTier].build+' days');
     renderCards();
   }
   function buildCollege(){
-    if(!S.unlocked.college || S.built.college || S.treasury<COLLEGE_COST) return;
-    S.treasury-=COLLEGE_COST; S.built.college=true; B.college.locked=false;
-    toast('🎓 The <span class="g">College</span> opens its doors');
+    if(!S.unlocked.college || S.built.college || S.collegeBuild>0 || S.treasury<COLLEGE_COST) return;
+    S.treasury-=COLLEGE_COST; S.collegeBuild=COLLEGE_BUILD_DAYS;
+    toast('🏗 College construction begun — opens in <span class="g">'+COLLEGE_BUILD_DAYS+' days</span>');
     renderCards();
   }
 
@@ -597,7 +621,13 @@
     while(S.elapsed>=DAY_MS){
       S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
       S.today={indirect:0,income:0};
-      
+
+      // advance construction (one day per rollover)
+      let finished=false;
+      S.houses.forEach(h=>{ if(h.build>0){ h.build--; if(h.build<=0){ h.tier=h.pendingTier; finished=true; } } });
+      if(S.collegeBuild>0){ S.collegeBuild--; if(S.collegeBuild<=0){ S.built.college=true; B.college.locked=false; toast('🎓 The <span class="g">College</span> opens its doors'); } }
+      if(finished) reassignHomes();
+
       S.people.forEach(p => {
         if (p.home === -1) {
           p.homelessDays = (p.homelessDays || 0) + 1;
@@ -979,10 +1009,14 @@
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
 
-  // somewhere to amble to: now and then gather at the well to socialise, else a random spot on the village ground
-  function pickRoam(){
-    if(Math.random()<0.25) return [388+rnd(-26,26), 360+rnd(-14,14)];
-    return [rnd(70,700), rnd(322,452)];
+  // somewhere to amble to: now and then gather at the well to socialise, else a short stroll near where they are
+  function pickRoam(p){
+    if(Math.random()<0.2) return [388+rnd(-30,30), 360+rnd(-16,16)];
+    const a=Math.random()*Math.PI*2, r=rnd(18,70);
+    let x=p.x+Math.cos(a)*r, y=p.y+Math.sin(a)*r;
+    if(x<60)x=60; else if(x>704)x=704;
+    if(y<318)y=318; else if(y>456)y=456;
+    return [x,y];
   }
   function targetFor(p){
     if(p.needFood && shopOpen() && roleCount('shop')>0) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; // hungry -> Shop while it trades
@@ -993,14 +1027,16 @@
   function updatePeople(){
     S.people.forEach(p=>{
       if(p.wx===undefined){ p.wx=p.x; p.wy=p.y; p.wt=0; }
+      if(p._spd===undefined) p._spd=1.0+Math.random()*0.7;   // gentle, varied walking pace (px/frame)
       const hungryBound = p.needFood && shopOpen() && roleCount('shop')>0;
-      if(!hungryBound && workTarget(p)===null){           // currently roaming
+      if(!hungryBound && workTarget(p)===null){              // currently roaming
         p.wt=(p.wt||0)-1;
         const dx=p.wx-p.x, dy=p.wy-p.y;
-        if(p.wt<=0 || (dx*dx+dy*dy)<36){ const sp=pickRoam(); p.wx=sp[0]; p.wy=sp[1]; p.wt=120+Math.floor(Math.random()*240); }
+        if(p.wt<=0 || (dx*dx+dy*dy)<25){ const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1]; p.wt=160+Math.floor(Math.random()*260); }
       }
       const t=targetFor(p);
-      p.x+=(t[0]-p.x)*0.045; p.y+=(t[1]-p.y)*0.045;
+      const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);   // capped step so nobody darts across the map
+      if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
     });
   }
 
@@ -1029,11 +1065,22 @@
     const r=rates(), c=el('cards'); let html='';
     const hl=homeless();
 
-    html+=card('house','#b5764f','Housing','Cottages — '+HOUSE_CAP+' people each',
-      S.houses.length+'<small style="font-weight:400;color:var(--ink-faint)">/'+MAX_HOUSES+'</small>',
-      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>Each home adds <b>'+money(HOUSE_COST)+'</b> to prosperity',
+    const shacks=S.houses.filter(h=>h.tier===0).length, huts=S.houses.filter(h=>h.tier===1).length, cots=S.houses.filter(h=>h.tier===2).length;
+    const building=S.houses.filter(h=>h.build>0).length;
+    const upShack=S.houses.some(h=>h.tier===0 && h.build<=0), upHut=S.houses.some(h=>h.tier===1 && h.build<=0);
+    let houseCtrl=
       '<button class="buildbtn" data-act="build" '+((S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST)?'disabled':'')+'>'+
-        (S.houses.length>=MAX_HOUSES?'Housing full':'Build cottage · '+money(HOUSE_COST))+'</button>');
+        (S.houses.length>=MAX_HOUSES?'Plots full ('+MAX_HOUSES+')':'Build shack · '+money(HOUSE_COST)+' · '+HOUSE_TIERS[0].build+'d')+'</button>'+
+      '<button class="buildbtn" data-act="uphut" '+((!upShack||S.treasury<HUT_UPGRADE_COST)?'disabled':'')+'>'+
+        'Upgrade shack → hut · '+money(HUT_UPGRADE_COST)+' · '+HOUSE_TIERS[1].build+'d</button>';
+    if(S.godownUnlocked) houseCtrl+=
+      '<button class="buildbtn" data-act="upcottage" '+((!upHut||S.treasury<COTTAGE_UPGRADE_COST)?'disabled':'')+'>'+
+        'Upgrade hut → cottage · '+money(COTTAGE_UPGRADE_COST)+' · '+HOUSE_TIERS[2].build+'d</button>';
+    html+=card('house','#b5764f','Housing','Shack → Hut → Cottage',
+      S.houses.length+'<small style="font-weight:400;color:var(--ink-faint)">/'+MAX_HOUSES+'</small>',
+      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>'+
+        'Shacks <b>'+shacks+'</b> · Huts <b>'+huts+'</b> · Cottages <b>'+cots+'</b>'+(building?' · <b style="color:var(--ink-faint)">'+building+' building</b>':''),
+      houseCtrl);
    if(S.godownUnlocked){
       html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding · Chapter Two',
         Math.floor(S.stockO)+' kg in reserve',
@@ -1066,10 +1113,15 @@
     if(!S.unlocked.college){
       const inter=S.people.filter(p=>p.edu>=2).length;
       html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate', Math.min(1,inter/COLLEGE_UNLOCK), inter+' / '+COLLEGE_UNLOCK+' intermediate');
+    } else if(S.collegeBuild>0){
+      const pct=Math.round((COLLEGE_BUILD_DAYS-S.collegeBuild)/COLLEGE_BUILD_DAYS*100);
+      html+=card('college',B.college.color,'College','Under construction','—',
+        'Construction underway — opens in <b>'+S.collegeBuild+'</b> day'+(S.collegeBuild===1?'':'s'),
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
     } else if(!S.built.college){
       html+=card('college',B.college.color,'College',B.college.sub,'—',
-        'Milestone reached! Construct the College to train<br>Advanced and Highly Skilled workers.',
-        '<button class="buildbtn" data-act="buildcollege" '+(S.treasury<COLLEGE_COST?'disabled':'')+'>'+(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST))+'</button>');
+        'Milestone reached! Construct the College to train<br>Advanced and Highly Skilled workers ('+COLLEGE_BUILD_DAYS+' days to build).',
+        '<button class="buildbtn" data-act="buildcollege" '+(S.treasury<COLLEGE_COST?'disabled':'')+'>'+(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_DAYS+'d')+'</button>');
     } else {
       const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
       html+=card('college',B.college.color,'College',B.college.sub,
@@ -1247,12 +1299,14 @@
     if(act==='add') assign(role);
     else if(act==='rem') unassign(role);
     else if(act==='build') buildHouse();
+    else if(act==='uphut') upgradeHouse(1);
+    else if(act==='upcottage') upgradeHouse(2);
     else if(act==='buildcollege') buildCollege();
     else if(act==='fdec') { S.flowO--; renderCards(); }
     else if(act==='finc') { S.flowO++; renderCards(); }
   });
 
-  el('introBtn').addEventListener('click',()=> el('intro').classList.add('hidden'));
+  el('introBtn').addEventListener('click',()=>{ el('intro').classList.add('hidden'); toast('🏛 District grant received — <span class="g">'+money(START_TREASURY)+'</span> to build Tawapur'); });
   el('ch2Btn').addEventListener('click',()=>{ el('chapter2').classList.add('hidden'); if(!S.over) setSpeed(lastPlaySpeed||1); });
   el('restartBtn').addEventListener('click',()=>{
     el('gameover').classList.add('hidden'); B.college.locked=true; newState(); setSpeed(1); renderCards(); lastT=0;
