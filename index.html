@@ -203,12 +203,12 @@
         <p class="lead">Welcome, Sarpanchji. Grain has no fixed price in <b>Tawapur</b> — it is set by <b>demand and supply</b>. When buyers outnumber the grain on the market the price <b>climbs</b>; when grain is plentiful it <b>falls</b>. Read that balance, and your treasury — funded by <b>tax alone</b> — will grow.</p>
         <ul>
           <li><b>18% indirect tax</b> on every good sold at the Shop.</li>
-          <li><b>Income tax</b> on educated workers — 12% at Basic, rising with each level.</li>
-          <li>The <b>Farm</b> harvests grain. Villagers eat from a personal store and restock at the <b>Shop</b> (2 keepers, 3 customers each) — staff it, or they go hungry.</li>
-          <li>Every <b>5 days a census</b> runs: with enough <b>goods and housing</b>, two babies are born — if either falls short, a villager dies.</li>
-          <li>The <b>School</b> needs <b>2–5 Basic teachers</b> (5 students each) to lift workers a level each year. Reach <b>5 Intermediate</b> to build the College.</li>
+          <li><b>Income tax</b> on educated workers.</li>
+          <li>The <b>Farm</b> harvests grain. Villagers eat from a personal store and restock at the <b>Shop</b>.</li>
+          <li>Every <b>5 days a census</b> runs: with enough <b>goods and housing</b>, two babies are born.</li>
+          <li>The <b>School</b> needs <b>2–5 Basic teachers</b> to lift uneducated workers to Basic. Reach <b>75% Basic Education</b> to unlock the College.</li>
         </ul>
-        <p style="margin-bottom:16px">One day passes each real minute, and the village keeps living even in a background tab. Press <b>space</b> to pause or resume, and click the village to close an open panel.</p>
+        <p style="margin-bottom:16px">One day passes each real minute. Press <b>space</b> to pause or resume, and click buildings to inspect them.</p>
         <button class="play" id="introBtn">Begin building</button>
       </div>
     </div>
@@ -281,7 +281,7 @@
         </div>
         <div class="panel">
           <h3 class="section-h" style="margin-top:0">Sarpanch's note <span class="ln"></span></h3>
-          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more, so it must be staffed or they go hungry. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> (5 students each) to run. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
+          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> to run. Keep <b>goods ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
           <div class="legend">
             <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
             <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
@@ -360,30 +360,39 @@
   const INCOME_TAX=[0,0.12,0.18,0.24,0.30];
 
   const FARM_OUT=1.5, SHOP_SELL=4;
-  const INDIRECT_TAX=0.18, SHOP_MARKUP=0.20; // 20% retail markup
+  const INDIRECT_TAX=0.18, SHOP_MARKUP=0.20; 
   const CONSUME_UNEDU=0.5, CONSUME_BASIC=0.7, CONSUME_DAYS=3;  
   const CONSUME_RATE=[CONSUME_UNEDU/CONSUME_DAYS, CONSUME_BASIC/CONSUME_DAYS, 0, 0, 0];  
   const SHOP_KEEPERS_MAX=2, SERVE_PER_KEEPER=3, SERVE_MS=4000;  
   const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       
   const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       
   const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  
-  const HOUSE_COST=150, MAX_HOUSES=7;                    // HOUSE_COST = raise a new shack on a plot
-  const HUT_UPGRADE_COST=75, COTTAGE_UPGRADE_COST=150;  // shack->hut ; hut->cottage (cottage needs Chapter Two)
-  const HOUSE_TIERS=[                                    // a house grows: shack -> hut -> cottage
-    {name:'Shack',   cap:2, build:1},                    // raised in 1 day
-    {name:'Hut',     cap:3, build:2},                    // upgraded in 2 days
-    {name:'Cottage', cap:4, build:3},                    // upgraded in 3 days (Chapter Two)
+  const HOUSE_COST=150, MAX_HOUSES=7;                    
+  const HUT_UPGRADE_COST=75, COTTAGE_UPGRADE_COST=150;  
+  const HOUSE_TIERS=[                                    
+    {name:'Shack',   cap:2, build:1},                    
+    {name:'Hut',     cap:3, build:2},                    
+    {name:'Cottage', cap:4, build:3},                    
   ];
-  const COLLEGE_COST=500, COLLEGE_UNLOCK=5, COLLEGE_BUILD_DAYS=5;  // College takes 5 days to raise
-  const NONRES_BUILD_DAYS=5;                             // shop / farm / school build time (they start pre-built)
-  const CH2_UNLOCK_DAY=20;                               // Chapter Two unlocks after 20 days
-  const START_TREASURY=5000, START_GOODS=15, GROW_TARGET=14;  // ₹5,000 district-office grant
+  
+  // NEW MECHANICS CONSTANTS
+  const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_DAYS=5; 
+  const COLLEGE_TEACHER_PAY=50, COLLEGE_STAFF_PAY=15;
+  const FARM_UPGRADES = {
+    tractor:  { name:'Tractor',   cost:500,  out:4 },
+    harvester:{ name:'Harvester', cost:1000, out:8 },
+    combiner: { name:'Combiner',  cost:1200, out:12 }
+  };
+  
+  const NONRES_BUILD_DAYS=5;                             
+  const CH2_UNLOCK_DAY=20;                               
+  const START_TREASURY=5000, START_GOODS=15, GROW_TARGET=14;  
 
   const B = {
     farm   :{name:'Farm', role:'farm', sub:'Harvests grain', cx:140, gy:250, w:124, h:88, color:'#5c8a4e', cap:6},
-    school :{name:'School', role:'school', sub:'Teaches to Intermediate', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
+    school :{name:'School', role:'school', sub:'Teaches to Basic', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
     shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
-    college:{name:'Community College', role:'college', sub:'Teaches Advanced & beyond', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:4, locked:true},
+    college:{name:'Community College', role:'college', sub:'Teaches to Intermediate', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:20, locked:true},
   };
   const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] }; 
   const ICON={
@@ -407,6 +416,7 @@
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], collegeBuild:0,
       unlocked:{college:false}, built:{college:false}, godownUnlocked:false, shownCh2:false,
+      farmUpgrades:{tractor:false, harvester:false, combiner:false},
       daysSinceCensus:0, maxPop:10, nextId:0,
       people:[], today:{indirect:0, income:0},
       smoke:[], spark:[], rupees:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
@@ -430,7 +440,7 @@
   function idle(){return S.people.filter(p=>p.role==='idle');}
   function roleCount(r){return S.people.filter(p=>p.role===r).length;}
   function roleList(r){return S.people.filter(p=>p.role===r);}
-  function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }   // tier -1 = bare plot under construction
+  function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }   
   function housingCap(){ return S.houses.reduce((s,h)=>s+houseCap(h),0); }
   function homeless(){return Math.max(0,S.people.length-housingCap());}
   function reassignHomes(){
@@ -449,21 +459,31 @@
   function capacityOf(role){
     if(role==='teacher') return TEACH_MAX;
     if(role==='school'){ const t=roleCount('teacher'); return t>=TEACH_MIN ? t*STUDENTS_PER_TEACHER : 0; }
+    if(role==='college_teacher') return 5;
+    if(role==='college_staff') return 3;
+    if(role==='college') { return (roleCount('college_teacher')===5 && roleCount('college_staff')===3) ? B.college.cap : 0; }
+    if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
     return B[role]?B[role].cap:0;
   }
 
   function assign(role){
-    if(role==='college' && !S.built.college) return;
+    if((role==='college'||role==='college_teacher'||role==='college_staff') && !S.built.college) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
-    if(role==='school') cand=cand.filter(p=>p.edu<2);
+    
+    if(role==='school') cand=cand.filter(p=>p.edu===0);
     else if(role==='teacher') cand=cand.filter(p=>p.edu===1);
-    else if(role==='college') cand=cand.filter(p=>p.edu>=2 && p.edu<4);
+    else if(role==='college_teacher') cand=cand.filter(p=>p.edu===1);
+    else if(role==='college_staff') cand=cand.filter(p=>p.edu===0);
+    else if(role==='college') cand=cand.filter(p=>p.edu===1);
+    else if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) cand=cand.filter(p=>p.edu===2);
+    
     if(!cand.length) return;
-    cand.sort((a,b)=> (role==='school'||role==='college') ? a.edu-b.edu : b.edu-a.edu);
+    cand.sort((a,b)=> a.edu-b.edu);
     cand[0].role=role;
     renderCards();
   }
+  
   function unassign(role){
     const list=roleList(role);
     if(!list.length) return;
@@ -484,7 +504,7 @@
     renderCards();
   }
 
-  function upgradeHouse(toTier, idx){   // shack->hut (toTier 1) or hut->cottage (toTier 2)
+  function upgradeHouse(toTier, idx){   
     if(toTier===2 && !S.godownUnlocked) return;
     const cost = toTier===1 ? HUT_UPGRADE_COST : COTTAGE_UPGRADE_COST;
     if(S.treasury<cost) return;
@@ -517,8 +537,15 @@
   function rates(){
     let prod=0, fTax=0, sTax=0, tTax=0;
     
-    roleList('farm').forEach(p=>{
-      prod += FARM_OUT * EDU_MULT[p.edu] * getHomelessMultiplier(p);
+    const allFarmers = [...roleList('farm'), ...roleList('tractor_driver'), ...roleList('harvester_driver'), ...roleList('combiner_driver')];
+
+    allFarmers.forEach(p=>{
+      let baseOut = FARM_OUT;
+      if (p.role === 'tractor_driver') baseOut = FARM_UPGRADES.tractor.out;
+      if (p.role === 'harvester_driver') baseOut = FARM_UPGRADES.harvester.out;
+      if (p.role === 'combiner_driver') baseOut = FARM_UPGRADES.combiner.out;
+      
+      prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p);
     });
     
     let sCap=0;
@@ -550,17 +577,20 @@
     const indirect=taxedSales*retailPrice*INDIRECT_TAX;
     const spending=consumed*retailPrice;
 
-    // shopkeepers earn only from retail markup; farmers earn via wholesale purchases
     const farmShopRev = taxedSales * price;
     const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
     const totalFarmRev = farmShopRev + farmGovRev;
     const totalShopRev = taxedSales * price * SHOP_MARKUP;
-    const totalTeachRev = roleCount('teacher') * 15;
+    
+    let tcRev = roleCount('teacher') * 15;
+    let colTeachRev = roleCount('college_teacher') * COLLEGE_TEACHER_PAY;
+    let colStaffRev = roleCount('college_staff') * COLLEGE_STAFF_PAY;
+    const totalTeachRev = tcRev + colTeachRev + colStaffRev;
 
     let farmSumM = 0; 
-    roleList('farm').forEach(p => farmSumM += EDU_MULT[p.edu]);
+    allFarmers.forEach(p => farmSumM += EDU_MULT[p.edu]);
     if(farmSumM > 0) {
-      roleList('farm').forEach(p => {
+      allFarmers.forEach(p => {
         const share = totalFarmRev * (EDU_MULT[p.edu] / farmSumM);
         fTax += share * INCOME_TAX[p.edu];
       });
@@ -575,9 +605,9 @@
       });
     }
 
-    roleList('teacher').forEach(p => {
-      tTax += 15 * INCOME_TAX[p.edu];
-    });
+    roleList('teacher').forEach(p => tTax += 15 * INCOME_TAX[p.edu]);
+    roleList('college_teacher').forEach(p => tTax += COLLEGE_TEACHER_PAY * INCOME_TAX[p.edu]);
+    roleList('college_staff').forEach(p => tTax += COLLEGE_STAFF_PAY * INCOME_TAX[p.edu]);
 
     const incomeTax = fTax + sTax + tTax;
     const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
@@ -602,7 +632,6 @@
 
     S.villagerCash += r.netWages*frac;  if(S.villagerCash<0) S.villagerCash=0;
 
-    // teachers get paid their base wage directly out of public treasury funds
     S.treasury -= r.totalTeachRev * frac;
 
     for(const p of S.people){
@@ -647,7 +676,6 @@
       S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
       S.today={indirect:0,income:0};
 
-      // advance construction (one day per rollover)
       let finished=false;
       S.houses.forEach(h=>{ if(h.build>0){ h.build--; if(h.build<=0){ h.tier=h.pendingTier; finished=true; } } });
       if(S.collegeBuild>0){ S.collegeBuild--; if(S.collegeBuild<=0){ S.built.college=true; B.college.locked=false; toast('🎓 The <span class="g">College</span> opens its doors'); } }
@@ -671,11 +699,22 @@
     let grew=0;
     const teachers=roleCount('teacher');
     if(teachers>=TEACH_MIN){
-      roleList('school').forEach(p=>{ if(p.edu<2){ p.edu++; grew++; } if(p.edu>=2){ p.role='idle'; } });
+      roleList('school').forEach(p=>{ if(p.edu===0){ p.edu=1; grew++; } p.role='idle'; });
     } else if(roleCount('school')>0){
       toast('⚠ School idle — needs <span class="g">'+TEACH_MIN+'</span> teachers to hold class');
     }
-    roleList('college').forEach(p=>{ if(p.edu<4){ p.edu++; grew++; } if(p.edu>=4){ p.role='idle'; } });
+    
+    if(S.built.college){
+      if(roleCount('college_teacher')===5 && roleCount('college_staff')===3){
+        roleList('college').forEach(p=>{
+          if(p.edu===1){ p.edu=2; grew++; }
+          p.role='idle';
+        });
+      } else if(roleCount('college')>0){
+        toast('⚠ College idle — needs 5 Basic Teachers and 3 Uneducated Staff');
+      }
+    }
+    
     if(grew) toast('Year '+S.year+' — <span class="g">'+grew+'</span> graduated a level');
     renderCards();
   }
@@ -709,8 +748,8 @@
       }
     }
     if(!S.unlocked.college){
-      const inter=S.people.filter(p=>p.edu>=2).length;
-      if(inter>=COLLEGE_UNLOCK){
+      const basicOrHigher = S.people.filter(p=>p.edu>=1).length;
+      if(S.people.length>0 && (basicOrHigher / S.people.length) >= COLLEGE_UNLOCK_FRAC){
         S.unlocked.college=true;
         toast('🎓 College available to build — <span class="g">'+money(COLLEGE_COST)+'</span>');
         renderCards(); renderObjectives();
@@ -825,7 +864,6 @@
     for(let i=0; i<MAX_HOUSES; i++){
       if(i < S.houses.length) drawHouse(i, night);
       else {
-        // empty plot hint
         const cx=58+i*70, gy=434;
         ctx.strokeStyle='rgba(120,90,50,0.4)'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
         rr(cx-27, gy-40, 54, 40, 4); ctx.stroke(); ctx.setLineDash([]);
@@ -1027,13 +1065,12 @@
     const targetTier = hDat.tier === -1 ? 0 : hDat.pendingTier || hDat.tier;
     const flat = targetTier%3===2;
     
-    // under-construction scaffolding indicator
     if (hDat.build > 0 || hDat.tier === -1) {
        ctx.strokeStyle='rgba(150,120,60,0.6)'; ctx.lineWidth=2;
        ctx.beginPath(); ctx.moveTo(cx-w/2, gy); ctx.lineTo(cx-w/2, gy-h*0.8);
        ctx.moveTo(cx+w/2, gy); ctx.lineTo(cx+w/2, gy-h*0.8);
        ctx.moveTo(cx-w/2, gy-h*0.4); ctx.lineTo(cx+w/2, gy-h*0.4); ctx.stroke();
-       if (hDat.tier === -1) return; // pure plot, scaffolding only
+       if (hDat.tier === -1) return; 
     }
 
     ctx.fillStyle='rgba(30,22,10,0.18)'; ctx.beginPath(); ctx.ellipse(cx,gy+4,w*0.56,6,0,0,7); ctx.fill();
@@ -1058,10 +1095,10 @@
   }
 
   /* ---- daily schedule (progress 0..1 maps to midnight..midnight; noon = 0.5) ---- */
-  const TEACH_START=8/24, TEACH_END=16/24;       // teachers + their students: 8am – 4pm
-  const SHOP_AM_START=7/24, SHOP_AM_END=12/24;   // shop morning shift:        7am – 12pm
-  const SHOP_PM_START=16/24, SHOP_PM_END=21/24;  // shop evening shift:        4pm – 9pm
-  const FARM_BLOCKS=12;                          // farmers flip work/rest at random through the day
+  const TEACH_START=8/24, TEACH_END=16/24;       
+  const SHOP_AM_START=7/24, SHOP_AM_END=12/24;   
+  const SHOP_PM_START=16/24, SHOP_PM_END=21/24;  
+  const FARM_BLOCKS=12;                          
 
   function hash01(n){ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
   function teacherWorking(){ return S.progress>=TEACH_START && S.progress<TEACH_END; }
@@ -1071,18 +1108,16 @@
   function shopOpen(){ return shopWorking(); }
   function atShop(p){ if(!shopOpen()) return false; return Math.abs(p.x-ZONE.shop[0])<48 && Math.abs(p.y-ZONE.shop[1])<42; }
 
-  // a worker's on-shift destination (lightly scattered), or null when off duty
   function workTarget(p){
-    if(p.role==='farm')    return farmerWorking(p) ? [ZONE.farm[0]+p.ox,    ZONE.farm[1]+p.oy]    : null;
+    if(p.role==='farm' || p.role.endsWith('_driver'))    return farmerWorking(p) ? [ZONE.farm[0]+p.ox,    ZONE.farm[1]+p.oy]    : null;
     if(p.role==='shop')    return shopWorking()    ? [ZONE.shop[0]+p.ox,    ZONE.shop[1]+p.oy]    : null;
     if(p.role==='teacher') return teacherWorking() ? [ZONE.teacher[0]+p.ox, ZONE.teacher[1]+p.oy] : null;
     if(p.role==='school')  return teacherWorking() ? [ZONE.school[0]+p.ox,  ZONE.school[1]+p.oy]  : null;
-    if(p.role==='college') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
-    return null; // idle villagers are never on shift
+    if(p.role==='college' || p.role==='college_teacher' || p.role==='college_staff') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
+    return null; 
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
 
-  // somewhere to amble to: now and then gather at the well to socialise, else a short stroll near where they are
   function pickRoam(p){
     if(Math.random()<0.2) return [388+rnd(-30,30), 360+rnd(-16,16)];
     const a=Math.random()*Math.PI*2, r=rnd(18,70);
@@ -1092,23 +1127,23 @@
     return [x,y];
   }
   function targetFor(p){
-    if(p.needFood && shopOpen() && roleCount('shop')>0) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; // hungry -> Shop while it trades
+    if(p.needFood && shopOpen() && roleCount('shop')>0) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
     const w=workTarget(p);
-    if(w) return w;            // on shift -> at work
-    return [p.wx, p.wy];       // off shift -> wandering / socialising
+    if(w) return w;            
+    return [p.wx, p.wy];       
   }
   function updatePeople(){
     S.people.forEach(p=>{
       if(p.wx===undefined){ p.wx=p.x; p.wy=p.y; p.wt=0; }
-      if(p._spd===undefined) p._spd=1.0+Math.random()*0.7;   // gentle, varied walking pace (px/frame)
+      if(p._spd===undefined) p._spd=1.0+Math.random()*0.7;   
       const hungryBound = p.needFood && shopOpen() && roleCount('shop')>0;
-      if(!hungryBound && workTarget(p)===null){              // currently roaming
+      if(!hungryBound && workTarget(p)===null){              
         p.wt=(p.wt||0)-1;
         const dx=p.wx-p.x, dy=p.wy-p.y;
         if(p.wt<=0 || (dx*dx+dy*dy)<25){ const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1]; p.wt=160+Math.floor(Math.random()*260); }
       }
       const t=targetFor(p);
-      const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);   // capped step so nobody darts across the map
+      const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);   
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
     });
   }
@@ -1183,10 +1218,20 @@
       elTitle.innerHTML = B[key].name + ' <span class="ln"></span>';
       
       if (key === 'farm') {
+        let upgHtml = '';
+        ['tractor','harvester','combiner'].forEach(upg => {
+           const u = FARM_UPGRADES[upg];
+           if(S.farmUpgrades[upg]) {
+              upgHtml += '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:9px">'+u.name+' (Driver · Intermediate)</div>' + stepper(upg+'_driver');
+           } else {
+              upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+(S.treasury<u.cost?'disabled':'')+'>Buy '+u.name+' · '+money(u.cost)+'</button>';
+           }
+        });
+
         html += card('farm', B.farm.color, B.farm.name, B.farm.sub,
           roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
           'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
-          stepper('farm'));
+          stepper('farm') + upgHtml);
       } else if (key === 'shop') {
         const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
         html += card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
@@ -1203,8 +1248,8 @@
           '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
       } else if (key === 'college') {
         if(!S.unlocked.college){
-           const inter=S.people.filter(p=>p.edu>=2).length;
-           html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate', Math.min(1,inter/COLLEGE_UNLOCK), inter+' / '+COLLEGE_UNLOCK+' intermediate');
+           const inter=S.people.filter(p=>p.edu>=1).length;
+           html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
         } else if(S.collegeBuild>0){
            const pct=Math.round((COLLEGE_BUILD_DAYS-S.collegeBuild)/COLLEGE_BUILD_DAYS*100);
            html+=card('college',B.college.color,'College','Under construction','—',
@@ -1212,14 +1257,21 @@
              '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
         } else if(!S.built.college){
            html+=card('college',B.college.color,'College',B.college.sub,'—',
-             'Milestone reached! Construct the College to train<br>Advanced and Highly Skilled workers ('+COLLEGE_BUILD_DAYS+' days to build).',
+             'Milestone reached! Construct the College to train<br>Basic workers to Intermediate ('+COLLEGE_BUILD_DAYS+' days to build).',
              '<button class="buildbtn" data-act="buildcollege" '+(S.treasury<COLLEGE_COST?'disabled':'')+'>'+(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_DAYS+'d')+'</button>');
         } else {
            const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
+           const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
+           const collegeOpen = (ctc===5 && cst===3);
+           
            html+=card('college',B.college.color,'College',B.college.sub,
              ce+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
-             (ce?'<b>'+ce+'</b> enrolled · +1 level at year-end<br>Next graduation in <b>'+nIn+'d</b>':'Enrol Intermediate/Advanced workers'),
-             stepper('college',true));
+             'Teachers <b>'+ctc+'</b>/5 (Basic) · Staff <b>'+cst+'</b>/3 (Unedu)<br>'+
+             (collegeOpen ? (ce?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol basic students') : '<b style="color:var(--bad)">closed</b> — requires full staff to run'),
+             '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
+             '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
+             '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
+           );
         }
       }
     }
@@ -1256,10 +1308,21 @@
         '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
       );
     }
+    
+    let upgHtml = '';
+    ['tractor','harvester','combiner'].forEach(upg => {
+       const u = FARM_UPGRADES[upg];
+       if(S.farmUpgrades[upg]) {
+          upgHtml += '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:9px">'+u.name+' (Driver · Intermediate)</div>' + stepper(upg+'_driver');
+       } else {
+          upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+(S.treasury<u.cost?'disabled':'')+'>Buy '+u.name+' · '+money(u.cost)+'</button>';
+       }
+    });
+
     html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
       roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
       'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
-      stepper('farm'));
+      stepper('farm') + upgHtml);
 
     const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
     html+=card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
@@ -1276,8 +1339,8 @@
       '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
 
     if(!S.unlocked.college){
-      const inter=S.people.filter(p=>p.edu>=2).length;
-      html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Get <b>'+COLLEGE_UNLOCK+'</b> workers to Intermediate', Math.min(1,inter/COLLEGE_UNLOCK), inter+' / '+COLLEGE_UNLOCK+' intermediate');
+      const inter=S.people.filter(p=>p.edu>=1).length;
+      html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
     } else if(S.collegeBuild>0){
       const pct=Math.round((COLLEGE_BUILD_DAYS-S.collegeBuild)/COLLEGE_BUILD_DAYS*100);
       html+=card('college',B.college.color,'College','Under construction','—',
@@ -1285,14 +1348,21 @@
         '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
     } else if(!S.built.college){
       html+=card('college',B.college.color,'College',B.college.sub,'—',
-        'Milestone reached! Construct the College to train<br>Advanced and Highly Skilled workers ('+COLLEGE_BUILD_DAYS+' days to build).',
+        'Milestone reached! Construct the College to train<br>Basic workers to Intermediate ('+COLLEGE_BUILD_DAYS+' days to build).',
         '<button class="buildbtn" data-act="buildcollege" '+(S.treasury<COLLEGE_COST?'disabled':'')+'>'+(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_DAYS+'d')+'</button>');
     } else {
       const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
+      const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
+      const collegeOpen = (ctc===5 && cst===3);
+      
       html+=card('college',B.college.color,'College',B.college.sub,
         ce+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
-        (ce?'<b>'+ce+'</b> enrolled · +1 level at year-end<br>Next graduation in <b>'+nIn+'d</b>':'Enrol Intermediate/Advanced workers'),
-        stepper('college',true));
+        'Teachers <b>'+ctc+'</b>/5 (Basic) · Staff <b>'+cst+'</b>/3 (Unedu)<br>'+
+        (collegeOpen ? (ce?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol basic students') : '<b style="color:var(--bad)">closed</b> — requires full staff to run'),
+        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
+        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
+        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
+      );
     }
 
     c.innerHTML=html;
@@ -1316,9 +1386,12 @@
     const cur=roleCount(role), cap=capacityOf(role);
     let canAdd=cur<cap;
     if(canAdd){
-      if(role==='school') canAdd=idle().some(p=>p.edu<2);
+      if(role==='school') canAdd=idle().some(p=>p.edu===0);
       else if(role==='teacher') canAdd=idle().some(p=>p.edu===1);
-      else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu>=2&&p.edu<4);
+      else if(role==='college_teacher') canAdd=idle().some(p=>p.edu===1);
+      else if(role==='college_staff') canAdd=idle().some(p=>p.edu===0);
+      else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu===1);
+      else if(role.endsWith('_driver')) canAdd=idle().some(p=>p.edu===2);
       else canAdd=idle().length>0;
     }
     return '<div class="ctrl"><button class="pm" data-act="rem" data-b="'+role+'" '+(cur<=0?'disabled':'')+'>−</button>'
@@ -1334,7 +1407,6 @@
     if(pop>S.maxPop) S.maxPop=pop;
     el('h-treasury').textContent=money(S.treasury);
     
-    // calculate actual net flow by subtracting teacher overhead from gross taxes
     const netFlow = r.taxTotal - r.totalTeachRev;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
     el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
@@ -1469,6 +1541,16 @@
     else if(act==='upcottage') upgradeHouse(2);
     else if(act==='upcottage_idx') upgradeHouse(2, idx !== undefined ? parseInt(idx) : undefined);
     else if(act==='buildcollege') buildCollege();
+    else if(act==='buy_upg') {
+       const upg = b.dataset.upg;
+       if (!S.farmUpgrades[upg] && S.treasury >= FARM_UPGRADES[upg].cost) {
+          S.treasury -= FARM_UPGRADES[upg].cost;
+          S.farmUpgrades[upg] = true;
+          toast(`🚜 ${FARM_UPGRADES[upg].name} purchased!`);
+          spawnRupee(B.farm.cx, B.farm.gy - B.farm.h);
+          renderCards();
+       }
+    }
     else if(act==='fdec') { S.flowO--; renderCards(); }
     else if(act==='finc') { S.flowO++; renderCards(); }
   });
