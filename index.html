@@ -343,6 +343,22 @@
   
   <div class="ribbon">
     <div class="hud">
+      <div class="chip" id="chip-treasury"><span class="lab">Treasury</span><span class="val" id="h-treasury">₹300</span><span class="sub pos" id="h-net">+₹0/day</span></div>
+      <div class="sep"></div>
+      <div class="chip" id="chip-goods"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
+      <div class="chip" id="chip-people"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
+      <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
+      <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
+      <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
+      <div class="hud-right">
+        <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
+          <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
+        <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
+        <button class="sbtn on" data-spd="1" id="spd1">1×</button>
+        <button class="sbtn" data-spd="2" id="spd2">2×</button>
+        <button class="sbtn" data-spd="4" id="spd4">4×</button>
+      </div>
+    </div>
     <div class="ribbon-tools">
       <button class="r-btn" id="btn-toggle-ledger">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -352,8 +368,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         Build
       </button>
-    </div> 
-  </div>
+    </div> 
+  </div>
 </div>
 <script>
 (function(){
@@ -1809,14 +1825,15 @@ const unl = unlocksAllowed();
   el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
 
   document.addEventListener('pointerdown', e => {
-    if (e.target && e.target.closest && e.target.closest('.ribbon')) return;
-    if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
-    if (e.target && e.target.id === 'town') return; 
-    popups.forEach(id => {
-      const node = el(id);
-      if(node) node.classList.remove('active');
-    });
-  });
+    if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
+    if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
+    if (e.target && e.target.id === 'town') return; 
+    popups.forEach(id => {
+      const node = el(id);
+      if(node) node.classList.remove('active');
+    });
+    el('sub-ribbon-build').classList.remove('active');
+  });
 
   document.addEventListener('keydown', e=>{
     if(e.code==='Space' || e.key===' '){
