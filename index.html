@@ -281,6 +281,58 @@
         <button class="play" id="ch2Btn">Take control</button>
       </div>
     </div>
+    <div class="ov hidden" id="chapter3">
+      <div class="modal">
+        <div class="eyebrow">Book One · The Basics</div>
+        <div class="chapter-title">Chapter Three<span>Institutional Growth</span></div>
+        <div class="anim-stage">
+          <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
+            <line x1="10" y1="128" x2="270" y2="128" stroke="#a98f63" stroke-width="1.5"/>
+            <g>
+              <rect x="20" y="96" width="40" height="28" rx="2" fill="#bd9a6d"/>
+              <polygon points="16,96 40,80 64,96" fill="#9a3b2e"/>
+              <rect x="34" y="108" width="12" height="16" fill="#5b4326"/>
+              <text x="40" y="142" fill="#6d5b46" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">Saver</text>
+            </g>
+            <g>
+              <rect x="112" y="88" width="56" height="36" rx="2" fill="#dcd8cf"/>
+              <polygon points="106,88 140,72 174,88" fill="#9a958c"/>
+              <rect x="120" y="96" width="6" height="28" fill="#b3aea4"/>
+              <rect x="134" y="96" width="6" height="28" fill="#b3aea4"/>
+              <rect x="148" y="96" width="6" height="28" fill="#b3aea4"/>
+              <text x="140" y="86" fill="#6b7a8f" font-family="Outfit,sans-serif" font-size="11" font-weight="700" text-anchor="middle">₹</text>
+              <text x="140" y="142" fill="#6d5b46" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">Bank</text>
+            </g>
+            <g>
+              <rect x="222" y="92" width="40" height="32" rx="3" fill="#cdb083"/>
+              <rect x="218" y="86" width="48" height="8" fill="#9a7b3a"/>
+              <circle cx="242" cy="108" r="9" fill="#b1936a" stroke="#8a6a3a" stroke-width="1.5"/>
+              <circle cx="242" cy="108" r="3" fill="#6d5b46"/>
+              <text x="242" y="142" fill="#6d5b46" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">Treasury</text>
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" values="0 0;0 0;100 0;200 0;200 0;200 0;100 0;0 0;0 0" keyTimes="0;0.05;0.28;0.45;0.5;0.55;0.72;0.95;1" dur="6s" repeatCount="indefinite"/>
+              <circle cx="40" cy="108" r="6" fill="#d4a13c" stroke="#fff" stroke-width="1.5"><animate attributeName="opacity" values="0;1;1;1;1;1;1;1;0" keyTimes="0;0.05;0.28;0.45;0.5;0.55;0.72;0.95;1" dur="6s" repeatCount="indefinite"/></circle>
+            </g>
+            <g>
+              <rect x="92" y="14" width="96" height="24" rx="7"><animate attributeName="fill" values="#5c8a4e;#5c8a4e;#bd5a3f;#bd5a3f;#5c8a4e" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></rect>
+              <text x="140" y="30" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">deposit &rarr;<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></text>
+              <text x="140" y="30" fill="#fff" font-family="Outfit,sans-serif" font-size="10" font-weight="700" text-anchor="middle">&larr; repay +3%<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.45;0.55;0.95;1" dur="6s" repeatCount="indefinite"/></text>
+            </g>
+          </svg>
+          <div class="anim-cap">Good times &rarr; savings flow to your treasury. Withdrawals return with 3% interest.</div>
+        </div>
+        <p class="lead">With <b>75% of Tawapur</b> now educated, the <b>College</b> can be built — and new institutions open to you, Sarpanchji. Chief among them: a village <b>Bank</b>.</p>
+        <ul>
+          <li>The <b>Bank</b> (₹2,000) lets citizens deposit <b>excess cash</b> in good times. Those deposits flow straight into your <b>treasury</b> to spend.</li>
+          <li>Deposits are <b>locked for one year</b>. When hard times come, citizens withdraw — and you must repay from the treasury with <b>3% interest</b>.</li>
+          <li>A <b>Billing Counter</b> (₹100) adds <b>2 more shopkeepers</b> to the Shop, easing queues and lifting tax throughput.</li>
+          <li>Both the <b>Bank</b> and the <b>Billing Counter</b> are managed from the <b>Service</b> panel.</li>
+        </ul>
+        <p style="margin-bottom:16px">Beware over-leveraging: if you spend deposits you cannot repay, a <b>run on the vault</b> can drain your treasury when withdrawals come due.</p>
+        <button class="play" id="ch3Btn">Lay the foundations</button>
+      </div>
+    </div>
     
     <div class="ui-popup" id="pop-build">
       <h3 class="section-h">Buildings &amp; assignments <span class="ln"></span></h3>
@@ -414,7 +466,11 @@
   const SHOP_COST=300, SHOP_BUILD_UNITS=15;
 
   const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_UNITS=150;
-  const COLLEGE_TEACHER_PAY=50, COLLEGE_STAFF_PAY=15;
+  const SCHOOL_TEACHER_PAY=8;
+  const COLLEGE_TEACHER_PAY=12, COLLEGE_STAFF_PAY=4;
+  const BANK_COST=2000, BANK_BUILD_UNITS=40;
+  const BANK_DEPOSIT_RATE=0.15, BANK_BUFFER_PER=30, BANK_INTEREST=0.03, BANK_WITHDRAW_RATE=0.5;
+  const BILLING_COST=100, BILLING_KEEPERS=2;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
     harvester:{ name:'Harvester', cost:1000, out:8 },
@@ -430,6 +486,7 @@
     school :{name:'School', role:'school', sub:'Teaches to Basic', cx:380, gy:250, w:112, h:82, color:'#d4a13c', cap:4},
     shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
     college:{name:'Community College', role:'college', sub:'Teaches to Intermediate', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:20},
+    bank   :{name:'Bank', role:'bank', sub:'Holds citizen savings', cx:263, gy:250, w:104, h:80, color:'#6b7a8f', cap:0},
   };
   const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] }; 
   const ICON={
@@ -452,9 +509,10 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0,
-      built:{college:false, school:false, shop:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0,
+      built:{college:false, school:false, shop:false, bank:false},
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
+      ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
       allowImmigration:true, activeBuildTab:'residential',
       daysSinceCensus:0, maxPop:10, nextId:0,
@@ -503,7 +561,7 @@
   function capacityOf(role){
     if(role==='teacher') return S.built.school ? TEACH_MAX : 0;
     if(role==='school') return S.built.school ? (roleCount('teacher')>=TEACH_MIN ? roleCount('teacher')*STUDENTS_PER_TEACHER : 0) : 0;
-    if(role==='shop') return S.built.shop ? B.shop.cap : 0;
+    if(role==='shop') return S.built.shop ? (B.shop.cap + (S.shopBillingCounter ? BILLING_KEEPERS : 0)) : 0;
     if(role==='college_teacher') return S.built.college ? 5 : 0;
     if(role==='college_staff') return S.built.college ? 3 : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
@@ -635,7 +693,7 @@
     const totalFarmRev = farmShopRev + farmGovRev;
     const totalShopRev = taxedSales * price * SHOP_MARKUP;
     
-    let tcRev = roleCount('teacher') * 15;
+    let tcRev = roleCount('teacher') * SCHOOL_TEACHER_PAY;
     let colTeachRev = roleCount('college_teacher') * COLLEGE_TEACHER_PAY;
     let colStaffRev = roleCount('college_staff') * COLLEGE_STAFF_PAY;
     const totalTeachRev = tcRev + colTeachRev + colStaffRev;
@@ -658,7 +716,7 @@
       });
     }
 
-    roleList('teacher').forEach(p => tTax += 15 * INCOME_TAX[p.edu]);
+    roleList('teacher').forEach(p => tTax += SCHOOL_TEACHER_PAY * INCOME_TAX[p.edu]);
     roleList('college_teacher').forEach(p => tTax += COLLEGE_TEACHER_PAY * INCOME_TAX[p.edu]);
     roleList('college_staff').forEach(p => tTax += COLLEGE_STAFF_PAY * INCOME_TAX[p.edu]);
 
@@ -728,7 +786,49 @@
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
     });
-    
+
+    if(S.built.bank){
+      const bpop=S.people.length;
+      const goodTimes = r.avgMorale>=65 && S.goods>=bpop;
+      const badTimes = r.avgMorale<45 || S.goods<bpop;
+      if(goodTimes){
+        const excess = S.villagerCash - bpop*BANK_BUFFER_PER;
+        if(excess>0){
+          const dep = excess*BANK_DEPOSIT_RATE*frac;
+          if(dep>0){
+            S.villagerCash -= dep;
+            S.treasury += dep;
+            const today = totalDaysElapsed();
+            const last = S.bank.deposits[S.bank.deposits.length-1];
+            if(last && last.day===today) last.amt += dep;
+            else S.bank.deposits.push({amt:dep, day:today});
+          }
+        }
+      } else if(badTimes){
+        const matured = bankMatured();
+        if(matured>0){
+          let want = matured*BANK_WITHDRAW_RATE*frac;
+          const maxPayable = S.treasury/(1+BANK_INTEREST);
+          if(want>maxPayable) want=maxPayable;
+          if(want>0){
+            const payout = want*(1+BANK_INTEREST);
+            S.treasury -= payout; if(S.treasury<0) S.treasury=0;
+            S.villagerCash += payout;
+            let remaining = want;
+            const now = totalDaysElapsed();
+            for(const d of S.bank.deposits){
+              if(remaining<=0) break;
+              if(now-d.day>=YEAR_DAYS){
+                const take = Math.min(d.amt, remaining);
+                d.amt -= take; remaining -= take;
+              }
+            }
+            S.bank.deposits = S.bank.deposits.filter(d=>d.amt>0.0001);
+          }
+        }
+      }
+    }
+
     const slots=r.keepers*SERVE_PER_KEEPER;
     if(slots>0){
       let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
@@ -778,6 +878,9 @@
       } else if (S.collegeBuild > 0) {
         S.collegeBuild -= activeProgress;
         if (S.collegeBuild <= 0) { S.collegeBuild = 0; S.built.college = true; toast('🎓 The <span class="g">College</span> opens its doors'); renderCards(); }
+      } else if (S.bankBuild > 0) {
+        S.bankBuild -= activeProgress;
+        if (S.bankBuild <= 0) { S.bankBuild = 0; S.built.bank = true; toast('🏦 The <span class="g">Bank</span> opens its vault'); renderCards(); }
       }
     }
 
@@ -850,6 +953,9 @@
 
   function prosperity(){ return S.villagerCash + S.houses.length*HOUSE_COST; }
 
+  function bankOwed(){ return S.bank.deposits.reduce((s,d)=>s+d.amt,0); }
+  function bankMatured(){ const now=totalDaysElapsed(); return S.bank.deposits.reduce((s,d)=>s+(now-d.day>=YEAR_DAYS?d.amt:0),0); }
+
   function checkUnlocks(){
     if(!S.godownUnlocked){
       const dayCount=(S.year-1)*YEAR_DAYS+S.day;
@@ -863,7 +969,8 @@
       const basicOrHigher = S.people.filter(p=>p.edu>=1).length;
       if(S.people.length>0 && (basicOrHigher / S.people.length) >= COLLEGE_UNLOCK_FRAC){
         S.unlocked.college=true;
-        toast('🎓 College available to build — <span class="g">'+money(COLLEGE_COST)+'</span>');
+        S.ch3Unlocked=true; S.shownCh3=true;
+        setSpeed(0); el('chapter3').classList.remove('hidden');
         renderCards(); renderObjectives();
       }
     }
@@ -975,6 +1082,7 @@
     renderables.push({type: 'well', y: 360});
     for(let i=0; i<MAX_HOUSES; i++) renderables.push({type: 'house', idx: i, y: 434});
     ['farm','school','shop','college'].forEach(k => renderables.push({type: 'building', key: k, y: B[k].gy}));
+    if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) renderables.push({type:'building', key:'bank', y:B.bank.gy});
     renderables.push({type: 'tree', x: 704, y: 338, scale: 1.05});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
     updatePeople();
@@ -1098,7 +1206,7 @@
   function drawBuilding(key,night,day){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h;
     const isBuilt = (key === 'farm') || S.built[key];
-    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0);
+    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0);
     
     const sdir=(S.progress-0.5)*-2;
     ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(b.cx+sdir*10,baseY+6,b.w*0.58,9,0,0,7); ctx.fill();
@@ -1124,6 +1232,7 @@
     if(key==='farm'){ wallTop='#b36b49'; wallBot='#945233'; wallEdge='#6e381f'; }
     else if(key==='school'){ wallTop='#eee4d2'; wallBot='#d9cbb2'; wallEdge='#b9a988'; }
     else if(key==='shop'){ wallTop='#cdb083'; wallBot='#b1936a'; wallEdge='#8f7351'; }
+    else if(key==='bank'){ wallTop='#dcd8cf'; wallBot='#bdb8ad'; wallEdge='#8f897d'; }
     else { wallTop='#c9b6cc'; wallBot='#a892ad'; wallEdge='#7d6783'; }
     const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,wallTop); wg.addColorStop(1,wallBot);
     ctx.fillStyle=wg; rr(x,topY+12,b.w,b.h-12,3); ctx.fill();
@@ -1178,7 +1287,7 @@
     } else if(key==='college'){
       ctx.fillStyle=shade(wallBot,0.85); rr(x-3,topY+4,b.w+6,14,3); ctx.fill(); ctx.fillStyle=shade(wallBot,0.7); ctx.fillRect(x-3,topY+4,b.w+6,4);
     } else {
-      const rc = key==='school' ? '#b05a34' : ROOFS[1];
+      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : ROOFS[1];
       ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.closePath(); ctx.fill();
       ctx.strokeStyle=shade(rc,0.78); ctx.lineWidth=1;
       for(let k2=2;k2<=5;k2++){ const ty=topY+16-(k2*((topY+16)-(topY-8))/6); const hw=((x+b.w+7)-(x-7))/2*(1-k2/6.5); ctx.beginPath(); ctx.moveTo(b.cx-hw,ty); ctx.lineTo(b.cx+hw,ty); ctx.stroke(); }
@@ -1196,7 +1305,16 @@
       ctx.fillStyle='#0a3a8a'; ctx.beginPath(); ctx.arc(b.cx+9,topY-24,1.2,0,7); ctx.fill();
     }
     if(key==='college'){ ctx.fillStyle=shade(wallBot,0.78); for(let i=0;i<4;i++) ctx.fillRect(x+14+i*((b.w-28)/3.3),topY+22,7,b.h-36); }
-    if(key !== 'farm'){
+    if(key==='bank'){
+      ctx.fillStyle=shade(wallBot,0.82); rr(x-3,baseY-6,b.w+6,6,2); ctx.fill();
+      ctx.fillStyle=shade(wallTop,1.04); rr(x+2,topY+14,b.w-4,9,2); ctx.fill();
+      for(let i=0;i<4;i++){ const colx=x+16+i*((b.w-32)/3);
+        ctx.fillStyle=shade(wallEdge,0.9); ctx.fillRect(colx,topY+24,8,baseY-topY-30);
+        ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fillRect(colx,topY+24,2,baseY-topY-30);
+        ctx.fillStyle='rgba(30,24,16,.16)'; ctx.fillRect(colx+6,topY+24,2,baseY-topY-30); }
+      ctx.fillStyle='#8a7a3a'; ctx.font='700 13px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('₹',b.cx,topY+5);
+    }
+    if(key !== 'farm' && key !== 'bank'){
       const wy=topY+30, cols=key==='college'?5:3;
       for(let i=0;i<cols;i++){
         const wx=x+18+i*((b.w-36)/(cols-1))-6;
@@ -1449,9 +1567,9 @@
         } else {
            const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
            html+=card('shop',B.shop.color,'Business',B.shop.sub,
-             keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
+             keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+capacityOf('shop')+'</small>',
              'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
-             stepper('shop'));
+             stepper('shop')+billingBtnHTML());
         }
       } else if (key === 'college') {
         if(!S.unlocked.college){
@@ -1479,11 +1597,43 @@
              '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
            );
         }
+      } else if (key === 'bank') {
+        elTitle.innerHTML = B.bank.name + ' <span class="ln"></span>';
+        html += bankCard(r);
       }
     }
     elCont.innerHTML = html;
   }
 
+  function billingBtnHTML(){
+    if(!S.ch3Unlocked) return '';
+    if(S.shopBillingCounter) return '<div class="stat" style="margin-top:8px"><i>Billing counter installed — +'+BILLING_KEEPERS+' shopkeeper slots.</i></div>';
+    return '<button class="buildbtn" data-act="buy_billing" '+(S.treasury<BILLING_COST?'disabled':'')+'>'+(S.treasury<BILLING_COST?'Need '+money(BILLING_COST):'Add Billing Counter · '+money(BILLING_COST)+' · +'+BILLING_KEEPERS+' keepers')+'</button>';
+  }
+  function bankCard(r){
+    if(!S.ch3Unlocked) return '';
+    if(S.bankBuild>0){
+      const pct=Math.round((BANK_BUILD_UNITS-S.bankBuild)/BANK_BUILD_UNITS*100);
+      return card('warehouse','#6b7a8f','Bank','Under construction','—',
+        'Construction underway — needs <b>'+Math.ceil(S.bankBuild)+'</b> units',
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+    }
+    if(!S.built.bank){
+      return card('warehouse','#6b7a8f','Bank',B.bank.sub,'—',
+        'Citizens deposit spare cash in good times — it flows to your treasury. Repay with <b>'+Math.round(BANK_INTEREST*100)+'%</b> interest on withdrawal (1-year lock).',
+        '<button class="buildbtn" data-act="buildbank" '+(S.treasury<BANK_COST?'disabled':'')+'>'+(S.treasury<BANK_COST?'Need '+money(BANK_COST):'Set up Bank · '+money(BANK_COST)+' · '+BANK_BUILD_UNITS+' units')+'</button>');
+    }
+    const owed=bankOwed(), matured=bankMatured(), bpop=S.people.length;
+    const good = r.avgMorale>=65 && S.goods>=bpop;
+    const bad = r.avgMorale<45 || S.goods<bpop;
+    const status = good ? '<b style="color:var(--good)">good times</b> — citizens depositing'
+      : bad ? '<b style="color:var(--bad)">hard times</b> — citizens withdrawing'
+      : '<b>stable</b> — no deposit flow';
+    return card('warehouse','#6b7a8f','Bank',B.bank.sub,
+      money(owed)+' held',
+      'Deposits owed <b>'+money(owed)+'</b> · matured <b>'+money(matured)+'</b><br>'+status+'<br><i style="color:var(--ink-faint)">Withdrawals repaid from treasury at +'+Math.round(BANK_INTEREST*100)+'% after 1 year.</i>',
+      '');
+  }
   function renderCards(){
     const r=rates(), c=el('cards'); let html='';
     const hl=homeless();
@@ -1573,9 +1723,9 @@
       } else {
          const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
          html+=card('shop',B.shop.color,'Business',B.shop.sub,
-           keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
+           keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+capacityOf('shop')+'</small>',
            'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
-           stepper('shop'));
+           stepper('shop')+billingBtnHTML());
       }
 
       if(!S.unlocked.college){
@@ -1604,6 +1754,8 @@
         );
       }
     }
+
+    if (S.activeBuildTab === 'service') html+=bankCard(r);
 
     c.innerHTML=html;
     renderBuildingInfo();
@@ -1716,6 +1868,7 @@
       + lrow('(+) Income Tax Revenue', '+' + money(r.incomeTax) + '/day', 'pos')
       + lrow('(+) Indirect Retail Tax', '+' + money(r.indirect) + '/day', 'pos')
       + lrow('(−) Teacher Salaries Base', '−' + money(r.totalTeachRev) + '/day', 'neg')
+      + (S.built.bank ? lrow('(!) Bank Deposits Owed', money(bankOwed()), 'neg') : '')
       + '<div class="row tot"><span class="k">Net Balance Flow</span><span class="v '+(netFlow >= 0 ? 'pos':'neg')+'">'+(netFlow >= 0 ? '+': '')+money(netFlow)+'/day</span></div>';
 
     el('hud-ledger-goods').innerHTML = 
@@ -1819,8 +1972,8 @@
 
   document.addEventListener('keydown', e=>{
     if(e.code==='Space' || e.key===' '){
-      const intro=el('intro'), ch2=el('chapter2');
-      if((intro && !intro.classList.contains('hidden')) || (ch2 && !ch2.classList.contains('hidden'))) return;
+      const intro=el('intro'), ch2=el('chapter2'), ch3=el('chapter3');
+      if((intro && !intro.classList.contains('hidden')) || (ch2 && !ch2.classList.contains('hidden')) || (ch3 && !ch3.classList.contains('hidden'))) return;
       e.preventDefault();
       togglePause();
     }
@@ -1839,7 +1992,6 @@
 
     const tabBtn = e.target.closest('[data-tab]');
     if(tabBtn) {
-       if(tabBtn.dataset.tab === 'service') return; // nonfunctional
        const tab = tabBtn.dataset.tab;
        const closeIt = el('pop-build').classList.contains('active') && S.activeBuildTab === tab;
        S.activeBuildTab = tab;
@@ -1894,12 +2046,29 @@
           renderCards();
        }
     }
+    else if(act==='buildbank') {
+       if(!S.built.bank && S.bankBuild<=0 && S.treasury>=BANK_COST) {
+          S.treasury-=BANK_COST; S.bankBuild=BANK_BUILD_UNITS;
+          toast('🏗 Bank construction begun — requires <span class="g">'+BANK_BUILD_UNITS+' progress units</span>');
+          spawnRupee(B.bank.cx, B.bank.gy - B.bank.h);
+          renderCards();
+       }
+    }
+    else if(act==='buy_billing') {
+       if(S.ch3Unlocked && S.built.shop && !S.shopBillingCounter && S.treasury>=BILLING_COST) {
+          S.treasury-=BILLING_COST; S.shopBillingCounter=true;
+          toast('🧾 Billing counter installed — <span class="g">+'+BILLING_KEEPERS+' shopkeeper slots</span>');
+          spawnRupee(B.shop.cx, B.shop.gy - B.shop.h);
+          renderCards();
+       }
+    }
     else if(act==='fdec') { S.flowO--; renderCards(); }
     else if(act==='finc') { S.flowO++; renderCards(); }
   });
 
   el('introBtn').addEventListener('click',()=>{ el('intro').classList.add('hidden'); toast('🏛 District grant received — <span class="g">'+money(START_TREASURY)+'</span> to build Tawapur'); });
   el('ch2Btn').addEventListener('click',()=>{ el('chapter2').classList.add('hidden'); if(!S.over) setSpeed(lastPlaySpeed||1); });
+  el('ch3Btn').addEventListener('click',()=>{ el('chapter3').classList.add('hidden'); if(!S.over) setSpeed(lastPlaySpeed||1); });
   el('restartBtn').addEventListener('click',()=>{
     el('gameover').classList.add('hidden'); newState(); setSpeed(1); renderCards(); lastT=0;
   });
@@ -1925,7 +2094,9 @@
            return {type: 'house', idx: i};
         }
      }
-     for(const key of ['farm', 'school', 'shop', 'college']){
+     const hitKeys = ['farm', 'school', 'shop', 'college'];
+     if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) hitKeys.push('bank');
+     for(const key of hitKeys){
         const b = B[key];
         if(clickX >= b.cx - b.w/2 - 10 && clickX <= b.cx + b.w/2 + 10 && clickY >= b.gy - b.h - 10 && clickY <= b.gy + 10){
            return {type: 'building', key: key};
