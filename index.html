@@ -400,7 +400,7 @@
     {name:'Cottage', cap:4, build:25},
   ];
  
-  const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_DAYS=5; 
+  const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_DAYS=60; 
   const COLLEGE_TEACHER_PAY=50, COLLEGE_STAFF_PAY=15;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
@@ -1405,7 +1405,7 @@ const unl = unlocksAllowed();
         } else if(!S.built.college){
            html+=card('college',B.college.color,'College',B.college.sub,'—',
              'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
-             '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unlF)?'disabled':'')+'>'+(!unlF?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');        } else {
+             '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unlocksAllowed())?'disabled':'')+'>'+(!unlocksAllowed()?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');        } else {
            const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
            const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
            const collegeOpen = (ctc===5 && cst===3);
@@ -1517,6 +1517,8 @@ const unl = unlocksAllowed();
         '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
       );
     }
+  }
+  
 
     c.innerHTML=html;
     renderBuildingInfo();
