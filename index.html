@@ -52,11 +52,10 @@
   .chip:hover{background:var(--cream-2);}
   
   #pop-hud-treasury{left:16px;bottom:76px;}
-  #pop-hud-goods{left:120px;bottom:76px;}
-  #pop-hud-people{left:260px;bottom:76px;}
-  #pop-hud-morale{left:340px;bottom:76px;}
-  #pop-hud-census{left:480px;bottom:76px;}
-  #pop-building-info{left:50%;bottom:90px;transform:translate(-50%, 20px);width:360px;} 
+  #pop-hud-goods{left:120px;bottom:76px;}
+  #pop-hud-people{left:260px;bottom:76px;}
+  #pop-hud-census{left:480px;bottom:76px;}
+  #pop-building-info{left:50%;bottom:90px;transform:translate(-50%, 20px);width:360px;}
   #pop-building-info.active{transform:translate(-50%, 0);}
 
   .chip .lab{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
@@ -314,14 +313,9 @@
       <div class="ledger" id="hud-ledger-goods"></div>
     </div>
     <div class="ui-popup" id="pop-hud-people">
-      <h3 class="section-h">Demographics &amp; Labor <span class="ln"></span></h3>
-      <div class="ledger" id="hud-ledger-people"></div>
-    </div>
-    <div class="ui-popup" id="pop-hud-morale">
-      <h3 class="section-h">Morale Factors <span class="ln"></span></h3>
-      <div class="ledger" id="hud-ledger-morale"></div>
-    </div>
-    <div class="ui-popup" id="pop-hud-census">
+      <h3 class="section-h">Demographics &amp; Labor <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-people"></div>
+    </div>
     <div class="ui-popup" id="pop-hud-census">
      <h3 class="section-h">Census Requirements <span class="ln"></span></h3>
       <div class="ledger" id="hud-ledger-census"></div>
@@ -335,9 +329,8 @@
       <div class="sep"></div>
       <div class="chip" id="chip-goods"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
       <div class="chip" id="chip-people"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
-      <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
-      <div class="chip" id="chip-morale"><span class="lab">Morale</span><span class="val" id="h-morale">60%</span></div>
-      <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
+      <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
+      <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
       <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
       <div class="hud-right">
         <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
@@ -1611,32 +1604,20 @@ const unl = unlocksAllowed();
       + lrow('(±) Godown Intervention', (r.effFlow !== 0 ? (r.effFlow > 0 ? '+' : '') + r.effFlow.toFixed(1) : '0.0') + ' kg/day')
       + lrow('(−) Total Eaten / Day', '−' + r.consumed.toFixed(1) + ' kg/day', 'neg');
 
-    el('h-morale').textContent = r.avgMorale.toFixed(0) + '%';
-    el('h-morale').className = 'val ' + (r.avgMorale>=50?'pos':'neg');
-
-    const eduStats = EDU.map((n, i) => {
-      const c = S.people.filter(p => p.edu === i).length;
-      return c > 0 ? `<span style="display:inline-flex;align-items:center;gap:3px"><span class="dot" style="background:${EDU_COLOR[i]}"></span>${c}</span>` : '';
-    }).filter(s => s).join(' · ');
-
-    el('hud-ledger-people').innerHTML = 
-      lrow('Total Population', pop + ' villagers')
-      + lrow('Active Idle Labor Pool', idle().length + ' workers')
-      + lrow('Housed Villagers', (pop - hl) + ' housed', hl > 0 ? 'neg' : 'pos')
-      + lrow('Homeless Villagers', hl + ' homeless', hl > 0 ? 'neg' : 'pos')
-      + lrow('Hungry Villagers', hungry + ' hungry', hungry > 0 ? 'neg' : 'pos')
-      + '<div class="row tot" style="flex-direction:column;gap:6px"><span class="k">Education Tiers</span><span class="v" style="font-weight:400;font-size:13px;display:flex;gap:8px">'+(eduStats||'None')+'</span></div>';
-
-    let mHtml = '';
-    mHtml += lrow('Village General Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg');
-    mHtml += '<div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)">';
-    mHtml += '<b>Factors affecting morale:</b><br>';
-    mHtml += '• <b>Food:</b> Being hungry rapidly depletes morale.<br>';
-    mHtml += '• <b>Housing:</b> Homelessness causes a steady decline.<br>';
-    mHtml += '• <b>Employment:</b> Idleness lowers morale slightly.<br>';
-    mHtml += '• <b>Cottages:</b> Living in a cottage grants a persistent morale bonus.';
-    mHtml += '</div>';
-    el('hud-ledger-morale').innerHTML = mHtml;
+    const unedu = S.people.filter(p=>p.edu===0).length;
+    const basic = S.people.filter(p=>p.edu===1).length;
+    const inter = S.people.filter(p=>p.edu===2).length;
+    const adv = S.people.filter(p=>p.edu===3).length;
+    const high = S.people.filter(p=>p.edu===4).length;
+    el('hud-ledger-people').innerHTML = 
+      lrow('Total Population', pop + ' villagers')
+      + lrow('Village General Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg')
+      + lrow('Active Idle Labor Pool', idle().length + ' workers')
+      + lrow('Uneducated Tiers', unedu)
+      + lrow('Basic Literacy Tiers', basic)
+      + lrow('Intermediate Tiers', inter)
+      + lrow('Advanced Technical Tiers', adv)
+      + lrow('Highly Skilled Tiers', high);
 
     el('hud-ledger-census').innerHTML = 
       lrow('Days Until Evaluation', (CENSUS_DAYS - S.daysSinceCensus) + ' days')
@@ -1810,7 +1791,7 @@ const unl = unlocksAllowed();
   });
 
 /* ============ UI TOGGLES ============ */
-  const popups = ['pop-build', 'pop-ledger', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
+  const popups = ['pop-build', 'pop-ledger', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-census'];
   
   function togglePopup(targetId) {
     popups.forEach(id => {
@@ -1827,11 +1808,11 @@ const unl = unlocksAllowed();
   
   el('chip-treasury').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
   el('chip-prosp').addEventListener('click', () => togglePopup('pop-hud-treasury'));
-  el('chip-goods').addEventListener('click', () => togglePopup('pop-hud-goods'));
-  el('chip-people').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-idle').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-morale').addEventListener('click', () => togglePopup('pop-hud-morale'));
-  el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
+  el('chip-goods').addEventListener('click', () => togglePopup('pop-hud-goods'));
+  el('chip-people').addEventListener('click', () => togglePopup('pop-hud-people'));
+  el('chip-idle').addEventListener('click', () => togglePopup('pop-hud-people'));
+  el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
+
   document.addEventListener('pointerdown', e => {
     if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
     if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
