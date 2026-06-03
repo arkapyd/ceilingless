@@ -1792,24 +1792,29 @@
     });
   }
 
-  el('btn-toggle-ledger').addEventListener('click', () => togglePopup('pop-ledger'));
+  el('btn-toggle-ledger').addEventListener('click', () => { togglePopup('pop-ledger'); el('sub-ribbon-build').classList.remove('active'); });
+  el('btn-toggle-build').addEventListener('click', () => { 
+    el('sub-ribbon-build').classList.toggle('active');
+    popups.forEach(id => { const node = el(id); if(node) node.classList.remove('active'); });
+  });
   
-  el('chip-treasury').addEventListener('click', () => togglePopup('pop-hud-treasury'));
-  el('chip-prosp').addEventListener('click', () => togglePopup('pop-hud-treasury'));
-  el('chip-goods').addEventListener('click', () => togglePopup('pop-hud-goods'));
-  el('chip-people').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-idle').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-morale').addEventListener('click', () => togglePopup('pop-hud-morale'));
-  el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
+  el('chip-treasury').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-prosp').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-goods').addEventListener('click', () => { togglePopup('pop-hud-goods'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-people').addEventListener('click', () => { togglePopup('pop-hud-people'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-idle').addEventListener('click', () => { togglePopup('pop-hud-people'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-morale').addEventListener('click', () => { togglePopup('pop-hud-morale'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-census').addEventListener('click', () => { togglePopup('pop-hud-census'); el('sub-ribbon-build').classList.remove('active'); });
 
   document.addEventListener('pointerdown', e => {
-    if (e.target && e.target.closest && e.target.closest('.ribbon')) return;
+    if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
     if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
     if (e.target && e.target.id === 'town') return; 
     popups.forEach(id => {
       const node = el(id);
       if(node) node.classList.remove('active');
     });
+    el('sub-ribbon-build').classList.remove('active');
   });
 
   document.addEventListener('keydown', e=>{
