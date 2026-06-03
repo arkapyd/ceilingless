@@ -54,6 +54,7 @@
   #pop-hud-treasury{left:16px;bottom:76px;}
   #pop-hud-goods{left:120px;bottom:76px;}
   #pop-hud-people{left:260px;bottom:76px;}
+  #pop-hud-morale{left:340px;bottom:76px;}
   #pop-hud-census{left:480px;bottom:76px;}
   #pop-building-info{left:50%;bottom:90px;transform:translate(-50%, 20px);width:360px;}
   #pop-building-info.active{transform:translate(-50%, 0);}
@@ -80,6 +81,7 @@
   .r-btn svg{width:18px;height:18px;}
   .stage{flex:1;position:relative;background:#1d160e;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;width:100%;height:100%;object-fit:contain;background:#12100c;transition:cursor .1s;}
+  
   .ui-popup{
     position:absolute;bottom:16px;background:var(--cream);border:1px solid var(--line-strong);
     border-radius:14px;padding:16px;width:340px;max-height:calc(100vh - 120px);overflow-y:auto;
@@ -89,8 +91,19 @@
   }
   .ui-popup .panel { flex-shrink:0; }
   .ui-popup.active{opacity:1;transform:translateY(0);pointer-events:auto;}
-  #pop-build{right:16px;}
+  #pop-build{right:16px; bottom:74px;}
   #pop-ledger{right:370px;}
+
+  .sub-ribbon {
+    position: absolute; right: 16px; bottom: 16px;
+    background: var(--cream); border: 1px solid var(--line-strong); border-radius: 12px;
+    display: flex; flex-direction: row; gap: 8px; padding: 10px;
+    box-shadow: 0 12px 48px rgba(0,0,0,.4);
+    transform: translateY(20px); opacity: 0; pointer-events: none; transition: all .2s ease;
+    z-index: 25;
+  }
+  .sub-ribbon.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
   .toast-wrap{position:absolute;left:0;right:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:25}
   .toast{font-size:13px;font-weight:500;color:#fff;background:rgba(58,44,24,.92);border:1px solid rgba(212,161,60,.6);padding:7px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.3);animation:pop .35s ease both}
   .toast .g{color:var(--gold);font-weight:600}
@@ -159,12 +172,6 @@
   .modal .lead b{font-weight:600}
   @keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .hidden{display:none!important}
-  .sub-ribbon { display: flex; flex-direction: row; gap: 6px; align-items: center; }
-  .cat-btn{display:grid;place-items:center;width:46px;height:42px;border-radius:10px;background:var(--gold);border:1px solid #b9842a;color:#3a2a0c;cursor:pointer;transition:transform .08s, filter .12s;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-  .cat-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-  .cat-btn:active{transform:translateY(1px);box-shadow:none}
-  .cat-btn svg{width:22px;height:22px}
-  .cat-btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
 </style>
 </head>
 <body>
@@ -270,7 +277,7 @@
           <li>You cannot release from an <b>empty</b> reserve, nor procure with an <b>empty</b> treasury.</li>
           <li>Use the <b>− / +</b> on the Godown card to set the daily flow; hold at zero to let the free market be.</li>
         </ul>
-        <p style="margin-bottom:16px">The <b>Panchayat Godown</b> now sits in your <b>Build &amp; Assign</b> panel.</p>
+        <p style="margin-bottom:16px">The <b>Panchayat Godown</b> now sits in your <b>Build</b> panel.</p>
         <button class="play" id="ch2Btn">Take control</button>
       </div>
     </div>
@@ -316,10 +323,29 @@
       <h3 class="section-h">Demographics &amp; Labor <span class="ln"></span></h3>
       <div class="ledger" id="hud-ledger-people"></div>
     </div>
+    <div class="ui-popup" id="pop-hud-morale">
+      <h3 class="section-h">Morale Factors <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-morale"></div>
+    </div>
     <div class="ui-popup" id="pop-hud-census">
-     <h3 class="section-h">Census Requirements <span class="ln"></span></h3>
+      <h3 class="section-h">Census Requirements <span class="ln"></span></h3>
       <div class="ledger" id="hud-ledger-census"></div>
       <button class="buildbtn" id="btn-toggle-immigration" data-act="toggle_immigration" style="margin-top:10px;"></button>
+    </div>
+
+    <div class="sub-ribbon" id="sub-ribbon-build">
+      <button class="r-btn" data-tab="residential">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        Residential
+      </button>
+      <button class="r-btn" data-tab="production">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Production
+      </button>
+      <button class="r-btn" data-tab="service" disabled style="opacity: 0.5; cursor: not-allowed;" title="Coming soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+        Service
+      </button>
     </div>
   </div>
 
@@ -330,6 +356,7 @@
       <div class="chip" id="chip-goods"><span class="lab">Goods</span><span class="val" id="h-goods">15</span><span class="sub" id="h-goods-sub">need 10</span></div>
       <div class="chip" id="chip-people"><span class="lab">People</span><span class="val" id="h-pop">10</span><span class="sub" id="h-house">2 homeless</span></div>
       <div class="chip" id="chip-idle"><span class="lab">Idle</span><span class="val" id="h-idle">10</span></div>
+      <div class="chip" id="chip-morale"><span class="lab">Morale</span><span class="val" id="h-morale">60%</span></div>
       <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
       <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
       <div class="hud-right">
@@ -346,20 +373,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
         Stats &amp; Note
       </button>
-      <div class="sub-ribbon" id="sub-ribbon-build">
-        <button class="cat-btn" data-tab="residential" title="Residential">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-        </button>
-        <button class="cat-btn" data-tab="production" title="Production">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        </button>
-        <button class="cat-btn" data-tab="service" title="Service" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-        </button>
-      </div>
+      <button class="r-btn" id="btn-toggle-build">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Build
+      </button>
     </div> 
   </div>
 </div>
+
 <script>
 (function(){
   'use strict';
@@ -378,8 +399,8 @@
   const CONSUME_UNEDU=0.5, CONSUME_BASIC=0.7, CONSUME_DAYS=3;  
   const CONSUME_RATE=[CONSUME_UNEDU/CONSUME_DAYS, CONSUME_BASIC/CONSUME_DAYS, 0, 0, 0];  
   const SHOP_KEEPERS_MAX=2, SERVE_PER_KEEPER=3, SERVE_MS=4000;  
-  const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;       
-  const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;       
+  const TEACH_MIN=2, TEACH_MAX=5, STUDENTS_PER_TEACHER=5;        
+  const PERSON_KG_START=2, BUY_THRESHOLD=1, BUY_AMOUNT=1;        
   const DEMAND_SLOPE=0.4, SUPPLY_SLOPE=0.2, PRICE_FLOOR=2;  
   const HOUSE_COST=150, MAX_HOUSES=7;                    
   const HUT_UPGRADE_COST=75, COTTAGE_UPGRADE_COST=150;  
@@ -388,8 +409,8 @@
     {name:'Hut',     cap:3, build:15},
     {name:'Cottage', cap:4, build:25},
   ];
- 
-  const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_UNITS=60; 
+
+  const COLLEGE_COST=2500, COLLEGE_UNLOCK_FRAC=0.75, COLLEGE_BUILD_UNITS=150;
   const COLLEGE_TEACHER_PAY=50, COLLEGE_STAFF_PAY=15;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
@@ -458,7 +479,7 @@
   function idle(){return S.people.filter(p=>p.role==='idle');}
   function roleCount(r){return S.people.filter(p=>p.role===r).length;}
   function roleList(r){return S.people.filter(p=>p.role===r);}
-  function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }   
+  function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }  
   function housingCap(){ return S.houses.reduce((s,h)=>s+houseCap(h),0); }
   function homeless(){return Math.max(0,S.people.length-housingCap());}
   function reassignHomes(){
@@ -522,7 +543,7 @@
     renderCards();
   }
 
-  function upgradeHouse(toTier, idx){   
+  function upgradeHouse(toTier, idx){  
     if(!unlocksAllowed() || (toTier===2 && !S.godownUnlocked)) return;
     const cost = toTier===1 ? HUT_UPGRADE_COST : COTTAGE_UPGRADE_COST;
     if(S.treasury<cost) return;
@@ -537,7 +558,7 @@
     if(!h) return;
     
     S.treasury-=cost;
-    h.build=HOUSE_TIERS[toTier].build; h.pendingTier=toTier;       
+    h.build=HOUSE_TIERS[toTier].build; h.pendingTier=toTier;        
     toast('🏗 Upgrading a '+HOUSE_TIERS[toTier-1].name.toLowerCase()+' to a <span class="g">'+HOUSE_TIERS[toTier].name+'</span> — requires '+HOUSE_TIERS[toTier].build+' progress units');
     spawnRupee(58 + S.houses.indexOf(h)*70, 434 - 44);
     renderCards();
@@ -1002,11 +1023,11 @@
     if (S.selectedEntity) {
        ctx.strokeStyle = 'rgba(212, 161, 60, 0.8)'; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
        if (S.selectedEntity.type === 'house') {
-          const cx=58+S.selectedEntity.idx*70, gy=434;
-          rr(cx-30, gy-48, 60, 52, 6); ctx.stroke();
+         const cx=58+S.selectedEntity.idx*70, gy=434;
+         rr(cx-30, gy-48, 60, 52, 6); ctx.stroke();
        } else if (S.selectedEntity.type === 'building') {
-          const b = B[S.selectedEntity.key];
-          rr(b.cx-b.w/2 - 6, b.gy-b.h - 6, b.w + 12, b.h + 10, 6); ctx.stroke();
+         const b = B[S.selectedEntity.key];
+         rr(b.cx-b.w/2 - 6, b.gy-b.h - 6, b.w + 12, b.h + 10, 6); ctx.stroke();
        }
        ctx.setLineDash([]);
     }
@@ -1268,7 +1289,7 @@
         if(p.wt<=0 || (dx*dx+dy*dy)<25){ const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1]; p.wt=160+Math.floor(Math.random()*260); }
       }
       const t=targetFor(p);
-      const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);   
+      const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);    
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
       
       // Dynamic rendering filter:
@@ -1316,7 +1337,7 @@
       const i = S.selectedEntity.idx;
       elTitle.innerHTML = 'Housing Plot ' + (i+1) + ' <span class="ln"></span>';
       
-const unl = unlocksAllowed();
+      const unl = unlocksAllowed();
       if (i >= S.houses.length) {
         html += card('house', '#b5764f', 'Empty Plot', 'Ready for construction', '—',
           'Build a shack here to house 2 villagers.',
@@ -1394,7 +1415,8 @@ const unl = unlocksAllowed();
         } else if(!S.built.college){
            html+=card('college',B.college.color,'College',B.college.sub,'—',
              'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
-             '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unlocksAllowed())?'disabled':'')+'>'+(!unlocksAllowed()?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');        } else {
+             '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unlocksAllowed())?'disabled':'')+'>'+(!unlocksAllowed()?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');
+        } else {
            const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
            const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
            const collegeOpen = (ctc===5 && cst===3);
@@ -1484,30 +1506,29 @@ const unl = unlocksAllowed();
       if(!S.unlocked.college){
         // Hidden until unlocked to prevent clutter
       } else if(S.collegeBuild>0){
-      const pct=Math.round((COLLEGE_BUILD_UNITS-S.collegeBuild)/COLLEGE_BUILD_UNITS*100);
-      html+=card('college',B.college.color,'College','Under construction','—',
-        'Construction underway — needs <b>'+Math.ceil(S.collegeBuild)+'</b> units',
-        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
-    } else if(!S.built.college){
-      html+=card('college',B.college.color,'College',B.college.sub,'—',
-        'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
-        '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unl)?'disabled':'')+'>'+(!unl?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');
-    } else {
-      const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
-      const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
-      const collegeOpen = (ctc===5 && cst===3);
-      
-      html+=card('college',B.college.color,'College',B.college.sub,
-        ce+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
-        'Teachers <b>'+ctc+'</b>/5 (Basic) · Staff <b>'+cst+'</b>/3 (Unedu)<br>'+
-        (collegeOpen ? (ce?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol basic students') : '<b style="color:var(--bad)">closed</b> — requires full staff to run'),
-        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
-        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
-        '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
-      );
+        const pct=Math.round((COLLEGE_BUILD_UNITS-S.collegeBuild)/COLLEGE_BUILD_UNITS*100);
+        html+=card('college',B.college.color,'College','Under construction','—',
+          'Construction underway — needs <b>'+Math.ceil(S.collegeBuild)+'</b> units',
+          '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+      } else if(!S.built.college){
+        html+=card('college',B.college.color,'College',B.college.sub,'—',
+          'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
+          '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unl)?'disabled':'')+'>'+(!unl?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');
+      } else {
+        const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
+        const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
+        const collegeOpen = (ctc===5 && cst===3);
+        
+        html+=card('college',B.college.color,'College',B.college.sub,
+          ce+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.college.cap+'</small>',
+          'Teachers <b>'+ctc+'</b>/5 (Basic) · Staff <b>'+cst+'</b>/3 (Unedu)<br>'+
+          (collegeOpen ? (ce?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol basic students') : '<b style="color:var(--bad)">closed</b> — requires full staff to run'),
+          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
+          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
+          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
+        );
+      }
     }
-  }
-  
 
     c.innerHTML=html;
     renderBuildingInfo();
@@ -1577,14 +1598,38 @@ const unl = unlocksAllowed();
 
     const hungry=S.people.filter(p=>p.needFood).length;
     const avgKg=S.people.length? S.people.reduce((s,p)=>s+p.kg,0)/S.people.length : 0;
-   el('ledger').innerHTML=
+    el('h-morale').textContent = r.avgMorale.toFixed(0) + '%';
+    el('h-morale').className = 'val ' + (r.avgMorale>=50?'pos':'neg');
+
+    const eduStats = EDU.map((n, i) => {
+      const c = S.people.filter(p => p.edu === i).length;
+      return c > 0 ? `<span style="display:inline-flex;align-items:center;gap:3px"><span class="dot" style="background:${EDU_COLOR[i]}"></span>${c}</span>` : '';
+    }).filter(s => s).join(' · ');
+
+    el('hud-ledger-people').innerHTML = 
+      lrow('Total Population', pop + ' villagers')
+      + lrow('Active Idle Labor Pool', idle().length + ' workers')
+      + lrow('Housed Villagers', (pop - hl) + ' housed', hl > 0 ? 'neg' : 'pos')
+      + lrow('Homeless Villagers', hl + ' homeless', hl > 0 ? 'neg' : 'pos')
+      + lrow('Hungry Villagers', hungry + ' hungry', hungry > 0 ? 'neg' : 'pos')
+      + '<div class="row tot" style="flex-direction:column;gap:6px"><span class="k">Education Tiers</span><span class="v" style="font-weight:400;font-size:13px;display:flex;gap:8px">'+(eduStats||'None')+'</span></div>';
+
+    let mHtml = '';
+    mHtml += lrow('Village General Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg');
+    mHtml += '<div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)">';
+    mHtml += '<b>Factors affecting morale:</b><br>';
+    mHtml += '• <b>Food:</b> Being hungry rapidly depletes morale.<br>';
+    mHtml += '• <b>Housing:</b> Homelessness causes a steady decline.<br>';
+    mHtml += '• <b>Employment:</b> Idleness lowers morale slightly.<br>';
+    mHtml += '• <b>Cottages:</b> Living in a cottage grants a persistent morale bonus.';
+    mHtml += '</div>';
+    el('hud-ledger-morale').innerHTML = mHtml;
+
+    el('ledger').innerHTML=
       lrow('Wholesale Price', money(r.price)+'/kg')
       +lrow('Shop Retail Price (20% markup)', money(r.retailPrice)+'/kg')
       +lrow('Produced / day', r.prod.toFixed(1)+' kg')
       +lrow('Eaten / day', r.consumed.toFixed(1)+' kg')
-      +lrow('Avg Village Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg')
-      +lrow('Avg food / person', avgKg.toFixed(1)+' kg', avgKg>=BUY_THRESHOLD?'pos':'neg')
-      +lrow('Villagers hungry', hungry+(hungry?' ⚠':''), hungry?'neg':'pos')
       +lrow('Shop capacity', r.shopThroughput.toFixed(0)+' kg/day')
       +lrow('Indirect tax (18%)', '+'+money(r.indirect)+'/day','pos')
       +lrow('Income tax', '+'+money(r.incomeTax)+'/day','pos')
@@ -1603,21 +1648,6 @@ const unl = unlocksAllowed();
       + lrow('(+) Farm Output Harvest', r.prod.toFixed(1) + ' kg/day', 'pos')
       + lrow('(±) Godown Intervention', (r.effFlow !== 0 ? (r.effFlow > 0 ? '+' : '') + r.effFlow.toFixed(1) : '0.0') + ' kg/day')
       + lrow('(−) Total Eaten / Day', '−' + r.consumed.toFixed(1) + ' kg/day', 'neg');
-
-    const unedu = S.people.filter(p=>p.edu===0).length;
-    const basic = S.people.filter(p=>p.edu===1).length;
-    const inter = S.people.filter(p=>p.edu===2).length;
-    const adv = S.people.filter(p=>p.edu===3).length;
-    const high = S.people.filter(p=>p.edu===4).length;
-    el('hud-ledger-people').innerHTML = 
-      lrow('Total Population', pop + ' villagers')
-      + lrow('Village General Morale', r.avgMorale.toFixed(1) + '%', r.avgMorale>=50?'pos':'neg')
-      + lrow('Active Idle Labor Pool', idle().length + ' workers')
-      + lrow('Uneducated Tiers', unedu)
-      + lrow('Basic Literacy Tiers', basic)
-      + lrow('Intermediate Tiers', inter)
-      + lrow('Advanced Technical Tiers', adv)
-      + lrow('Highly Skilled Tiers', high);
 
     el('hud-ledger-census').innerHTML = 
       lrow('Days Until Evaluation', (CENSUS_DAYS - S.daysSinceCensus) + ' days')
@@ -1673,6 +1703,54 @@ const unl = unlocksAllowed();
   function setSpeed(s){ S.speed=s; if(s>0) lastPlaySpeed=s; [0,1,2,4].forEach(v=>el('spd'+v).classList.toggle('on', v===s)); }
   function togglePause(){ if(S.over) return; setSpeed(S.speed===0 ? lastPlaySpeed : 0); }
 
+/* ============ UI TOGGLES ============ */
+  const popups = ['pop-build', 'pop-ledger', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
+  
+  function togglePopup(targetId) {
+    popups.forEach(id => {
+      const elNode = el(id);
+      if (id === targetId) {
+        elNode.classList.toggle('active');
+      } else {
+        elNode.classList.remove('active');
+      }
+    });
+  }
+
+  el('btn-toggle-ledger').addEventListener('click', () => { togglePopup('pop-ledger'); el('sub-ribbon-build').classList.remove('active'); });
+  el('btn-toggle-build').addEventListener('click', () => { 
+    el('sub-ribbon-build').classList.toggle('active');
+    popups.forEach(id => { const node = el(id); if(node) node.classList.remove('active'); });
+  });
+  
+  el('chip-treasury').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-prosp').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-goods').addEventListener('click', () => { togglePopup('pop-hud-goods'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-people').addEventListener('click', () => { togglePopup('pop-hud-people'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-idle').addEventListener('click', () => { togglePopup('pop-hud-people'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-morale').addEventListener('click', () => { togglePopup('pop-hud-morale'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-census').addEventListener('click', () => { togglePopup('pop-hud-census'); el('sub-ribbon-build').classList.remove('active'); });
+
+  document.addEventListener('pointerdown', e => {
+    if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
+    if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
+    if (e.target && e.target.id === 'town') return; 
+    popups.forEach(id => {
+      const node = el(id);
+      if(node) node.classList.remove('active');
+    });
+    el('sub-ribbon-build').classList.remove('active');
+  });
+
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space' || e.key===' '){
+      const intro=el('intro'), ch2=el('chapter2');
+      if((intro && !intro.classList.contains('hidden')) || (ch2 && !ch2.classList.contains('hidden'))) return;
+      e.preventDefault();
+      togglePause();
+    }
+  });
+
   /* ============ GLOBAL EVENT SYSTEM ============ */
   document.addEventListener('click', e => {
     if(S.over) return;
@@ -1696,7 +1774,8 @@ const unl = unlocksAllowed();
        return;
     }
 
-    const b = e.target.closest('[data-act]');    if(!b) return;
+    const b = e.target.closest('[data-act]');
+    if(!b) return;
     const act = b.dataset.act, role = b.dataset.b, idx = b.dataset.idx;
     
     if(act==='add') assign(role);
@@ -1788,49 +1867,6 @@ const unl = unlocksAllowed();
            if(node) node.classList.remove('active');
          });
       }
-  });
-
-/* ============ UI TOGGLES ============ */
-  const popups = ['pop-build', 'pop-ledger', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-census'];
-  
-  function togglePopup(targetId) {
-    popups.forEach(id => {
-      const elNode = el(id);
-      if (id === targetId) {
-        elNode.classList.toggle('active');
-      } else {
-        elNode.classList.remove('active');
-      }
-    });
-  }
-
-  el('btn-toggle-ledger').addEventListener('click', () => { togglePopup('pop-ledger'); el('sub-ribbon-build').classList.remove('active'); });
-  
-  el('chip-treasury').addEventListener('click', () => { togglePopup('pop-hud-treasury'); el('sub-ribbon-build').classList.remove('active'); });
-  el('chip-prosp').addEventListener('click', () => togglePopup('pop-hud-treasury'));
-  el('chip-goods').addEventListener('click', () => togglePopup('pop-hud-goods'));
-  el('chip-people').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-idle').addEventListener('click', () => togglePopup('pop-hud-people'));
-  el('chip-census').addEventListener('click', () => togglePopup('pop-hud-census'));
-
-  document.addEventListener('pointerdown', e => {
-    if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
-    if (e.target && e.target.closest && e.target.closest('.ui-popup')) return;
-    if (e.target && e.target.id === 'town') return; 
-    popups.forEach(id => {
-      const node = el(id);
-      if(node) node.classList.remove('active');
-    });
-    el('sub-ribbon-build').classList.remove('active');
-  });
-
-  document.addEventListener('keydown', e=>{
-    if(e.code==='Space' || e.key===' '){
-      const intro=el('intro'), ch2=el('chapter2');
-      if((intro && !intro.classList.contains('hidden')) || (ch2 && !ch2.classList.contains('hidden'))) return;
-      e.preventDefault();
-      togglePause();
-    }
   });
 
   /* ============ BOOT ============ */
