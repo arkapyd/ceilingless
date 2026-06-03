@@ -501,7 +501,7 @@
   }
 
  function buildHouse(idx){
-    if(!unlocksAllowed() || S.houses.length>=MAX_HOUSES || S.treasury<HOUSE_COST) return;
+    if(S.houses.length>=MAX_HOUSES || S.treasury<HOUSE_COST) return;
     S.treasury-=HOUSE_COST;
     S.houses.push({tier:-1, build:HOUSE_TIERS[0].build, pendingTier:0});
     toast('🏗 Shack plot started — requires <span class="g">'+HOUSE_TIERS[0].build+' progress units</span>');
@@ -1260,7 +1260,7 @@ const unl = unlocksAllowed();
       if (i >= S.houses.length) {
         html += card('house', '#b5764f', 'Empty Plot', 'Ready for construction', '—',
           'Build a shack here to house 2 villagers.',
-          '<button class="buildbtn" data-act="build_idx" data-idx="'+i+'" '+ ((S.treasury<HOUSE_COST || !unl)?'disabled':'') +'>'+(unl?'Build Shack · '+money(HOUSE_COST)+' · '+HOUSE_TIERS[0].build+' units':'Locked (Day 16)')+'</button>'
+          '<button class="buildbtn" data-act="build_idx" data-idx="'+i+'" '+ (S.treasury<HOUSE_COST?'disabled':'') +'>Build Shack · '+money(HOUSE_COST)+' · '+HOUSE_TIERS[0].build+' units</button>'
         );
       } else {
         const h = S.houses[i];
@@ -1274,60 +1274,59 @@ const unl = unlocksAllowed();
            let upBtn = '';
            
            if (h.tier === 0) {
-             upBtn = '<button class="buildbtn" data-act="uphut_idx" data-idx="'+i+'" '+((S.treasury<HUT_UPGRADE_COST || !unl)?'disabled':'')+'>'+(unl?'Upgrade to Hut · '+money(HUT_UPGRADE_COST)+' · '+HOUSE_TIERS[1].build+' units':'Locked (Day 16)')+'</button>';
+             if (unl) upBtn = '<button class="buildbtn" data-act="uphut_idx" data-idx="'+i+'" '+(S.treasury<HUT_UPGRADE_COST?'disabled':'')+'>Upgrade to Hut · '+money(HUT_UPGRADE_COST)+' · '+HOUSE_TIERS[1].build+' units</button>';
            } else if (h.tier === 1) {
              if(S.godownUnlocked) {
-               upBtn = '<button class="buildbtn" data-act="upcottage_idx" data-idx="'+i+'" '+((S.treasury<COTTAGE_UPGRADE_COST || !unl)?'disabled':'')+'>'+(unl?'Upgrade to Cottage · '+money(COTTAGE_UPGRADE_COST)+' · '+HOUSE_TIERS[2].build+' units':'Locked (Day 16)')+'</button>';
-             } else {
-               upBtn = '<div class="stat" style="margin-top:8px"><i>Further upgrades locked.</i></div>';
-             }
-           } else {
-             upBtn = '<div class="stat" style="margin-top:8px"><i>Fully upgraded. Residents get +morale and +1kg home storage.</i></div>';
-           }
+               if (unl) upBtn = '<button class="buildbtn" data-act="upcottage_idx" data-idx="'+i+'" '+(S.treasury<COTTAGE_UPGRADE_COST?'disabled':'')+'>Upgrade to Cottage · '+money(COTTAGE_UPGRADE_COST)+' · '+HOUSE_TIERS[2].build+' units</button>';
+             } else {
+               upBtn = '<div class="stat" style="margin-top:8px"><i>Further upgrades locked.</i></div>';
+             }
+           } else {
+             upBtn = '<div class="stat" style="margin-top:8px"><i>Fully upgraded. Residents get +morale and +1kg home storage.</i></div>';
+           }
 
-           html += card('house', '#b5764f', tierData.name, 'Level '+(h.tier+1)+' Home', occ+'<small style="font-weight:400;color:var(--ink-faint)">/'+tierData.cap+'</small>',
-             'Currently housing <b>'+occ+'</b> villagers.', upBtn);
-        }
-      }
-    } else if (S.selectedEntity.type === 'building') {
-      const key = S.selectedEntity.key;
-      elTitle.innerHTML = B[key].name + ' <span class="ln"></span>';
-      
-      if (key === 'farm') {
-        let upgHtml = '';
-        const unlF = unlocksAllowed();
+           html += card('house', '#b5764f', tierData.name, 'Level '+(h.tier+1)+' Home', occ+'<small style="font-weight:400;color:var(--ink-faint)">/'+tierData.cap+'</small>',
+             'Currently housing <b>'+occ+'</b> villagers.', upBtn);
+        }
+      }
+    } else if (S.selectedEntity.type === 'building') {
+      const key = S.selectedEntity.key;
+      elTitle.innerHTML = B[key].name + ' <span class="ln"></span>';
+      
+      if (key === 'farm') {
+        let upgHtml = '';
+        const unlF = unlocksAllowed();
         ['tractor','harvester','combiner'].forEach(upg => {
            const u = FARM_UPGRADES[upg];
            if(S.farmUpgrades[upg]) {
               upgHtml += '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:9px">'+u.name+' (Driver · Intermediate)</div>' + stepper(upg+'_driver');
-           } else {
-              upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+((S.treasury<u.cost || !unlF)?'disabled':'')+'>'+(unlF?'Buy '+u.name+' · '+money(u.cost):'Locked (Day 16)')+'</button>';
+           } else if (unlF) {
+              upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+(S.treasury<u.cost?'disabled':'')+'>Buy '+u.name+' · '+money(u.cost)+'</button>';
            }
         });
 
-        html += card('farm', B.farm.color, B.farm.name, B.farm.sub,
-          roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
-          stepper('farm') + upgHtml);
-      } else if (key === 'shop') {
-        const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
-        html += card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
-          keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
-          'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
-          stepper('shop'));
-      } else if (key === 'school') {
-        const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
-        html += card('school',B.school.color,B.school.name,'Basic teachers school the unschooled',
-          stu+'<small style="font-weight:400;color:var(--ink-faint)">/'+(scap||'—')+'</small>',
-          'Teachers <b>'+tc+'</b>/'+TEACH_MAX+' (need '+TEACH_MIN+', '+STUDENTS_PER_TEACHER+' students each)<br>'+
-          (schoolOpen ? (stu?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol uneducated or basic students') : '<b style="color:var(--bad)">closed</b> — assign '+TEACH_MIN+' Basic teachers'),
-          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers · Basic</div>'+stepper('teacher')+
-          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
-      } else if (key === 'college') {
-        if(!S.unlocked.college){
-           const inter = S.people.filter(p=>p.edu>=1).length;
-           html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
-        } else if(S.collegeBuild>0){
+        html += card('farm', B.farm.color, B.farm.name, B.farm.sub,
+          roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
+          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
+          stepper('farm') + upgHtml);
+      } else if (key === 'shop') {
+        const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
+        html += card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
+          keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
+          'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
+          stepper('shop'));
+      } else if (key === 'school') {
+        const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
+        html += card('school',B.school.color,B.school.name,'Basic teachers school the unschooled',
+          stu+'<small style="font-weight:400;color:var(--ink-faint)">/'+(scap||'—')+'</small>',
+          'Teachers <b>'+tc+'</b>/'+TEACH_MAX+' (need '+TEACH_MIN+', '+STUDENTS_PER_TEACHER+' students each)<br>'+
+          (schoolOpen ? (stu?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol uneducated or basic students') : '<b style="color:var(--bad)">closed</b> — assign '+TEACH_MIN+' Basic teachers'),
+          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers · Basic</div>'+stepper('teacher')+
+          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
+      } else if (key === 'college') {
+        if(!S.unlocked.college){
+           // Hidden until unlocked to prevent clutter
+        } else if(S.collegeBuild>0){
            const pct=Math.round((COLLEGE_BUILD_UNITS-S.collegeBuild)/COLLEGE_BUILD_UNITS*100);
            html+=card('college',B.college.color,'College','Under construction','—',
              'Construction underway — needs <b>'+Math.ceil(S.collegeBuild)+'</b> units',
@@ -1359,66 +1358,67 @@ const unl = unlocksAllowed();
     const hl=homeless();
 
     const shacks=S.houses.filter(h=>h.tier===0).length, huts=S.houses.filter(h=>h.tier===1).length, cots=S.houses.filter(h=>h.tier===2).length;
-    const building=S.houses.filter(h=>h.build>0).length;
-    const upShack=S.houses.some(h=>h.tier===0 && h.build<=0), upHut=S.houses.some(h=>h.tier===1 && h.build<=0);
-    const unl = unlocksAllowed();
+    const building=S.houses.filter(h=>h.build>0).length;
+    const upShack=S.houses.some(h=>h.tier===0 && h.build<=0), upHut=S.houses.some(h=>h.tier===1 && h.build<=0);
+    const unl = unlocksAllowed();
     let houseCtrl=
-      '<button class="buildbtn" data-act="build" '+((S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST||!unl)?'disabled':'')+'>'+
-        (!unl?'Locked (Day 16)':(S.houses.length>=MAX_HOUSES?'Plots full ('+MAX_HOUSES+')':'Build shack · '+money(HOUSE_COST)+' · '+HOUSE_TIERS[0].build+' units'))+'</button>'+
-      '<button class="buildbtn" data-act="uphut" '+((!upShack||S.treasury<HUT_UPGRADE_COST||!unl)?'disabled':'')+'>'+
-        (!unl?'Locked (Day 16)':'Upgrade shack → hut · '+money(HUT_UPGRADE_COST)+' · '+HOUSE_TIERS[1].build+' units')+'</button>';
-    if(S.godownUnlocked) houseCtrl+=
-      '<button class="buildbtn" data-act="upcottage" '+((!upHut||S.treasury<COTTAGE_UPGRADE_COST||!unl)?'disabled':'')+'>'+
-        (!unl?'Locked (Day 16)':'Upgrade hut → cottage · '+money(COTTAGE_UPGRADE_COST)+' · '+HOUSE_TIERS[2].build+' units')+'</button>';    html+=card('house','#b5764f','Housing','Shack → Hut → Cottage',
-      S.houses.length+'<small style="font-weight:400;color:var(--ink-faint)">/'+MAX_HOUSES+'</small>',
-      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>'+
-        'Shacks <b>'+shacks+'</b> · Huts <b>'+huts+'</b> · Cottages <b>'+cots+'</b>'+(building?' · <b style="color:var(--ink-faint)">'+building+' building</b>':''),
-      houseCtrl);
-   if(S.godownUnlocked){
-      html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding · Chapter Two',
-        Math.floor(S.stockO)+' kg in reserve',
-        'Market intervention flow: <b>'+(S.flowO>0?'+':'')+S.flowO+' kg/day</b><br>'+
-        (S.flowO>0?'Releasing lowers price &amp; earns '+CUR:S.flowO<0?'Procuring raises price &amp; costs '+CUR:'Set flow to release or procure grain'),
-        '<div class="ctrl"><button class="pm" data-act="fdec" '+(S.flowO<=-5?'disabled':'')+'>−</button>'+
-        '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Procure from market'))+'</div>'+
-        '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
-      );
-    }
-    
-    let upgHtml = '';
+      '<button class="buildbtn" data-act="build" '+(S.houses.length>=MAX_HOUSES||S.treasury<HOUSE_COST?'disabled':'')+'>'+
+        (S.houses.length>=MAX_HOUSES?'Plots full ('+MAX_HOUSES+')':'Build shack · '+money(HOUSE_COST)+' · '+HOUSE_TIERS[0].build+' units')+'</button>';
+    if (unl) {
+      houseCtrl += '<button class="buildbtn" data-act="uphut" '+(!upShack||S.treasury<HUT_UPGRADE_COST?'disabled':'')+'>Upgrade shack → hut · '+money(HUT_UPGRADE_COST)+' · '+HOUSE_TIERS[1].build+' units</button>';
+      if(S.godownUnlocked) {
+        houseCtrl += '<button class="buildbtn" data-act="upcottage" '+(!upHut||S.treasury<COTTAGE_UPGRADE_COST?'disabled':'')+'>Upgrade hut → cottage · '+money(COTTAGE_UPGRADE_COST)+' · '+HOUSE_TIERS[2].build+' units</button>';
+      }
+    }
+    html+=card('house','#b5764f','Housing','Shack → Hut → Cottage',
+      S.houses.length+'<small style="font-weight:400;color:var(--ink-faint)">/'+MAX_HOUSES+'</small>',
+      'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>'+
+        'Shacks <b>'+shacks+'</b> · Huts <b>'+huts+'</b> · Cottages <b>'+cots+'</b>'+(building?' · <b style="color:var(--ink-faint)">'+building+' building</b>':''),
+      houseCtrl);
+   if(S.godownUnlocked){
+      html+=card('warehouse','#8a6a9a','Panchayat Godown','Public Stockholding · Chapter Two',
+        Math.floor(S.stockO)+' kg in reserve',
+        'Market intervention flow: <b>'+(S.flowO>0?'+':'')+S.flowO+' kg/day</b><br>'+
+        (S.flowO>0?'Releasing lowers price &amp; earns '+CUR:S.flowO<0?'Procuring raises price &amp; costs '+CUR:'Set flow to release or procure grain'),
+        '<div class="ctrl"><button class="pm" data-act="fdec" '+(S.flowO<=-5?'disabled':'')+'>−</button>'+
+        '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Procure from market'))+'</div>'+
+        '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
+      );
+    }
+    
+    let upgHtml = '';
     ['tractor','harvester','combiner'].forEach(upg => {
        const u = FARM_UPGRADES[upg];
        if(S.farmUpgrades[upg]) {
           upgHtml += '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:9px">'+u.name+' (Driver · Intermediate)</div>' + stepper(upg+'_driver');
-       } else {
-          upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+((S.treasury<u.cost || !unl)?'disabled':'')+'>'+(unl?'Buy '+u.name+' · '+money(u.cost):'Locked (Day 16)')+'</button>';
+       } else if (unl) {
+          upgHtml += '<button class="buildbtn" data-act="buy_upg" data-upg="'+upg+'" '+(S.treasury<u.cost?'disabled':'')+'>Buy '+u.name+' · '+money(u.cost)+'</button>';
        }
     });
 
-    html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
-      roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-      'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
-      stepper('farm') + upgHtml);
+    html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
+      roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
+      'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
+      stepper('farm') + upgHtml);
 
-    const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
-    html+=card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
-      keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
-      'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
-      stepper('shop'));
+    const keepers=roleCount('shop'), slots=keepers*SERVE_PER_KEEPER, hungry=S.people.filter(p=>p.needFood).length;
+    html+=card('shop',B.shop.color,B.shop.name,'Earns on 20% retail markup over wholesale',
+      keepers+'<small style="font-weight:400;color:var(--ink-faint)">/'+SHOP_KEEPERS_MAX+'</small>',
+      'Serves <b>'+slots+'</b> · <b>'+hungry+'</b> hungry<br>Retail: <b>'+money(r.retailPrice)+'</b>/kg · Sales ~<b>'+r.taxedSales.toFixed(1)+'</b> kg/d → Indirect tax <b>'+money(r.indirect)+'</b>',
+      stepper('shop'));
 
-    const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
-    html+=card('school',B.school.color,B.school.name,'Basic teachers school the unschooled',
-      stu+'<small style="font-weight:400;color:var(--ink-faint)">/'+(scap||'—')+'</small>',
-      'Teachers <b>'+tc+'</b>/'+TEACH_MAX+' (need '+TEACH_MIN+', '+STUDENTS_PER_TEACHER+' students each)<br>'+
-        (schoolOpen ? (stu?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol uneducated or basic students') : '<b style="color:var(--bad)">closed</b> — assign '+TEACH_MIN+' Basic teachers'),
-      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers · Basic</div>'+stepper('teacher')+
-      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
+    const tc=roleCount('teacher'), stu=roleCount('school'), scap=capacityOf('school'), schoolOpen=tc>=TEACH_MIN, nextIn=YEAR_DAYS-S.day+1;
+    html+=card('school',B.school.color,B.school.name,'Basic teachers school the unschooled',
+      stu+'<small style="font-weight:400;color:var(--ink-faint)">/'+(scap||'—')+'</small>',
+      'Teachers <b>'+tc+'</b>/'+TEACH_MAX+' (need '+TEACH_MIN+', '+STUDENTS_PER_TEACHER+' students each)<br>'+
+        (schoolOpen ? (stu?'<b style="color:var(--good)">teaching</b> · +1 level/yr · next in <b>'+nextIn+'d</b>':'Ready — enrol uneducated or basic students') : '<b style="color:var(--bad)">closed</b> — assign '+TEACH_MIN+' Basic teachers'),
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers · Basic</div>'+stepper('teacher')+
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('school'));
 
-    if(!S.unlocked.college){
-      const inter = S.people.filter(p=>p.edu>=1).length;
-      html+=lockedCard('college',B.college.color,B.college.name,B.college.sub,'Reach 75% Basic Education', Math.min(1,inter/(S.people.length*COLLEGE_UNLOCK_FRAC)), inter+' / '+Math.ceil(S.people.length*COLLEGE_UNLOCK_FRAC)+' basic educated');
-    } else if(S.collegeBuild>0){
-      const pct=Math.round((COLLEGE_BUILD_UNITS-S.collegeBuild)/COLLEGE_BUILD_UNITS*100);
+    if(!S.unlocked.college){
+      // Hidden until unlocked to prevent clutter
+    } else if(S.collegeBuild>0){
+      const pct=Math.round((COLLEGE_BUILD_UNITS-S.collegeBuild)/COLLEGE_BUILD_UNITS*100);
       html+=card('college',B.college.color,'College','Under construction','—',
         'Construction underway — needs <b>'+Math.ceil(S.collegeBuild)+'</b> units',
         '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
