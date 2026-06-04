@@ -471,6 +471,9 @@
   const BANK_COST=2000, BANK_BUILD_UNITS=40;
   const BANK_DEPOSIT_RATE=0.15, BANK_BUFFER_PER=30, BANK_INTEREST=0.03, BANK_WITHDRAW_RATE=0.5;
   const BILLING_COST=100, BILLING_KEEPERS=2;
+  const DHABA_COST=400, DHABA_BUILD_UNITS=15;
+  const DHABA_MIN_KG=0.2, DHABA_MAX_KG=1.5, DHABA_SERVE_KG=45, DHABA_HELPER_SHARE=0.25, DHABA_MORALE=7;
+  const SAVE_RATE_MEAN=0.2, SAVE_RATE_SD=0.15;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
     harvester:{ name:'Harvester', cost:1000, out:8 },
@@ -487,8 +490,9 @@
     shop   :{name:'Shop', role:'shop', sub:'Sells goods · 18% tax', cx:600, gy:250, w:112, h:76, color:'#c87a55', cap:2},
     college:{name:'Community College', role:'college', sub:'Teaches to Intermediate', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:20},
     bank   :{name:'Bank', role:'bank', sub:'Holds citizen savings', cx:263, gy:250, w:104, h:80, color:'#6b7a8f', cap:0},
+    dhaba  :{name:'Dhaba', role:'dhaba', sub:'Eatery · 18% tax', cx:490, gy:250, w:96, h:74, color:'#c0743a', cap:0},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358] }; 
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358], dhaba:[490,302] }; 
   const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
@@ -509,14 +513,14 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0,
-      built:{college:false, school:false, shop:false, bank:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0,
+      built:{college:false, school:false, shop:false, bank:false, dhaba:false},
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
       allowImmigration:true, activeBuildTab:'residential',
       daysSinceCensus:0, maxPop:10, nextId:0,
-      people:[], today:{indirect:0, income:0},
+      people:[], today:{indirect:0, income:0, godown:0, bank:0},
       smoke:[], spark:[], rupees:[], clouds:[{x:160,y:34,s:.12,r:1},{x:520,y:52,s:.08,r:.8}],
       selectedEntity:null
     };
@@ -531,12 +535,15 @@
       kg:PERSON_KG_START, buyT:0, needFood:false, homelessDays:0,
       morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), 
       wx:sx, wy:sy, wt:Math.floor(Math.random()*180),
+      dhabaKg:rnd(DHABA_MIN_KG,DHABA_MAX_KG), s:clamp01(gaussian(SAVE_RATE_MEAN,SAVE_RATE_SD)), income:0,
       hidden: false });
   }
   /* ============ HELPERS ============ */
   function totalDaysElapsed(){ return (S.year - 1) * YEAR_DAYS + S.day; }
   function unlocksAllowed(){ return totalDaysElapsed() > 15; }
   function rnd(a,b){return a+Math.random()*(b-a);}
+  function gaussian(mean,sd){ let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return mean + sd*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  function clamp01(x){ return x<0?0:x>1?1:x; }
   function el(id){return document.getElementById(id);}
   function money(n){const r=Math.round(n);return (r<0?'-'+CUR:CUR)+Math.abs(r).toLocaleString();}
   function idle(){return S.people.filter(p=>p.role==='idle');}
@@ -564,6 +571,8 @@
     if(role==='shop') return S.built.shop ? (B.shop.cap + (S.shopBillingCounter ? BILLING_KEEPERS : 0)) : 0;
     if(role==='college_teacher') return S.built.college ? 5 : 0;
     if(role==='college_staff') return S.built.college ? 3 : 0;
+    if(role==='dhaba_cook') return S.built.dhaba ? 1 : 0;
+    if(role==='dhaba_helper') return S.built.dhaba ? 2 : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
     if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
     return B[role]?B[role].cap:0;
@@ -573,6 +582,7 @@
     if((role==='school' || role==='teacher') && !S.built.school) return;
     if(role==='shop' && !S.built.shop) return;
     if((role==='college'||role==='college_teacher'||role==='college_staff') && !S.built.college) return;
+    if((role==='dhaba_cook'||role==='dhaba_helper') && !S.built.dhaba) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     
@@ -581,6 +591,8 @@
     else if(role==='college_teacher') cand=cand.filter(p=>p.edu===1);
     else if(role==='college_staff') cand=cand.filter(p=>p.edu===0);
     else if(role==='college') cand=cand.filter(p=>p.edu===1);
+    else if(role==='dhaba_cook') cand=cand.filter(p=>p.edu>=1);
+    else if(role==='dhaba_helper') cand=cand.filter(p=>p.edu===0);
     else if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) cand=cand.filter(p=>p.edu===2);
     
     if(!cand.length) return;
@@ -692,6 +704,23 @@
     const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
     const totalFarmRev = farmShopRev + farmGovRev;
     const totalShopRev = taxedSales * price * SHOP_MARKUP;
+
+    // --- Dhaba (eatery) sales ---
+    const dhabaStaffed = S.built.dhaba && roleCount('dhaba_cook')>=1 && roleCount('dhaba_helper')>=2;
+    const dhabaOpen = dhabaStaffed && S.goods > pop;
+    let dhabaDemandKg = 0;
+    if(dhabaOpen){
+      S.people.forEach(p=>{
+        if(p.role==='dhaba_cook' || p.role==='dhaba_helper') return;
+        if(p.kg < BUY_THRESHOLD) return;            // only fed villagers dine out
+        dhabaDemandKg += (p.dhabaKg||0);
+      });
+    }
+    const dhabaSales = dhabaOpen ? Math.min(dhabaDemandKg, DHABA_SERVE_KG) : 0;
+    const dhabaServeFrac = dhabaDemandKg>0 ? dhabaSales/dhabaDemandKg : 0;
+    const dhabaSpend = dhabaSales * retailPrice;
+    const dhabaIndirect = dhabaSpend * INDIRECT_TAX;
+    const dhabaAfterTax = dhabaSpend - dhabaIndirect;
     
     let tcRev = roleCount('teacher') * SCHOOL_TEACHER_PAY;
     let colTeachRev = roleCount('college_teacher') * COLLEGE_TEACHER_PAY;
@@ -723,10 +752,36 @@
     const incomeTax = fTax + sTax + tTax;
     const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
 
+    // --- Per-person net daily income Y (drives savings S = sY) ---
+    S.people.forEach(p => p.income = 0);
+    if(farmSumM > 0){
+      allFarmers.forEach(p => {
+        const share = totalFarmRev * (EDU_MULT[p.edu] / farmSumM);
+        p.income = share * (1 - INCOME_TAX[p.edu]);
+      });
+    }
+    if(shopSumM > 0){
+      roleList('shop').forEach(p => {
+        const share = totalShopRev * (EDU_MULT[p.edu] / shopSumM);
+        p.income = share * (1 - INCOME_TAX[p.edu]);
+      });
+    }
+    roleList('teacher').forEach(p => p.income = SCHOOL_TEACHER_PAY * (1 - INCOME_TAX[p.edu]));
+    roleList('college_teacher').forEach(p => p.income = COLLEGE_TEACHER_PAY * (1 - INCOME_TAX[p.edu]));
+    roleList('college_staff').forEach(p => p.income = COLLEGE_STAFF_PAY * (1 - INCOME_TAX[p.edu]));
+    if(dhabaOpen){
+      roleList('dhaba_cook').forEach(p => p.income = dhabaAfterTax * (1 - DHABA_HELPER_SHARE));
+      const helpers = roleList('dhaba_helper');
+      if(helpers.length > 0){
+        const eachHelper = (dhabaAfterTax * DHABA_HELPER_SHARE) / helpers.length;
+        helpers.forEach(p => p.income = eachHelper);
+      }
+    }
+
     let totalMorale = S.people.reduce((sum, p) => sum + p.morale, 0);
     let avgMorale = S.people.length ? totalMorale / S.people.length : 0;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaIndirect,dhabaAfterTax,dhabaServeFrac};
   }
   
   function step(dt){
@@ -741,6 +796,7 @@
       S.stockO -= r.effFlow * frac;
       S.goods += r.effFlow * frac;
       S.treasury += r.effFlow * r.price * frac;
+      S.today.godown += r.effFlow * r.price * frac;
     }
     if(S.stockO < 0) S.stockO = 0;
 
@@ -782,6 +838,9 @@
         else drift += -26;
       }
       if (inCottage) drift += 10;
+      if (r.dhabaOpen && isFed && p.role!=='dhaba_cook' && p.role!=='dhaba_helper') {
+        drift += DHABA_MORALE * ((p.dhabaKg||0) * r.dhabaServeFrac / DHABA_MAX_KG);
+      }
       p.morale += drift * frac;
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
@@ -792,17 +851,19 @@
       const goodTimes = r.avgMorale>=65 && S.goods>=bpop;
       const badTimes = r.avgMorale<45 || S.goods<bpop;
       if(goodTimes){
-        const excess = S.villagerCash - bpop*BANK_BUFFER_PER;
-        if(excess>0){
-          const dep = excess*BANK_DEPOSIT_RATE*frac;
-          if(dep>0){
-            S.villagerCash -= dep;
-            S.treasury += dep;
-            const today = totalDaysElapsed();
-            const last = S.bank.deposits[S.bank.deposits.length-1];
-            if(last && last.day===today) last.amt += dep;
-            else S.bank.deposits.push({amt:dep, day:today});
-          }
+        // Per-person savings: each saves s_i * Y_i (propensity x net income), pooled into the bank.
+        let want = 0;
+        for(const p of S.people){ if(p.income>0) want += p.s * p.income * frac; }
+        const headroom = S.villagerCash - bpop*BANK_BUFFER_PER;
+        let dep = Math.min(want, headroom>0 ? headroom : 0);
+        if(dep>0){
+          S.villagerCash -= dep;
+          S.treasury += dep;
+          S.today.bank += dep;
+          const today = totalDaysElapsed();
+          const last = S.bank.deposits[S.bank.deposits.length-1];
+          if(last && last.day===today) last.amt += dep;
+          else S.bank.deposits.push({amt:dep, day:today});
         }
       } else if(badTimes){
         const matured = bankMatured();
@@ -814,6 +875,7 @@
             const payout = want*(1+BANK_INTEREST);
             S.treasury -= payout; if(S.treasury<0) S.treasury=0;
             S.villagerCash += payout;
+            S.today.bank -= payout;
             let remaining = want;
             const now = totalDaysElapsed();
             for(const d of S.bank.deposits){
@@ -827,6 +889,17 @@
           }
         }
       }
+    }
+
+    // Dhaba: diners draw grain and pay retail; only the indirect tax leaks
+    // out of villager cash (wages flow back to the same pool, like the shop).
+    if(r.dhabaOpen && r.dhabaSales>0){
+      const sold = r.dhabaSales*frac;
+      S.goods -= sold; if(S.goods<0) S.goods=0;
+      const indD = r.dhabaIndirect*frac;
+      S.villagerCash -= indD; if(S.villagerCash<0) S.villagerCash=0;
+      S.treasury += indD;
+      S.today.indirect += indD;
     }
 
     const slots=r.keepers*SERVE_PER_KEEPER;
@@ -881,6 +954,9 @@
       } else if (S.bankBuild > 0) {
         S.bankBuild -= activeProgress;
         if (S.bankBuild <= 0) { S.bankBuild = 0; S.built.bank = true; toast('🏦 The <span class="g">Bank</span> opens its vault'); renderCards(); }
+      } else if (S.dhabaBuild > 0) {
+        S.dhabaBuild -= activeProgress;
+        if (S.dhabaBuild <= 0) { S.dhabaBuild = 0; S.built.dhaba = true; toast('🍲 The <span class="g">Dhaba</span> opens for business'); renderCards(); }
       }
     }
 
@@ -890,9 +966,11 @@
     S.elapsed += dt*S.speed;
     while(S.elapsed>=DAY_MS){
       S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
-      S.today={indirect:0,income:0};
+      S.today={indirect:0,income:0,godown:0,bank:0};
 
       S.people.forEach(p => {
+        p.dhabaKg = rnd(DHABA_MIN_KG, DHABA_MAX_KG);
+        p.s = clamp01(gaussian(SAVE_RATE_MEAN, SAVE_RATE_SD));
         if (p.home === -1) {
           p.homelessDays = (p.homelessDays || 0) + 1;
         } else {
@@ -1083,6 +1161,7 @@
     for(let i=0; i<MAX_HOUSES; i++) renderables.push({type: 'house', idx: i, y: 434});
     ['farm','school','shop','college'].forEach(k => renderables.push({type: 'building', key: k, y: B[k].gy}));
     if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) renderables.push({type:'building', key:'bank', y:B.bank.gy});
+    if(S.ch3Unlocked || S.built.dhaba || S.dhabaBuild>0) renderables.push({type:'building', key:'dhaba', y:B.dhaba.gy});
     renderables.push({type: 'tree', x: 704, y: 338, scale: 1.05});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
     updatePeople();
@@ -1206,7 +1285,7 @@
   function drawBuilding(key,night,day){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h;
     const isBuilt = (key === 'farm') || S.built[key];
-    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0);
+    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'dhaba' && S.dhabaBuild > 0);
     
     const sdir=(S.progress-0.5)*-2;
     ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(b.cx+sdir*10,baseY+6,b.w*0.58,9,0,0,7); ctx.fill();
@@ -1233,6 +1312,7 @@
     else if(key==='school'){ wallTop='#eee4d2'; wallBot='#d9cbb2'; wallEdge='#b9a988'; }
     else if(key==='shop'){ wallTop='#cdb083'; wallBot='#b1936a'; wallEdge='#8f7351'; }
     else if(key==='bank'){ wallTop='#dcd8cf'; wallBot='#bdb8ad'; wallEdge='#8f897d'; }
+    else if(key==='dhaba'){ wallTop='#d99a5c'; wallBot='#c0743a'; wallEdge='#94501f'; }
     else { wallTop='#c9b6cc'; wallBot='#a892ad'; wallEdge='#7d6783'; }
     const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,wallTop); wg.addColorStop(1,wallBot);
     ctx.fillStyle=wg; rr(x,topY+12,b.w,b.h-12,3); ctx.fill();
@@ -1287,12 +1367,22 @@
     } else if(key==='college'){
       ctx.fillStyle=shade(wallBot,0.85); rr(x-3,topY+4,b.w+6,14,3); ctx.fill(); ctx.fillStyle=shade(wallBot,0.7); ctx.fillRect(x-3,topY+4,b.w+6,4);
     } else {
-      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : ROOFS[1];
+      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='dhaba' ? '#9c4a28' : ROOFS[1];
       ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.closePath(); ctx.fill();
       ctx.strokeStyle=shade(rc,0.78); ctx.lineWidth=1;
       for(let k2=2;k2<=5;k2++){ const ty=topY+16-(k2*((topY+16)-(topY-8))/6); const hw=((x+b.w+7)-(x-7))/2*(1-k2/6.5); ctx.beginPath(); ctx.moveTo(b.cx-hw,ty); ctx.lineTo(b.cx+hw,ty); ctx.stroke(); }
       ctx.strokeStyle=shade(rc,1.15); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.stroke();
       ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(x-7,topY+15,b.w+14,3);
+    }
+    if(key==='dhaba'){
+      const ay=topY+16, aw=b.w+8, ax=x-4;
+      for(let i=0;i<6;i++){ ctx.fillStyle=i%2?'#f0d9a8':'#9c4a28'; ctx.beginPath(); ctx.moveTo(ax+i*(aw/6),ay); ctx.lineTo(ax+(i+1)*(aw/6),ay); ctx.lineTo(ax+(i+0.5)*(aw/6),ay+10); ctx.closePath(); ctx.fill(); }
+      // steaming pot by the door
+      ctx.fillStyle='#5a4632'; rr(b.cx-22,baseY-13,13,11,2); ctx.fill();
+      ctx.fillStyle='#3a2c1d'; ctx.fillRect(b.cx-23,baseY-13,15,3);
+      ctx.strokeStyle='rgba(240,230,210,'+(lit?0.5:0.35)+')'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(b.cx-18,baseY-14); ctx.quadraticCurveTo(b.cx-22,baseY-22,b.cx-16,baseY-28); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.cx-14,baseY-14); ctx.quadraticCurveTo(b.cx-10,baseY-22,b.cx-15,baseY-29); ctx.stroke();
     }
     if(key==='shop'){
       const ay=topY+16, aw=b.w+8, ax=x-4;
@@ -1401,6 +1491,7 @@
     if(p.role==='teacher') return teacherWorking() ? [ZONE.teacher[0]+p.ox, ZONE.teacher[1]+p.oy] : null;
     if(p.role==='school')  return teacherWorking() ? [ZONE.school[0]+p.ox,  ZONE.school[1]+p.oy]  : null;
     if(p.role==='college' || p.role==='college_teacher' || p.role==='college_staff') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
+    if(p.role==='dhaba_cook' || p.role==='dhaba_helper') return shopWorking() ? [ZONE.dhaba[0]+p.ox, ZONE.dhaba[1]+p.oy] : null;
     return null; 
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
@@ -1584,7 +1675,7 @@
              'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
              '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unlocksAllowed())?'disabled':'')+'>'+(!unlocksAllowed()?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');
         } else {
-           const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
+           const ce=roleCount('college'), nextIn=YEAR_DAYS-S.day+1;
            const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
            const collegeOpen = (ctc===5 && cst===3);
            
@@ -1595,11 +1686,15 @@
              '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
              '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
              '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
+             + (roleCount('college')<capacityOf('college') && !idle().some(p=>p.edu===1) ? '<div style="font-size:11px;color:var(--ink-faint);margin-top:5px;line-height:1.4">No idle <b>Basic</b> villager free to enrol — free one from a job, or wait for school graduates.</div>' : '')
            );
         }
       } else if (key === 'bank') {
         elTitle.innerHTML = B.bank.name + ' <span class="ln"></span>';
         html += bankCard(r);
+      } else if (key === 'dhaba') {
+        elTitle.innerHTML = B.dhaba.name + ' <span class="ln"></span>';
+        html += dhabaCard(r);
       }
     }
     elCont.innerHTML = html;
@@ -1633,6 +1728,29 @@
       money(owed)+' held',
       'Deposits owed <b>'+money(owed)+'</b> · matured <b>'+money(matured)+'</b><br>'+status+'<br><i style="color:var(--ink-faint)">Withdrawals repaid from treasury at +'+Math.round(BANK_INTEREST*100)+'% after 1 year.</i>',
       '');
+  }
+  function dhabaCard(r){
+    if(!S.ch3Unlocked) return '';
+    if(S.dhabaBuild>0){
+      const pct=Math.round((DHABA_BUILD_UNITS-S.dhabaBuild)/DHABA_BUILD_UNITS*100);
+      return card('shop','#c0743a','Dhaba','Under construction','—',
+        'Construction underway — needs <b>'+Math.ceil(S.dhabaBuild)+'</b> units',
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+    }
+    if(!S.built.dhaba){
+      return card('shop','#c0743a','Dhaba',B.dhaba.sub,'—',
+        'A village eatery. Diners eat <b>0.2–1.5 kg</b>/day of better food at retail price. Run by <b>1 cook</b> (educated) + <b>2 helpers</b> (uneducated); helpers earn <b>'+Math.round(DHABA_HELPER_SHARE*100)+'%</b> of after-tax revenue, the cook the rest. Gives diners a morale lift.',
+        '<button class="buildbtn" data-act="builddhaba" '+(S.treasury<DHABA_COST?'disabled':'')+'>'+(S.treasury<DHABA_COST?'Need '+money(DHABA_COST):'Set up Dhaba · '+money(DHABA_COST)+' · '+DHABA_BUILD_UNITS+' units')+'</button>');
+    }
+    const cooks=roleCount('dhaba_cook'), helpers=roleCount('dhaba_helper'), staffed=(cooks>=1&&helpers>=2);
+    const status = !staffed ? '<b style="color:var(--bad)">closed</b> — needs 1 cook + 2 helpers'
+      : r.dhabaOpen ? '<b style="color:var(--good)">open</b> · serving ~<b>'+r.dhabaSales.toFixed(1)+'</b> kg/d → indirect tax <b>'+money(r.dhabaIndirect)+'</b>'
+      : '<b>quiet</b> — villagers dine out only when grain is in surplus';
+    return card('shop','#c0743a','Dhaba',B.dhaba.sub,
+      (cooks+helpers)+'<small style="font-weight:400;color:var(--ink-faint)">/3</small>',
+      'Cook <b>'+cooks+'</b>/1 (Educated) · Helpers <b>'+helpers+'</b>/2 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Wages: cook '+Math.round((1-DHABA_HELPER_SHARE)*100)+'%, helpers '+Math.round(DHABA_HELPER_SHARE*100)+'% of after-tax revenue.</i>',
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Cook (Educated)</div>'+stepper('dhaba_cook')+
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Helpers (Uneducated)</div>'+stepper('dhaba_helper'));
   }
   function renderCards(){
     const r=rates(), c=el('cards'); let html='';
@@ -1740,7 +1858,7 @@
           'Milestone reached! Construct the College to train<br>Basic workers to Intermediate.',
           '<button class="buildbtn" data-act="buildcollege" '+((S.treasury<COLLEGE_COST || !unl)?'disabled':'')+'>'+(!unl?'Locked (Day 16)':(S.treasury<COLLEGE_COST?'Need '+money(COLLEGE_COST):'Build College · '+money(COLLEGE_COST)+' · '+COLLEGE_BUILD_UNITS+' units'))+'</button>');
       } else {
-        const ce=roleCount('college'), nIn=YEAR_DAYS-S.day+1;
+        const ce=roleCount('college'), nextIn=YEAR_DAYS-S.day+1;
         const ctc=roleCount('college_teacher'), cst=roleCount('college_staff');
         const collegeOpen = (ctc===5 && cst===3);
         
@@ -1751,11 +1869,13 @@
           '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Teachers (Basic)</div>'+stepper('college_teacher')+
           '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Staff (Uneducated)</div>'+stepper('college_staff')+
           '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Students</div>'+stepper('college')
+          + (roleCount('college')<capacityOf('college') && !idle().some(p=>p.edu===1) ? '<div style="font-size:11px;color:var(--ink-faint);margin-top:5px;line-height:1.4">No idle <b>Basic</b> villager free to enrol — free one from a job, or wait for school graduates.</div>' : '')
         );
       }
     }
 
     if (S.activeBuildTab === 'service') html+=bankCard(r);
+    if (S.activeBuildTab === 'service') html+=dhabaCard(r);
 
     c.innerHTML=html;
     renderBuildingInfo();
@@ -1783,6 +1903,8 @@
       else if(role==='college_teacher') canAdd=idle().some(p=>p.edu===1);
       else if(role==='college_staff') canAdd=idle().some(p=>p.edu===0);
       else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu===1);
+      else if(role==='dhaba_cook') canAdd=idle().some(p=>p.edu>=1);
+      else if(role==='dhaba_helper') canAdd=idle().some(p=>p.edu===0);
       else if(role.endsWith('_driver')) canAdd=idle().some(p=>p.edu===2);
       else canAdd=idle().length>0;
     }
@@ -1799,7 +1921,23 @@
     if(pop>S.maxPop) S.maxPop=pop;
     el('h-treasury').textContent=money(S.treasury);
     
-    const netFlow = r.taxTotal - r.totalTeachRev;
+    const godownRate = r.effFlow * r.price;            // + when selling stock, − when buying
+    let bankRate = 0;
+    if(S.built.bank){
+      const bpop=S.people.length;
+      const good = r.avgMorale>=65 && S.goods>=bpop;
+      const bad = r.avgMorale<45 || S.goods<bpop;
+      if(good){
+        let want=0; for(const q of S.people){ if(q.income>0) want += q.s*q.income; }
+        const headroom = S.villagerCash - bpop*BANK_BUFFER_PER;
+        bankRate = Math.min(want, headroom>0?headroom:0);
+      } else if(bad){
+        const matured=bankMatured();
+        if(matured>0){ let w=Math.min(matured*BANK_WITHDRAW_RATE, S.treasury/(1+BANK_INTEREST)); bankRate = -w*(1+BANK_INTEREST); }
+      }
+    }
+    const indirectRate = r.indirect + r.dhabaIndirect;
+    const netFlow = indirectRate + r.incomeTax - r.totalTeachRev + godownRate + bankRate;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
     el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
 
@@ -1866,8 +2004,10 @@
     el('hud-ledger-treasury').innerHTML = 
       lrow('Current Cash Holdings', money(S.treasury))
       + lrow('(+) Income Tax Revenue', '+' + money(r.incomeTax) + '/day', 'pos')
-      + lrow('(+) Indirect Retail Tax', '+' + money(r.indirect) + '/day', 'pos')
+      + lrow('(+) Indirect Tax (shop + dhaba)', '+' + money(indirectRate) + '/day', 'pos')
       + lrow('(−) Teacher Salaries Base', '−' + money(r.totalTeachRev) + '/day', 'neg')
+      + lrow('(±) Godown Trades', (godownRate>=0?'+':'−') + money(Math.abs(godownRate)) + '/day', godownRate>=0?'pos':'neg')
+      + (S.built.bank ? lrow('(±) Bank Savings Flow', (bankRate>=0?'+':'−') + money(Math.abs(bankRate)) + '/day', bankRate>=0?'pos':'neg') : '')
       + (S.built.bank ? lrow('(!) Bank Deposits Owed', money(bankOwed()), 'neg') : '')
       + '<div class="row tot"><span class="k">Net Balance Flow</span><span class="v '+(netFlow >= 0 ? 'pos':'neg')+'">'+(netFlow >= 0 ? '+': '')+money(netFlow)+'/day</span></div>';
 
@@ -2054,6 +2194,14 @@
           renderCards();
        }
     }
+    else if(act==='builddhaba') {
+       if(S.ch3Unlocked && !S.built.dhaba && S.dhabaBuild<=0 && S.treasury>=DHABA_COST) {
+          S.treasury-=DHABA_COST; S.dhabaBuild=DHABA_BUILD_UNITS;
+          toast('🏗 Dhaba construction begun — requires <span class="g">'+DHABA_BUILD_UNITS+' progress units</span>');
+          spawnRupee(B.dhaba.cx, B.dhaba.gy - B.dhaba.h);
+          renderCards();
+       }
+    }
     else if(act==='buy_billing') {
        if(S.ch3Unlocked && S.built.shop && !S.shopBillingCounter && S.treasury>=BILLING_COST) {
           S.treasury-=BILLING_COST; S.shopBillingCounter=true;
@@ -2096,6 +2244,7 @@
      }
      const hitKeys = ['farm', 'school', 'shop', 'college'];
      if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) hitKeys.push('bank');
+     if(S.ch3Unlocked || S.built.dhaba || S.dhabaBuild>0) hitKeys.push('dhaba');
      for(const key of hitKeys){
         const b = B[key];
         if(clickX >= b.cx - b.w/2 - 10 && clickX <= b.cx + b.w/2 + 10 && clickY >= b.gy - b.h - 10 && clickY <= b.gy + 10){
