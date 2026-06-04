@@ -79,6 +79,12 @@
   .r-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.2);}
   .r-btn:active{transform:translateY(1px);box-shadow:none;}
   .r-btn svg{width:18px;height:18px;}
+  .r-btn{justify-content:center;}
+  /* themed hover tooltips for icon buttons */
+  [data-tip]{position:relative;}
+  [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%) translateY(4px);background:#3a2c1d;color:#f2e6cd;font-family:'Outfit',sans-serif;font-weight:500;font-size:11.5px;letter-spacing:.3px;white-space:nowrap;padding:5px 10px;border-radius:8px;border:1px solid rgba(212,161,60,.55);box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .14s ease, transform .14s ease;z-index:60;}
+  [data-tip]::before{content:'';position:absolute;left:50%;bottom:calc(100% + 5px);transform:translateX(-50%) translateY(4px);border:5px solid transparent;border-top-color:#3a2c1d;opacity:0;pointer-events:none;transition:opacity .14s ease, transform .14s ease;z-index:60;}
+  [data-tip]:hover::after,[data-tip]:hover::before{opacity:1;transform:translateX(-50%) translateY(0);}
   .stage{flex:1;position:relative;background:#1d160e;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;width:100%;height:100%;object-fit:contain;background:#12100c;transition:cursor .1s;}
   
@@ -344,17 +350,6 @@
           <h3 class="section-h" style="margin-top:0">Village ledger <span class="ln"></span></h3>
           <div class="ledger" id="ledger"></div>
         </div>
-        <div class="panel">
-          <h3 class="section-h" style="margin-top:0">Sarpanch's note <span class="ln"></span></h3>
-          <div class="tip">Each villager keeps a little food; below <b>1 kg</b> they walk to the <b>Shop</b> to buy more. Cottages allow <b>1 kg</b> extra home storage. Every sale is taxed <b>18%</b>. The <b>School</b> needs <b>2–5 Basic teachers</b> to run. Keep <b>grain ≥ population</b> and <b>housing ≥ population</b> before each census.</div>
-          <div class="legend">
-            <span><span class="dot" style="background:#9a8f80"></span>Uneducated</span>
-            <span><span class="dot" style="background:#6fae5f"></span>Basic</span>
-            <span><span class="dot" style="background:#4f9fd4"></span>Intermediate</span>
-            <span><span class="dot" style="background:#8a6fd4"></span>Advanced</span>
-            <span><span class="dot" style="background:#e0b020"></span>Highly Skilled</span>
-          </div>
-        </div>
       </div>
     </div>
     
@@ -386,17 +381,14 @@
     </div>
 
     <div class="sub-ribbon" id="sub-ribbon-build">
-      <button class="r-btn" data-tab="residential">
+      <button class="r-btn" data-tab="residential" data-tip="Residential">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-        Residential
       </button>
-      <button class="r-btn" data-tab="production">
+      <button class="r-btn" data-tab="production" data-tip="Production">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        Production
       </button>
-      <button class="r-btn" data-tab="service">
+      <button class="r-btn" data-tab="service" data-tip="Service">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-        Service
       </button>
     </div>
   </div>
@@ -414,25 +406,22 @@
       <div class="hud-right">
         <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
           <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
-        <button class="sbtn" data-spd="0" id="spd0" title="Pause">II</button>
-        <button class="sbtn on" data-spd="1" id="spd1">1×</button>
-        <button class="sbtn" data-spd="2" id="spd2">2×</button>
-        <button class="sbtn" data-spd="4" id="spd4">4×</button>
+        <button class="sbtn" data-spd="0" id="spd0" data-tip="Pause">II</button>
+        <button class="sbtn on" data-spd="1" id="spd1" data-tip="Normal speed">1×</button>
+        <button class="sbtn" data-spd="2" id="spd2" data-tip="Double speed">2×</button>
+        <button class="sbtn" data-spd="4" id="spd4" data-tip="Quadruple speed">4×</button>
       </div>
     </div>
     <div class="ribbon-tools">
-      <button class="r-btn" id="btn-toggle-ledger">
+      <button class="r-btn" id="btn-toggle-ledger" data-tip="Stats">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        Stats &amp; Note
       </button>
-      <button class="r-btn" id="btn-toggle-build">
+      <button class="r-btn" id="btn-toggle-build" data-tip="Build">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        Build
       </button>
     </div> 
   </div>
 </div>
-
 <script>
 (function(){
   'use strict';
@@ -473,8 +462,9 @@
   const BILLING_COST=100, BILLING_KEEPERS=2;
   const DHABA_COST=400, DHABA_BUILD_UNITS=15;
   const DHABA_MIN_KG=0.2, DHABA_MAX_KG=1.5, DHABA_SERVE_KG=45, DHABA_HELPER_SHARE=0.25, DHABA_MORALE=7;
-  const TAILOR_COST=300, TAILOR_BUILD_UNITS=15, TAILOR_MARKUP=0.40;
-  const TAILOR_MIN_KG=0.1, TAILOR_MAX_KG=0.6, TAILOR_SERVE_KG=25, TAILOR_UNEDU_SHARE=0.25;
+  const BAR_COST=300, BAR_BUILD_UNITS=15, BAR_MARKUP=0.75;
+  const BAR_MAX_KG=0.8, BAR_SERVE_KG=25, BAR_UNEDU_SHARE=0.25;
+  const BAR_MORALE=16, BAR_PROD_PENALTY=0.3;
   const SAVE_RATE_MEAN=0.2, SAVE_RATE_SD=0.15;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
@@ -493,9 +483,9 @@
     college:{name:'Community College', role:'college', sub:'Teaches to Intermediate', cx:392, gy:452, w:158, h:104, color:'#8a6a9a', cap:20},
     bank   :{name:'Bank', role:'bank', sub:'Holds citizen savings', cx:263, gy:250, w:104, h:80, color:'#6b7a8f', cap:0},
     dhaba  :{name:'Dhaba', role:'dhaba', sub:'Eatery · 18% tax', cx:600, gy:250, w:96, h:74, color:'#c0743a', cap:0},
-    tailor :{name:'Tailor', role:'tailor', sub:'Garments · 40% markup', cx:702, gy:250, w:84, h:70, color:'#3f8a8a', cap:0},
+    bar :{name:'Bar', role:'bar', sub:'Alcohol · 75% markup', cx:702, gy:250, w:84, h:70, color:'#9a6a3a', cap:0},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[392,304], idle:[388,358], dhaba:[600,302], tailor:[700,302] }; 
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[392,304], idle:[388,358], dhaba:[600,302], bar:[700,302] }; 
   const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
@@ -516,8 +506,8 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, tailorBuild:0,
-      built:{college:false, school:false, shop:false, bank:false, dhaba:false, tailor:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0,
+      built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false},
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
@@ -539,7 +529,7 @@
       morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), 
       wx:sx, wy:sy, wt:Math.floor(Math.random()*180),
       dhabaKg:rnd(DHABA_MIN_KG,DHABA_MAX_KG), s:clamp01(gaussian(SAVE_RATE_MEAN,SAVE_RATE_SD)), income:0,
-      tailorKg:rnd(TAILOR_MIN_KG,TAILOR_MAX_KG),
+      barProp:rnd(0,1), drankToday:false, barDrinkFrac:0,
       hidden: false });
   }
   /* ============ HELPERS ============ */
@@ -577,8 +567,8 @@
     if(role==='college_staff') return S.built.college ? 3 : 0;
     if(role==='dhaba_cook') return S.built.dhaba ? 1 : 0;
     if(role==='dhaba_helper') return S.built.dhaba ? 2 : 0;
-    if(role==='tailor_master') return S.built.tailor ? 1 : 0;
-    if(role==='tailor_helper') return S.built.tailor ? 1 : 0;
+    if(role==='bar_master') return S.built.bar ? 1 : 0;
+    if(role==='bar_helper') return S.built.bar ? 1 : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
     if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
     return B[role]?B[role].cap:0;
@@ -589,7 +579,7 @@
     if(role==='shop' && !S.built.shop) return;
     if((role==='college'||role==='college_teacher'||role==='college_staff') && !S.built.college) return;
     if((role==='dhaba_cook'||role==='dhaba_helper') && !S.built.dhaba) return;
-    if((role==='tailor_master'||role==='tailor_helper') && !S.built.tailor) return;
+    if((role==='bar_master'||role==='bar_helper') && !S.built.bar) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     
@@ -600,8 +590,8 @@
     else if(role==='college') cand=cand.filter(p=>p.edu===1);
     else if(role==='dhaba_cook') cand=cand.filter(p=>p.edu>=1);
     else if(role==='dhaba_helper') cand=cand.filter(p=>p.edu===0);
-    else if(role==='tailor_master') cand=cand.filter(p=>p.edu>=1);
-    else if(role==='tailor_helper') cand=cand.filter(p=>p.edu===0);
+    else if(role==='bar_master') cand=cand.filter(p=>p.edu>=1);
+    else if(role==='bar_helper') cand=cand.filter(p=>p.edu===0);
     else if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) cand=cand.filter(p=>p.edu===2);
     
     if(!cand.length) return;
@@ -661,7 +651,7 @@
 
   /* ============ ECONOMY ============ */
   function rates(){
-    let prod=0, fTax=0, sTax=0, tTax=0, dTax=0, tlTax=0;
+    let prod=0, fTax=0, sTax=0, tTax=0, dTax=0, bTax=0;
     
     const allFarmers = [...roleList('farm'), ...roleList('tractor_driver'), ...roleList('harvester_driver'), ...roleList('combiner_driver')];
 
@@ -671,12 +661,14 @@
       if (p.role === 'harvester_driver') baseOut = FARM_UPGRADES.harvester.out;
       if (p.role === 'combiner_driver') baseOut = FARM_UPGRADES.combiner.out;
       
-      prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p);
+      const drunkMult = p.drankToday ? (1 - BAR_PROD_PENALTY * (p.barDrinkFrac||0)) : 1;
+      prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p) * drunkMult;
     });
     
     let sCap=0;
     roleList('shop').forEach(p=>{
-      sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p);
+      const dm = p.drankToday ? (1 - BAR_PROD_PENALTY * (p.barDrinkFrac||0)) : 1;
+      sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p) * dm;
     });
     
     const pop=S.people.length;
@@ -731,25 +723,26 @@
     const dhabaFarmGate = dhabaSales * price;                   // farmers paid for the grain
     const dhabaMargin = dhabaSales * price * SHOP_MARKUP;       // dhaba workers' wage pool
 
-    // --- Tailor (garments) sales --- supplied by the farm, 40% markup
-    const tailorStaffed = S.built.tailor && roleCount('tailor_master')>=1 && roleCount('tailor_helper')>=1;
-    const tailorOpen = tailorStaffed && S.goods > pop;
-    const tailorPrice = price * (1 + TAILOR_MARKUP);
-    let tailorDemandKg = 0;
-    if(tailorOpen){
+    // --- Bar (alcohol) sales --- grain distilled, 75% markup
+    const barStaffed = S.built.bar && roleCount('bar_master')>=1 && roleCount('bar_helper')>=1;
+    const barOpen = barStaffed && S.goods > pop;
+    const barPrice = price * (1 + BAR_MARKUP);
+    let barDemandKg = 0;
+    if(barOpen){
       S.people.forEach(p=>{
-        if(p.role==='tailor_master' || p.role==='tailor_helper') return;
-        if(p.kg < BUY_THRESHOLD) return;            // buy clothes once fed
-        tailorDemandKg += (p.tailorKg||0);
+        if(p.role==='bar_master' || p.role==='bar_helper') return;
+        if(p.kg < BUY_THRESHOLD) return;            // drink only once fed
+        barDemandKg += (p.barProp||0) * BAR_MAX_KG;   // propensity (0,1) scales how much they drink
       });
     }
-    const tailorSales = tailorOpen ? Math.min(tailorDemandKg, TAILOR_SERVE_KG) : 0;
-    const tailorSpend = tailorSales * tailorPrice;
-    const tailorIndirect = tailorSpend * INDIRECT_TAX;
-    const tailorFarmGate = tailorSales * price;                 // farmers paid for the cloth input
-    const tailorMargin = tailorSales * price * TAILOR_MARKUP;    // tailor workers' wage pool
+    const barSales = barOpen ? Math.min(barDemandKg, BAR_SERVE_KG) : 0;
+    const barServeFrac = barDemandKg>0 ? barSales/barDemandKg : 0;
+    const barSpend = barSales * barPrice;
+    const barIndirect = barSpend * INDIRECT_TAX;
+    const barFarmGate = barSales * price;                 // farmers paid for the grain
+    const barMargin = barSales * price * BAR_MARKUP;      // bar workers' wage pool
 
-    const totalFarmRev = farmShopRev + farmGovRev + dhabaFarmGate + tailorFarmGate;
+    const totalFarmRev = farmShopRev + farmGovRev + dhabaFarmGate + barFarmGate;
     
     let tcRev = roleCount('teacher') * SCHOOL_TEACHER_PAY;
     let colTeachRev = roleCount('college_teacher') * COLLEGE_TEACHER_PAY;
@@ -778,14 +771,14 @@
     roleList('college_teacher').forEach(p => tTax += COLLEGE_TEACHER_PAY * INCOME_TAX[p.edu]);
     roleList('college_staff').forEach(p => tTax += COLLEGE_STAFF_PAY * INCOME_TAX[p.edu]);
 
-    // dhaba + tailor workers pay income tax on their slice of the trade margin
+    // dhaba + bar workers pay income tax on their slice of the trade margin
     roleList('dhaba_cook').forEach(p => dTax += (dhabaMargin*(1-DHABA_HELPER_SHARE)) * INCOME_TAX[p.edu]);
     { const dh=roleList('dhaba_helper'); if(dh.length) dh.forEach(p => dTax += (dhabaMargin*DHABA_HELPER_SHARE/dh.length) * INCOME_TAX[p.edu]); }
-    roleList('tailor_master').forEach(p => tlTax += (tailorMargin*(1-TAILOR_UNEDU_SHARE)) * INCOME_TAX[p.edu]);
-    roleList('tailor_helper').forEach(p => tlTax += (tailorMargin*TAILOR_UNEDU_SHARE) * INCOME_TAX[p.edu]);
+    roleList('bar_master').forEach(p => bTax += (barMargin*(1-BAR_UNEDU_SHARE)) * INCOME_TAX[p.edu]);
+    roleList('bar_helper').forEach(p => bTax += (barMargin*BAR_UNEDU_SHARE) * INCOME_TAX[p.edu]);
 
-    const incomeTax = fTax + sTax + tTax + dTax + tlTax;
-    const netWages = totalFarmRev + totalShopRev + totalTeachRev + dhabaMargin + tailorMargin - incomeTax;
+    const incomeTax = fTax + sTax + tTax + dTax + bTax;
+    const netWages = totalFarmRev + totalShopRev + totalTeachRev + dhabaMargin + barMargin - incomeTax;
 
     // --- Per-person net daily income Y (drives savings S = sY) ---
     S.people.forEach(p => p.income = 0);
@@ -812,15 +805,15 @@
         helpers.forEach(p => p.income = eachHelper * (1 - INCOME_TAX[p.edu]));
       }
     }
-    if(tailorOpen){
-      roleList('tailor_master').forEach(p => p.income = (tailorMargin*(1-TAILOR_UNEDU_SHARE)) * (1 - INCOME_TAX[p.edu]));
-      roleList('tailor_helper').forEach(p => p.income = (tailorMargin*TAILOR_UNEDU_SHARE) * (1 - INCOME_TAX[p.edu]));
+    if(barOpen){
+      roleList('bar_master').forEach(p => p.income = (barMargin*(1-BAR_UNEDU_SHARE)) * (1 - INCOME_TAX[p.edu]));
+      roleList('bar_helper').forEach(p => p.income = (barMargin*BAR_UNEDU_SHARE) * (1 - INCOME_TAX[p.edu]));
     }
 
     let totalMorale = S.people.reduce((sum, p) => sum + p.morale, 0);
     let avgMorale = S.people.length ? totalMorale / S.people.length : 0;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaSpend,dhabaIndirect,dhabaMargin,dhabaFarmGate,dhabaServeFrac,tailorOpen,tailorSales,tailorSpend,tailorIndirect,tailorMargin,tailorFarmGate,tailorPrice};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaSpend,dhabaIndirect,dhabaMargin,dhabaFarmGate,dhabaServeFrac,barOpen,barSales,barSpend,barIndirect,barMargin,barFarmGate,barPrice,barServeFrac};
   }
   
   function step(dt){
@@ -880,6 +873,11 @@
       if (r.dhabaOpen && isFed && p.role!=='dhaba_cook' && p.role!=='dhaba_helper') {
         drift += DHABA_MORALE * ((p.dhabaKg||0) * r.dhabaServeFrac / DHABA_MAX_KG);
       }
+      if (r.barOpen && isFed && p.role!=='bar_master' && p.role!=='bar_helper') {
+        const drinkFrac = (p.barProp||0) * r.barServeFrac;   // share of max actually drunk
+        drift += BAR_MORALE * drinkFrac;                     // big morale lift
+        p.drankToday = true; p.barDrinkFrac = drinkFrac;      // flag a day of lower output
+      }
       p.morale += drift * frac;
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
@@ -930,14 +928,14 @@
       }
     }
 
-    // Dhaba + Tailor: customers pay full retail and grain is drawn from stock.
+    // Dhaba + Bar: customers pay full retail and grain is drawn from stock.
     // Farmgate (to farmers) and worker margins already flow via netWages above;
     // only the customer spend leaves villager cash and indirect tax hits treasury.
-    if(r.dhabaSales>0 || r.tailorSales>0){
-      S.goods -= (r.dhabaSales + r.tailorSales)*frac; if(S.goods<0) S.goods=0;
-      const spendOut = (r.dhabaSpend + r.tailorSpend)*frac;
+    if(r.dhabaSales>0 || r.barSales>0){
+      S.goods -= (r.dhabaSales + r.barSales)*frac; if(S.goods<0) S.goods=0;
+      const spendOut = (r.dhabaSpend + r.barSpend)*frac;
       S.villagerCash -= spendOut; if(S.villagerCash<0) S.villagerCash=0;
-      const indD = (r.dhabaIndirect + r.tailorIndirect)*frac;
+      const indD = (r.dhabaIndirect + r.barIndirect)*frac;
       S.treasury += indD;
       S.today.indirect += indD;
     }
@@ -997,9 +995,9 @@
       } else if (S.dhabaBuild > 0) {
         S.dhabaBuild -= activeProgress;
         if (S.dhabaBuild <= 0) { S.dhabaBuild = 0; S.built.dhaba = true; toast('🍲 The <span class="g">Dhaba</span> opens at the shop'); renderCards(); }
-      } else if (S.tailorBuild > 0) {
-        S.tailorBuild -= activeProgress;
-        if (S.tailorBuild <= 0) { S.tailorBuild = 0; S.built.tailor = true; toast('🧵 The <span class="g">Tailor</span> opens for business'); renderCards(); }
+      } else if (S.barBuild > 0) {
+        S.barBuild -= activeProgress;
+        if (S.barBuild <= 0) { S.barBuild = 0; S.built.bar = true; toast('🍺 The <span class="g">Bar</span> opens for business'); renderCards(); }
       }
     }
 
@@ -1014,7 +1012,8 @@
       S.people.forEach(p => {
         p.dhabaKg = rnd(DHABA_MIN_KG, DHABA_MAX_KG);
         p.s = clamp01(gaussian(SAVE_RATE_MEAN, SAVE_RATE_SD));
-        p.tailorKg = rnd(TAILOR_MIN_KG, TAILOR_MAX_KG);
+        p.barProp = rnd(0,1);
+        p.drankToday = false; p.barDrinkFrac = 0;
         if (p.home === -1) {
           p.homelessDays = (p.homelessDays || 0) + 1;
         } else {
@@ -1205,7 +1204,7 @@
     for(let i=0; i<MAX_HOUSES; i++) renderables.push({type: 'house', idx: i, y: 434});
     ['farm','school','shop'].forEach(k => renderables.push({type: 'building', key: k, y: B[k].gy}));
     if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) renderables.push({type:'building', key:'bank', y:B.bank.gy});
-    if(S.ch3Unlocked || S.built.tailor || S.tailorBuild>0) renderables.push({type:'building', key:'tailor', y:B.tailor.gy});
+    if(S.ch3Unlocked || S.built.bar || S.barBuild>0) renderables.push({type:'building', key:'bar', y:B.bar.gy});
     renderables.push({type: 'tree', x: 38, y: 352, scale: 0.95});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
     updatePeople();
@@ -1329,7 +1328,7 @@
   function drawBuilding(key,night,day){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h;
     const isBuilt = (key === 'farm') || S.built[key];
-    const isBuilding = (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'tailor' && S.tailorBuild > 0);
+    const isBuilding = (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'bar' && S.barBuild > 0);
     
     const sdir=(S.progress-0.5)*-2;
     ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(b.cx+sdir*10,baseY+6,b.w*0.58,9,0,0,7); ctx.fill();
@@ -1356,7 +1355,7 @@
     else if(key==='school'){ wallTop='#eee4d2'; wallBot='#d9cbb2'; wallEdge='#b9a988'; }
     else if(key==='shop'){ wallTop='#cdb083'; wallBot='#b1936a'; wallEdge='#8f7351'; }
     else if(key==='bank'){ wallTop='#dcd8cf'; wallBot='#bdb8ad'; wallEdge='#8f897d'; }
-    else if(key==='tailor'){ wallTop='#5fb0ac'; wallBot='#3f8a8a'; wallEdge='#2c6160'; }
+    else if(key==='bar'){ wallTop='#c08a4e'; wallBot='#9a6a3a'; wallEdge='#6e4824'; }
     else { wallTop='#c9b6cc'; wallBot='#a892ad'; wallEdge='#7d6783'; }
     const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,wallTop); wg.addColorStop(1,wallBot);
     ctx.fillStyle=wg; rr(x,topY+12,b.w,b.h-12,3); ctx.fill();
@@ -1409,20 +1408,21 @@
         ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(cx+8,cy-4,8,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(cx+24,cy-4,5,0,7); ctx.fill();
       }
     } else {
-      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='tailor' ? '#2f6f6e' : ROOFS[1];
+      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='bar' ? '#7a4a26' : ROOFS[1];
       ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.closePath(); ctx.fill();
       ctx.strokeStyle=shade(rc,0.78); ctx.lineWidth=1;
       for(let k2=2;k2<=5;k2++){ const ty=topY+16-(k2*((topY+16)-(topY-8))/6); const hw=((x+b.w+7)-(x-7))/2*(1-k2/6.5); ctx.beginPath(); ctx.moveTo(b.cx-hw,ty); ctx.lineTo(b.cx+hw,ty); ctx.stroke(); }
       ctx.strokeStyle=shade(rc,1.15); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.stroke();
       ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(x-7,topY+15,b.w+14,3);
     }
-    if(key==='tailor'){
+    if(key==='bar'){
       const ay=topY+16, aw=b.w+8, ax=x-4;
-      for(let i=0;i<6;i++){ ctx.fillStyle=i%2?'#eef3f2':'#2f6f6e'; ctx.beginPath(); ctx.moveTo(ax+i*(aw/6),ay); ctx.lineTo(ax+(i+1)*(aw/6),ay); ctx.lineTo(ax+(i+0.5)*(aw/6),ay+10); ctx.closePath(); ctx.fill(); }
-      // garment on a rail by the door
-      ctx.strokeStyle=shade(wallEdge,0.8); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(b.cx+8,baseY-20); ctx.lineTo(b.cx+22,baseY-20); ctx.stroke();
-      ctx.fillStyle='#c98aa6'; ctx.beginPath(); ctx.moveTo(b.cx+12,baseY-19); ctx.lineTo(b.cx+18,baseY-19); ctx.lineTo(b.cx+20,baseY-4); ctx.lineTo(b.cx+10,baseY-4); ctx.closePath(); ctx.fill();
-      ctx.fillStyle='#e6c84f'; ctx.fillRect(b.cx+13,baseY-19,4,3);
+      for(let i=0;i<6;i++){ ctx.fillStyle=i%2?'#f0e0c0':'#7a4a26'; ctx.beginPath(); ctx.moveTo(ax+i*(aw/6),ay); ctx.lineTo(ax+(i+1)*(aw/6),ay); ctx.lineTo(ax+(i+0.5)*(aw/6),ay+10); ctx.closePath(); ctx.fill(); }
+      // frothy mug by the door
+      ctx.fillStyle='#caa24a'; rr(b.cx+9,baseY-15,11,13,2); ctx.fill();
+      ctx.fillStyle='#e9c66a'; ctx.fillRect(b.cx+9,baseY-9,11,7);
+      ctx.fillStyle='#fbf3df'; ctx.beginPath(); ctx.ellipse(b.cx+14.5,baseY-15,6,2.6,0,0,7); ctx.fill();
+      ctx.strokeStyle=shade(wallEdge,1.2); ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(b.cx+22,baseY-8.5,3.4,-Math.PI/2,Math.PI/2); ctx.stroke();
     }
     if(key==='shop'){
       const ay=topY+16, aw=b.w+8, ax=x-4;
@@ -1539,7 +1539,7 @@
     if(p.role==='school')  return teacherWorking() ? [ZONE.school[0]+p.ox,  ZONE.school[1]+p.oy]  : null;
     if(p.role==='college' || p.role==='college_teacher' || p.role==='college_staff') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
     if(p.role==='dhaba_cook' || p.role==='dhaba_helper') return shopWorking() ? [ZONE.dhaba[0]+p.ox, ZONE.dhaba[1]+p.oy] : null;
-    if(p.role==='tailor_master' || p.role==='tailor_helper') return shopWorking() ? [ZONE.tailor[0]+p.ox, ZONE.tailor[1]+p.oy] : null;
+    if(p.role==='bar_master' || p.role==='bar_helper') return shopWorking() ? [ZONE.bar[0]+p.ox, ZONE.bar[1]+p.oy] : null;
     return null; 
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
@@ -1758,8 +1758,8 @@
         html += businessCard(r);
       } else if (key === 'bank') {
         html += bankCard(r);
-      } else if (key === 'tailor') {
-        html += tailorCard(r);
+      } else if (key === 'bar') {
+        html += barCard(r);
       }
     }
     elCont.innerHTML = html;
@@ -1796,28 +1796,28 @@
       '');
   }
 
-  function tailorCard(r){
+  function barCard(r){
     if(!S.ch3Unlocked) return '';
-    if(S.tailorBuild>0){
-      const pct=Math.round((TAILOR_BUILD_UNITS-S.tailorBuild)/TAILOR_BUILD_UNITS*100);
-      return card('shop','#3f8a8a','Tailor','Under construction','—',
-        'Construction underway — needs <b>'+Math.ceil(S.tailorBuild)+'</b> units',
+    if(S.barBuild>0){
+      const pct=Math.round((BAR_BUILD_UNITS-S.barBuild)/BAR_BUILD_UNITS*100);
+      return card('shop','#9a6a3a','Bar','Under construction','—',
+        'Construction underway — needs <b>'+Math.ceil(S.barBuild)+'</b> units',
         '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
     }
-    if(!S.built.tailor){
-      return card('shop','#3f8a8a','Tailor',B.tailor.sub,'—',
-        'Turns farm grain into garments sold at a <b>'+Math.round(TAILOR_MARKUP*100)+'%</b> markup. Run by <b>1 master</b> (educated) + <b>1 hand</b> (uneducated). Farmers are paid for the crop; the master takes <b>'+Math.round((1-TAILOR_UNEDU_SHARE)*100)+'%</b> of the margin and the hand <b>'+Math.round(TAILOR_UNEDU_SHARE*100)+'%</b>, both taxed by slab.',
-        '<button class="buildbtn" data-act="buildtailor" '+(S.treasury<TAILOR_COST?'disabled':'')+'>'+(S.treasury<TAILOR_COST?'Need '+money(TAILOR_COST):'Set up Tailor · '+money(TAILOR_COST)+' · '+TAILOR_BUILD_UNITS+' units')+'</button>');
+    if(!S.built.bar){
+      return card('shop','#9a6a3a','Bar',B.bar.sub,'—',
+        'Distills farm grain into liquor sold at a <b>'+Math.round(BAR_MARKUP*100)+'%</b> markup. Run by <b>1 master</b> (educated) + <b>1 hand</b> (uneducated). Farmers are paid for the grain; the master takes <b>'+Math.round((1-BAR_UNEDU_SHARE)*100)+'%</b> of the margin and the hand <b>'+Math.round(BAR_UNEDU_SHARE*100)+'%</b>, both taxed by slab. Drinkers gain a <b>big morale lift</b> but a <b>day of lower output</b>.',
+        '<button class="buildbtn" data-act="buildbar" '+(S.treasury<BAR_COST?'disabled':'')+'>'+(S.treasury<BAR_COST?'Need '+money(BAR_COST):'Set up Bar · '+money(BAR_COST)+' · '+BAR_BUILD_UNITS+' units')+'</button>');
     }
-    const masters=roleCount('tailor_master'), hands=roleCount('tailor_helper'), staffed=(masters>=1&&hands>=1);
+    const masters=roleCount('bar_master'), hands=roleCount('bar_helper'), staffed=(masters>=1&&hands>=1);
     const status = !staffed ? '<b style="color:var(--bad)">closed</b> — needs 1 master + 1 hand'
-      : r.tailorOpen ? '<b style="color:var(--good)">open</b> · selling ~<b>'+r.tailorSales.toFixed(1)+'</b> kg/d → indirect tax <b>'+money(r.tailorIndirect)+'</b>'
-      : '<b>quiet</b> — villagers buy clothes only when grain is in surplus';
-    return card('shop','#3f8a8a','Tailor',B.tailor.sub,
+      : r.barOpen ? '<b style="color:var(--good)">open</b> · selling ~<b>'+r.barSales.toFixed(1)+'</b> kg/d → indirect tax <b>'+money(r.barIndirect)+'</b>'
+      : '<b>quiet</b> — villagers drink only when grain is in surplus';
+    return card('shop','#9a6a3a','Bar',B.bar.sub,
       (masters+hands)+'<small style="font-weight:400;color:var(--ink-faint)">/2</small>',
-      'Master <b>'+masters+'</b>/1 (Educated) · Hand <b>'+hands+'</b>/1 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Final price '+money(r.tailorPrice)+'/kg · farmers paid for crop · margin split '+Math.round((1-TAILOR_UNEDU_SHARE)*100)+'% / '+Math.round(TAILOR_UNEDU_SHARE*100)+'%, taxed.</i>',
-      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Master (Educated)</div>'+stepper('tailor_master')+
-      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Hand (Uneducated)</div>'+stepper('tailor_helper'));
+      'Master <b>'+masters+'</b>/1 (Educated) · Hand <b>'+hands+'</b>/1 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Final price '+money(r.barPrice)+'/kg · farmers paid for grain · margin split '+Math.round((1-BAR_UNEDU_SHARE)*100)+'% / '+Math.round(BAR_UNEDU_SHARE*100)+'%, taxed.</i>',
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Master (Educated)</div>'+stepper('bar_master')+
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Hand (Uneducated)</div>'+stepper('bar_helper'));
   }
 
   function renderCards(){
@@ -1877,7 +1877,7 @@
       html += educationCard(r);
       html += businessCard(r);
       html += bankCard(r);
-      html += tailorCard(r);
+      html += barCard(r);
     }
     c.innerHTML=html;
     renderBuildingInfo();
@@ -1907,8 +1907,8 @@
       else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu===1);
       else if(role==='dhaba_cook') canAdd=idle().some(p=>p.edu>=1);
       else if(role==='dhaba_helper') canAdd=idle().some(p=>p.edu===0);
-      else if(role==='tailor_master') canAdd=idle().some(p=>p.edu>=1);
-      else if(role==='tailor_helper') canAdd=idle().some(p=>p.edu===0);
+      else if(role==='bar_master') canAdd=idle().some(p=>p.edu>=1);
+      else if(role==='bar_helper') canAdd=idle().some(p=>p.edu===0);
       else if(role.endsWith('_driver')) canAdd=idle().some(p=>p.edu===2);
       else canAdd=idle().length>0;
     }
@@ -1940,7 +1940,7 @@
         if(matured>0){ let w=Math.min(matured*BANK_WITHDRAW_RATE, S.treasury/(1+BANK_INTEREST)); bankRate = -w*(1+BANK_INTEREST); }
       }
     }
-    const indirectRate = r.indirect + r.dhabaIndirect + r.tailorIndirect;
+    const indirectRate = r.indirect + r.dhabaIndirect + r.barIndirect;
     const netFlow = indirectRate + r.incomeTax - r.totalTeachRev + godownRate + bankRate;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
     el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
@@ -2206,11 +2206,11 @@
           renderCards();
        }
     }
-    else if(act==='buildtailor') {
-       if(S.ch3Unlocked && !S.built.tailor && S.tailorBuild<=0 && S.treasury>=TAILOR_COST) {
-          S.treasury-=TAILOR_COST; S.tailorBuild=TAILOR_BUILD_UNITS;
-          toast('🏗 Tailor construction begun — requires <span class="g">'+TAILOR_BUILD_UNITS+' progress units</span>');
-          spawnRupee(B.tailor.cx, B.tailor.gy - B.tailor.h);
+    else if(act==='buildbar') {
+       if(S.ch3Unlocked && !S.built.bar && S.barBuild<=0 && S.treasury>=BAR_COST) {
+          S.treasury-=BAR_COST; S.barBuild=BAR_BUILD_UNITS;
+          toast('🏗 Bar construction begun — requires <span class="g">'+BAR_BUILD_UNITS+' progress units</span>');
+          spawnRupee(B.bar.cx, B.bar.gy - B.bar.h);
           renderCards();
        }
     }
@@ -2256,7 +2256,7 @@
      }
      const hitKeys = ['farm', 'school', 'shop'];
      if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) hitKeys.push('bank');
-     if(S.ch3Unlocked || S.built.tailor || S.tailorBuild>0) hitKeys.push('tailor');
+     if(S.ch3Unlocked || S.built.bar || S.barBuild>0) hitKeys.push('bar');
      for(const key of hitKeys){
         const b = B[key];
         if(clickX >= b.cx - b.w/2 - 10 && clickX <= b.cx + b.w/2 + 10 && clickY >= b.gy - b.h - 10 && clickY <= b.gy + 10){
@@ -2300,4 +2300,3 @@
 </script>
 </body>
 </html>
- 
