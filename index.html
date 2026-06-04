@@ -242,7 +242,7 @@
     <div class="ov hidden" id="chapter2">
       <div class="modal">
         <div class="eyebrow">Book One · The Basics</div>
-        <div class="chapter-title">Chapter Two<span>Government Intervention</span></div>
+        <div class="chapter-title">Chapter Two<span>Governance</span></div>
         <div class="anim-stage">
           <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
             <line x1="10" y1="128" x2="270" y2="128" stroke="#a98f63" stroke-width="1.5"/>
@@ -466,6 +466,9 @@
   const BAR_MAX_KG=0.8, BAR_SERVE_KG=25, BAR_UNEDU_SHARE=0.25;
   const BAR_MORALE=16, BAR_PROD_PENALTY=0.3;
   const SAVE_RATE_MEAN=0.2, SAVE_RATE_SD=0.15;
+  const WEAR_RATE=0.005, WEAR_REPAIR=0.01, WEAR_CAP=0.5, WORN_HOUSE_MORALE=14;
+  const SEWAK_PAY=2, SEWAK_MORALE=12;
+  const ASHRAM_COST=250, ASHRAM_CAP=6, ASHRAM_DEBUFF=0.2;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
     harvester:{ name:'Harvester', cost:1000, out:8 },
@@ -505,9 +508,10 @@
       treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
-      houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], 
+      houses:[{tier:0,build:0,pendingTier:0,wear:0},{tier:0,build:0,pendingTier:0,wear:0}], 
       collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0,
       built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false},
+      wear:{farm:0, shop:0, bar:0}, builtAshram:false, totalGrain:0, totalAlcohol:0,
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
@@ -529,7 +533,7 @@
       morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), 
       wx:sx, wy:sy, wt:Math.floor(Math.random()*180),
       dhabaKg:rnd(DHABA_MIN_KG,DHABA_MAX_KG), s:clamp01(gaussian(SAVE_RATE_MEAN,SAVE_RATE_SD)), income:0,
-      barProp:rnd(0,1), drankToday:false, barDrinkFrac:0,
+      barProp:rnd(0,1), drankToday:false, barDrinkFrac:0, inAshram:false,
       hidden: false });
   }
   /* ============ HELPERS ============ */
@@ -544,20 +548,41 @@
   function roleCount(r){return S.people.filter(p=>p.role===r).length;}
   function roleList(r){return S.people.filter(p=>p.role===r);}
   function houseCap(h){ return h.tier>=0 ? HOUSE_TIERS[h.tier].cap : 0; }  
-  function housingCap(){ return S.houses.reduce((s,h)=>s+houseCap(h),0); }
+  function housingCap(){ return S.houses.reduce((s,h)=>s+houseCap(h),0) + (S.builtAshram ? ASHRAM_CAP : 0); }
   function homeless(){return Math.max(0,S.people.length-housingCap());}
   function reassignHomes(){
     const slots=[]; S.houses.forEach((h,i)=>{ const c=houseCap(h); for(let k=0;k<c;k++) slots.push(i); });
-    S.people.forEach((p,idx)=>{ if(idx<slots.length){ p.home=slots[idx]; p.homelessDays=0; } else { p.home=-1; } });
+    let ashramLeft = S.builtAshram ? ASHRAM_CAP : 0;
+    S.people.forEach((p,idx)=>{
+      if(idx<slots.length){ p.home=slots[idx]; p.inAshram=false; p.homelessDays=0; }
+      else if(ashramLeft>0){ p.home=-1; p.inAshram=true; p.homelessDays=0; ashramLeft--; }
+      else { p.home=-1; p.inAshram=false; }
+    });
   }
 
   function getHomelessMultiplier(p) {
-    if (p.home >= 0) return 1;
+    if (p.home >= 0 || p.inAshram) return 1;
     const d = p.homelessDays || 0;
     if (d < 3) return 0.9;
     if (d < 6) return 0.7;
     if (d < 8) return 0.5;
     return 0;
+  }
+  function maintainableCount(){
+    let n = 1; // farm always stands
+    if(S.built.shop) n++;
+    if(S.built.bar) n++;
+    S.houses.forEach(h=>{ if(h.tier>=0) n++; });
+    return n;
+  }
+  function maintainFrac(){ const c=maintainableCount(); return c>0 ? Math.min(1, roleCount('sewak')/c) : 1; }
+  function avgBuildingWear(){
+    let sum=0, n=0;
+    sum += (S.wear.farm||0); n++;
+    if(S.built.shop){ sum += (S.wear.shop||0); n++; }
+    if(S.built.bar){ sum += (S.wear.bar||0); n++; }
+    S.houses.forEach(h=>{ if(h.tier>=0){ sum += (h.wear||0); n++; } });
+    return n>0 ? sum/n : 0;
   }
   function capacityOf(role){
     if(role==='teacher') return S.built.school ? TEACH_MAX : 0;
@@ -569,6 +594,7 @@
     if(role==='dhaba_helper') return S.built.dhaba ? 2 : 0;
     if(role==='bar_master') return S.built.bar ? 1 : 0;
     if(role==='bar_helper') return S.built.bar ? 1 : 0;
+    if(role==='sewak') return S.godownUnlocked ? maintainableCount() : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
     if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
     return B[role]?B[role].cap:0;
@@ -580,6 +606,7 @@
     if((role==='college'||role==='college_teacher'||role==='college_staff') && !S.built.college) return;
     if((role==='dhaba_cook'||role==='dhaba_helper') && !S.built.dhaba) return;
     if((role==='bar_master'||role==='bar_helper') && !S.built.bar) return;
+    if(role==='sewak' && !S.godownUnlocked) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     
@@ -592,6 +619,7 @@
     else if(role==='dhaba_helper') cand=cand.filter(p=>p.edu===0);
     else if(role==='bar_master') cand=cand.filter(p=>p.edu>=1);
     else if(role==='bar_helper') cand=cand.filter(p=>p.edu===0);
+    else if(role==='sewak') cand=cand.filter(p=>p.edu===0);
     else if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) cand=cand.filter(p=>p.edu===2);
     
     if(!cand.length) return;
@@ -614,7 +642,7 @@
  function buildHouse(idx){
     if(S.houses.length>=MAX_HOUSES || S.treasury<HOUSE_COST) return;
     S.treasury-=HOUSE_COST;
-    S.houses.push({tier:-1, build:HOUSE_TIERS[0].build, pendingTier:0});
+    S.houses.push({tier:-1, build:HOUSE_TIERS[0].build, pendingTier:0, wear:0});
     toast('🏗 Shack plot started — requires <span class="g">'+HOUSE_TIERS[0].build+' progress units</span>');
     spawnRupee(58 + (S.houses.length-1)*70, 434 - 44);
     renderCards();
@@ -662,14 +690,19 @@
       if (p.role === 'combiner_driver') baseOut = FARM_UPGRADES.combiner.out;
       
       const drunkMult = p.drankToday ? (1 - BAR_PROD_PENALTY * (p.barDrinkFrac||0)) : 1;
-      prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p) * drunkMult;
+      const ashMult = p.inAshram ? (1 - ASHRAM_DEBUFF) : 1;
+      prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p) * drunkMult * ashMult;
     });
+    prod *= (1 - (S.wear.farm||0));   // building wear cuts farm efficiency
     
-    let sCap=0;
+    let sCap=0, shopEffSum=0, shopN=0;
     roleList('shop').forEach(p=>{
       const dm = p.drankToday ? (1 - BAR_PROD_PENALTY * (p.barDrinkFrac||0)) : 1;
-      sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p) * dm;
+      const am = p.inAshram ? (1 - ASHRAM_DEBUFF) : 1;
+      sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p) * dm * am;
+      shopEffSum += dm*am; shopN++;
     });
+    const shopEff = shopN>0 ? shopEffSum/shopN : 1;
     
     const pop=S.people.length;
 
@@ -693,7 +726,7 @@
        avgBuyAmount = S.people.reduce((s, p) => s + ((p.home >= 0 && S.houses[p.home].tier === 2) ? 2 : 1), 0) / S.people.length;
     }
     
-    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*avgBuyAmount;  
+    const shopThroughput=keepers*SERVE_PER_KEEPER*(DAY_MS/SERVE_MS)*avgBuyAmount*shopEff*(1 - (S.wear.shop||0));  
     const consumed=demand;
     const taxedSales=Math.min(consumed, shopThroughput);
     
@@ -716,7 +749,7 @@
         dhabaDemandKg += (p.dhabaKg||0);
       });
     }
-    const dhabaSales = dhabaOpen ? Math.min(dhabaDemandKg, DHABA_SERVE_KG) : 0;
+    const dhabaSales = dhabaOpen ? Math.min(dhabaDemandKg, DHABA_SERVE_KG * (1 - (S.wear.shop||0))) : 0;
     const dhabaServeFrac = dhabaDemandKg>0 ? dhabaSales/dhabaDemandKg : 0;
     const dhabaSpend = dhabaSales * retailPrice;                // price * (1 + SHOP_MARKUP)
     const dhabaIndirect = dhabaSpend * INDIRECT_TAX;
@@ -735,7 +768,7 @@
         barDemandKg += (p.barProp||0) * BAR_MAX_KG;   // propensity (0,1) scales how much they drink
       });
     }
-    const barSales = barOpen ? Math.min(barDemandKg, BAR_SERVE_KG) : 0;
+    const barSales = barOpen ? Math.min(barDemandKg, BAR_SERVE_KG * (1 - (S.wear.bar||0))) : 0;
     const barServeFrac = barDemandKg>0 ? barSales/barDemandKg : 0;
     const barSpend = barSales * barPrice;
     const barIndirect = barSpend * INDIRECT_TAX;
@@ -777,8 +810,9 @@
     roleList('bar_master').forEach(p => bTax += (barMargin*(1-BAR_UNEDU_SHARE)) * INCOME_TAX[p.edu]);
     roleList('bar_helper').forEach(p => bTax += (barMargin*BAR_UNEDU_SHARE) * INCOME_TAX[p.edu]);
 
+    const sewakRev = roleCount('sewak') * SEWAK_PAY;
     const incomeTax = fTax + sTax + tTax + dTax + bTax;
-    const netWages = totalFarmRev + totalShopRev + totalTeachRev + dhabaMargin + barMargin - incomeTax;
+    const netWages = totalFarmRev + totalShopRev + totalTeachRev + dhabaMargin + barMargin + sewakRev - incomeTax;
 
     // --- Per-person net daily income Y (drives savings S = sY) ---
     S.people.forEach(p => p.income = 0);
@@ -809,11 +843,12 @@
       roleList('bar_master').forEach(p => p.income = (barMargin*(1-BAR_UNEDU_SHARE)) * (1 - INCOME_TAX[p.edu]));
       roleList('bar_helper').forEach(p => p.income = (barMargin*BAR_UNEDU_SHARE) * (1 - INCOME_TAX[p.edu]));
     }
+    roleList('sewak').forEach(p => p.income = SEWAK_PAY);
 
     let totalMorale = S.people.reduce((sum, p) => sum + p.morale, 0);
     let avgMorale = S.people.length ? totalMorale / S.people.length : 0;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaSpend,dhabaIndirect,dhabaMargin,dhabaFarmGate,dhabaServeFrac,barOpen,barSales,barSpend,barIndirect,barMargin,barFarmGate,barPrice,barServeFrac};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaSpend,dhabaIndirect,dhabaMargin,dhabaFarmGate,dhabaServeFrac,barOpen,barSales,barSpend,barIndirect,barMargin,barFarmGate,barPrice,barServeFrac,sewakRev};
   }
   
   function step(dt){
@@ -823,6 +858,7 @@
     const r=rates();
 
     S.goods += r.prod*frac;
+    S.totalGrain += r.prod*frac;
 
     if (r.effFlow !== 0) {
       S.stockO -= r.effFlow * frac;
@@ -834,11 +870,15 @@
 
     S.villagerCash += r.netWages*frac;  if(S.villagerCash<0) S.villagerCash=0;
 
-    S.treasury -= r.totalTeachRev * frac;
+    S.treasury -= (r.totalTeachRev + r.sewakRev) * frac;
 
     for(const p of S.people){
       const rate=CONSUME_RATE[p.edu]||0;
       if(rate>0){ p.kg-=rate*frac; if(p.kg<0)p.kg=0; }
+      if(p.inAshram && p.kg < BUY_THRESHOLD && S.stockO > 0){   // ashram residents eat free from the Godown reserve (no tax)
+        const take = Math.min(BUY_AMOUNT - p.kg, S.stockO);
+        p.kg += take; S.stockO -= take;
+      }
       p.needFood = p.kg < BUY_THRESHOLD;
     }
 
@@ -846,9 +886,9 @@
     S.people.forEach(p => {
       let drift = 0;
       const isEmployed = p.role !== 'idle';
-      const isHoused = p.home !== -1;
+      const isHoused = p.home !== -1 || p.inAshram;
       const isFed = p.kg >= BUY_THRESHOLD;
-      const inCottage = isHoused && S.houses[p.home].tier === 2;
+      const inCottage = p.home !== -1 && S.houses[p.home].tier === 2;
 
       if (p.moraleType === 0) { 
         drift += isFed ? 12 : -24;
@@ -870,6 +910,8 @@
         else drift += -26;
       }
       if (inCottage) drift += 10;
+      if (p.home>=0) drift -= WORN_HOUSE_MORALE * (S.houses[p.home].wear||0);   // a worn home grates
+      if (p.role==='sewak') drift -= SEWAK_MORALE;                              // sanitation duty is thankless
       if (r.dhabaOpen && isFed && p.role!=='dhaba_cook' && p.role!=='dhaba_helper') {
         drift += DHABA_MORALE * ((p.dhabaKg||0) * r.dhabaServeFrac / DHABA_MAX_KG);
       }
@@ -881,6 +923,7 @@
       p.morale += drift * frac;
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
+      if (p.inAshram && p.morale > 100*(1-ASHRAM_DEBUFF)) p.morale = 100*(1-ASHRAM_DEBUFF);  // ashram morale ceiling
     });
 
     if(S.built.bank){
@@ -933,6 +976,7 @@
     // only the customer spend leaves villager cash and indirect tax hits treasury.
     if(r.dhabaSales>0 || r.barSales>0){
       S.goods -= (r.dhabaSales + r.barSales)*frac; if(S.goods<0) S.goods=0;
+      S.totalAlcohol += r.barSales*frac;
       const spendOut = (r.dhabaSpend + r.barSpend)*frac;
       S.villagerCash -= spendOut; if(S.villagerCash<0) S.villagerCash=0;
       const indD = (r.dhabaIndirect + r.barIndirect)*frac;
@@ -945,7 +989,7 @@
       let occupied=0; for(const p of S.people){ if(p.buyT>0) occupied++; }
       let free=Math.max(0, slots-occupied);
       if(free>0){
-        const waiting=S.people.filter(p=>p.needFood && p.buyT<=0 && atShop(p)).sort((a,b)=>a.kg-b.kg);
+        const waiting=S.people.filter(p=>p.needFood && p.buyT<=0 && atShop(p) && !p.inAshram).sort((a,b)=>a.kg-b.kg);
         for(const p of waiting){ if(free<=0) break; p.buyT=SERVE_MS; free--; }
       }
     }
@@ -1020,6 +1064,16 @@
           p.homelessDays = 0;
         }
       });
+
+      if(S.godownUnlocked){   // Governance: buildings wear 0.5%/day unless sewakars maintain them
+        const mf = maintainFrac();
+        const wd = WEAR_RATE - mf*(WEAR_RATE + WEAR_REPAIR);   // unmaintained +0.5%/day; fully staffed repairs
+        const clampW = (x)=> x<0?0 : x>WEAR_CAP?WEAR_CAP : x;
+        S.wear.farm = clampW(S.wear.farm + wd);
+        if(S.built.shop) S.wear.shop = clampW(S.wear.shop + wd);
+        if(S.built.bar)  S.wear.bar  = clampW(S.wear.bar  + wd);
+        S.houses.forEach(h=>{ if(h.tier>=0) h.wear = clampW((h.wear||0) + wd); });
+      }
 
       if(S.day>YEAR_DAYS){ S.day=1; S.year++; advanceYear(); }
       if(S.daysSinceCensus>=CENSUS_DAYS){ S.daysSinceCensus=0; census(); }
@@ -1553,7 +1607,7 @@
     return [x,y];
   }
   function targetFor(p){
-    if(p.needFood && shopOpen() && roleCount('shop')>0) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
+    if(p.needFood && shopOpen() && roleCount('shop')>0 && !p.inAshram) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
     const w=workTarget(p);
     if(w) return w;            
     return [p.wx, p.wy];       
@@ -1729,7 +1783,7 @@
            }
 
            html += card('house', '#b5764f', tierData.name, 'Level '+(h.tier+1)+' Home', occ+'<small style="font-weight:400;color:var(--ink-faint)">/'+tierData.cap+'</small>',
-             'Currently housing <b>'+occ+'</b> villagers.', upBtn);
+             'Currently housing <b>'+occ+'</b> villagers.'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(h.wear||0))*100)+'%</b>':''), upBtn);
         }
       }
     } else if (S.selectedEntity.type === 'building') {
@@ -1750,7 +1804,7 @@
 
         html += card('farm', B.farm.color, B.farm.name, B.farm.sub,
           roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
+          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':''),
           stepper('farm') + upgHtml);
       } else if (key === 'school') {
         html += educationCard(r);
@@ -1820,6 +1874,32 @@
       '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Hand (Uneducated)</div>'+stepper('bar_helper'));
   }
 
+  function sanitationCard(){
+    if(!S.godownUnlocked) return '';
+    const sew=roleCount('sewak'), need=maintainableCount();
+    const cond=Math.round((1-avgBuildingWear())*100), mf=maintainFrac();
+    const status = mf>=1 ? '<b style="color:var(--good)">fully maintained</b> — buildings repairing'
+      : mf>0 ? '<b>partial cover</b> — wear slowed'
+      : '<b style="color:var(--bad)">unmaintained</b> — wearing 0.5%/day';
+    return card('warehouse','#7a9a6a','Sanitation & Upkeep','Swacchh Sewakars · Governance',
+      sew+'<small style="font-weight:400;color:var(--ink-faint)">/'+need+'</small>',
+      'Avg building condition <b>'+cond+'%</b><br>'+status+'<br><i style="color:var(--ink-faint)">'+CUR+SEWAK_PAY+'/day each · uneducated · one per building fully repairs wear. Morale dips while on duty.</i>',
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Sewakars (Uneducated)</div>'+stepper('sewak'));
+  }
+  function ashramCard(){
+    if(!S.godownUnlocked) return '';
+    if(!S.builtAshram){
+      return card('house','#9a7b9a','Sewa Ashram','Panchayat lodge · Governance','—',
+        'A panchayat-run lodge sheltering up to <b>'+ASHRAM_CAP+'</b> homeless immigrants. Residents eat free from the <b>Godown</b> reserve (no tax) but carry a permanent <b>'+Math.round(ASHRAM_DEBUFF*100)+'%</b> morale &amp; output debuff while lodged.',
+        '<button class="buildbtn" data-act="buildashram" '+(S.treasury<ASHRAM_COST?'disabled':'')+'>'+(S.treasury<ASHRAM_COST?'Need '+money(ASHRAM_COST):'Open Sewa Ashram · '+money(ASHRAM_COST))+'</button>');
+    }
+    const occ=S.people.filter(p=>p.inAshram).length;
+    return card('house','#9a7b9a','Sewa Ashram','Panchayat lodge · Governance',
+      occ+'<small style="font-weight:400;color:var(--ink-faint)">/'+ASHRAM_CAP+'</small>',
+      'Sheltering <b>'+occ+'</b> of <b>'+ASHRAM_CAP+'</b> homeless<br><i style="color:var(--ink-faint)">Residents eat free from the Godown · '+Math.round(ASHRAM_DEBUFF*100)+'% morale &amp; output debuff.</i>',
+      '');
+  }
+
   function renderCards(){
     const r=rates(), c=el('cards'); let html='';
     const hl=homeless();
@@ -1843,6 +1923,7 @@
         'Capacity <b>'+housingCap()+'</b> · '+(hl>0?'<b style="color:var(--bad)">'+hl+' homeless</b>':'<b style="color:var(--good)">everyone housed</b>')+'<br>'+
           'Shacks <b>'+shacks+'</b> · Huts <b>'+huts+'</b> · Cottages <b>'+cots+'</b>'+(building?' · <b style="color:var(--ink-faint)">'+building+' building</b>':''),
         houseCtrl);
+      html += ashramCard();
     }
 
     if (S.activeBuildTab === 'production') {
@@ -1858,7 +1939,7 @@
 
       html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
         roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-        'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg',
+        'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':''),
         stepper('farm') + upgHtml);
 
       if(S.godownUnlocked){
@@ -1870,6 +1951,7 @@
           '<div class="who" style="flex:1;justify-content:center;font-weight:600;font-size:12px;color:var(--ink-soft)">'+(S.flowO==0?'Hold':(S.flowO>0?'Release to market':'Procure from market'))+'</div>'+
           '<button class="pm" data-act="finc" '+(S.flowO>=5?'disabled':'')+'>+</button></div>'
         );
+        html += sanitationCard();
       }
     }
 
@@ -1909,6 +1991,7 @@
       else if(role==='dhaba_helper') canAdd=idle().some(p=>p.edu===0);
       else if(role==='bar_master') canAdd=idle().some(p=>p.edu>=1);
       else if(role==='bar_helper') canAdd=idle().some(p=>p.edu===0);
+      else if(role==='sewak') canAdd=idle().some(p=>p.edu===0);
       else if(role.endsWith('_driver')) canAdd=idle().some(p=>p.edu===2);
       else canAdd=idle().length>0;
     }
@@ -1941,7 +2024,7 @@
       }
     }
     const indirectRate = r.indirect + r.dhabaIndirect + r.barIndirect;
-    const netFlow = indirectRate + r.incomeTax - r.totalTeachRev + godownRate + bankRate;
+    const netFlow = indirectRate + r.incomeTax - r.totalTeachRev - r.sewakRev + godownRate + bankRate;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
     el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
 
@@ -1995,7 +2078,10 @@
     el('hud-ledger-morale').innerHTML = mHtml;
 
     el('ledger').innerHTML=
-      lrow('Wholesale Price', money(r.price)+'/kg')
+      lrow('Total grain produced', Math.floor(S.totalGrain).toLocaleString()+' kg')
+      +lrow('Total liquor produced', Math.floor(S.totalAlcohol).toLocaleString()+' kg')
+      +(S.godownUnlocked ? lrow('Avg building condition', Math.round((1-avgBuildingWear())*100)+'%') : '')
+      +lrow('Wholesale Price', money(r.price)+'/kg')
       +lrow('Shop Retail Price (20% markup)', money(r.retailPrice)+'/kg')
       +lrow('Produced / day', r.prod.toFixed(1)+' kg')
       +lrow('Eaten / day', r.consumed.toFixed(1)+' kg')
@@ -2010,6 +2096,7 @@
       + lrow('(+) Income Tax Revenue', '+' + money(r.incomeTax) + '/day', 'pos')
       + lrow('(+) Indirect Tax (shop + dhaba)', '+' + money(indirectRate) + '/day', 'pos')
       + lrow('(−) Teacher Salaries Base', '−' + money(r.totalTeachRev) + '/day', 'neg')
+      + (S.godownUnlocked && r.sewakRev>0 ? lrow('(−) Sanitation Wages', '−' + money(r.sewakRev) + '/day', 'neg') : '')
       + lrow('(±) Godown Trades', (godownRate>=0?'+':'−') + money(Math.abs(godownRate)) + '/day', godownRate>=0?'pos':'neg')
       + (S.built.bank ? lrow('(±) Bank Savings Flow', (bankRate>=0?'+':'−') + money(Math.abs(bankRate)) + '/day', bankRate>=0?'pos':'neg') : '')
       + (S.built.bank ? lrow('(!) Bank Deposits Owed', money(bankOwed()), 'neg') : '')
@@ -2211,6 +2298,13 @@
           S.treasury-=BAR_COST; S.barBuild=BAR_BUILD_UNITS;
           toast('🏗 Bar construction begun — requires <span class="g">'+BAR_BUILD_UNITS+' progress units</span>');
           spawnRupee(B.bar.cx, B.bar.gy - B.bar.h);
+          renderCards();
+       }
+    }
+    else if(act==='buildashram') {
+       if(S.godownUnlocked && !S.builtAshram && S.treasury>=ASHRAM_COST) {
+          S.treasury-=ASHRAM_COST; S.builtAshram=true; reassignHomes();
+          toast('🏠 The <span class="g">Sewa Ashram</span> opens its doors');
           renderCards();
        }
     }
