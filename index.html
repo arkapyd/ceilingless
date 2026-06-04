@@ -473,6 +473,8 @@
   const BILLING_COST=100, BILLING_KEEPERS=2;
   const DHABA_COST=400, DHABA_BUILD_UNITS=15;
   const DHABA_MIN_KG=0.2, DHABA_MAX_KG=1.5, DHABA_SERVE_KG=45, DHABA_HELPER_SHARE=0.25, DHABA_MORALE=7;
+  const TAILOR_COST=300, TAILOR_BUILD_UNITS=15, TAILOR_MARKUP=0.40;
+  const TAILOR_MIN_KG=0.1, TAILOR_MAX_KG=0.6, TAILOR_SERVE_KG=25, TAILOR_UNEDU_SHARE=0.25;
   const SAVE_RATE_MEAN=0.2, SAVE_RATE_SD=0.15;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
@@ -491,8 +493,9 @@
     college:{name:'Community College', role:'college', sub:'Teaches to Intermediate', cx:645, gy:452, w:158, h:104, color:'#8a6a9a', cap:20},
     bank   :{name:'Bank', role:'bank', sub:'Holds citizen savings', cx:263, gy:250, w:104, h:80, color:'#6b7a8f', cap:0},
     dhaba  :{name:'Dhaba', role:'dhaba', sub:'Eatery · 18% tax', cx:490, gy:250, w:96, h:74, color:'#c0743a', cap:0},
+    tailor :{name:'Tailor', role:'tailor', sub:'Garments · 40% markup', cx:702, gy:250, w:84, h:70, color:'#3f8a8a', cap:0},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358], dhaba:[490,302] }; 
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[600,476], idle:[388,358], dhaba:[490,302], tailor:[700,302] }; 
   const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
@@ -513,8 +516,8 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0},{tier:0,build:0,pendingTier:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0,
-      built:{college:false, school:false, shop:false, bank:false, dhaba:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, tailorBuild:0,
+      built:{college:false, school:false, shop:false, bank:false, dhaba:false, tailor:false},
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
@@ -536,6 +539,7 @@
       morale:rnd(40, 75), moraleType:Math.floor(Math.random()*4), 
       wx:sx, wy:sy, wt:Math.floor(Math.random()*180),
       dhabaKg:rnd(DHABA_MIN_KG,DHABA_MAX_KG), s:clamp01(gaussian(SAVE_RATE_MEAN,SAVE_RATE_SD)), income:0,
+      tailorKg:rnd(TAILOR_MIN_KG,TAILOR_MAX_KG),
       hidden: false });
   }
   /* ============ HELPERS ============ */
@@ -573,6 +577,8 @@
     if(role==='college_staff') return S.built.college ? 3 : 0;
     if(role==='dhaba_cook') return S.built.dhaba ? 1 : 0;
     if(role==='dhaba_helper') return S.built.dhaba ? 2 : 0;
+    if(role==='tailor_master') return S.built.tailor ? 1 : 0;
+    if(role==='tailor_helper') return S.built.tailor ? 1 : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
     if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
     return B[role]?B[role].cap:0;
@@ -583,6 +589,7 @@
     if(role==='shop' && !S.built.shop) return;
     if((role==='college'||role==='college_teacher'||role==='college_staff') && !S.built.college) return;
     if((role==='dhaba_cook'||role==='dhaba_helper') && !S.built.dhaba) return;
+    if((role==='tailor_master'||role==='tailor_helper') && !S.built.tailor) return;
     if(roleCount(role)>=capacityOf(role)) return;
     let cand=idle();
     
@@ -593,6 +600,8 @@
     else if(role==='college') cand=cand.filter(p=>p.edu===1);
     else if(role==='dhaba_cook') cand=cand.filter(p=>p.edu>=1);
     else if(role==='dhaba_helper') cand=cand.filter(p=>p.edu===0);
+    else if(role==='tailor_master') cand=cand.filter(p=>p.edu>=1);
+    else if(role==='tailor_helper') cand=cand.filter(p=>p.edu===0);
     else if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) cand=cand.filter(p=>p.edu===2);
     
     if(!cand.length) return;
@@ -652,7 +661,7 @@
 
   /* ============ ECONOMY ============ */
   function rates(){
-    let prod=0, fTax=0, sTax=0, tTax=0;
+    let prod=0, fTax=0, sTax=0, tTax=0, dTax=0, tlTax=0;
     
     const allFarmers = [...roleList('farm'), ...roleList('tractor_driver'), ...roleList('harvester_driver'), ...roleList('combiner_driver')];
 
@@ -702,10 +711,9 @@
 
     const farmShopRev = taxedSales * price;
     const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
-    const totalFarmRev = farmShopRev + farmGovRev;
     const totalShopRev = taxedSales * price * SHOP_MARKUP;
 
-    // --- Dhaba (eatery) sales ---
+    // --- Dhaba (eatery) sales --- supplied by the farm, like the shop
     const dhabaStaffed = S.built.dhaba && roleCount('dhaba_cook')>=1 && roleCount('dhaba_helper')>=2;
     const dhabaOpen = dhabaStaffed && S.goods > pop;
     let dhabaDemandKg = 0;
@@ -718,9 +726,30 @@
     }
     const dhabaSales = dhabaOpen ? Math.min(dhabaDemandKg, DHABA_SERVE_KG) : 0;
     const dhabaServeFrac = dhabaDemandKg>0 ? dhabaSales/dhabaDemandKg : 0;
-    const dhabaSpend = dhabaSales * retailPrice;
+    const dhabaSpend = dhabaSales * retailPrice;                // price * (1 + SHOP_MARKUP)
     const dhabaIndirect = dhabaSpend * INDIRECT_TAX;
-    const dhabaAfterTax = dhabaSpend - dhabaIndirect;
+    const dhabaFarmGate = dhabaSales * price;                   // farmers paid for the grain
+    const dhabaMargin = dhabaSales * price * SHOP_MARKUP;       // dhaba workers' wage pool
+
+    // --- Tailor (garments) sales --- supplied by the farm, 40% markup
+    const tailorStaffed = S.built.tailor && roleCount('tailor_master')>=1 && roleCount('tailor_helper')>=1;
+    const tailorOpen = tailorStaffed && S.goods > pop;
+    const tailorPrice = price * (1 + TAILOR_MARKUP);
+    let tailorDemandKg = 0;
+    if(tailorOpen){
+      S.people.forEach(p=>{
+        if(p.role==='tailor_master' || p.role==='tailor_helper') return;
+        if(p.kg < BUY_THRESHOLD) return;            // buy clothes once fed
+        tailorDemandKg += (p.tailorKg||0);
+      });
+    }
+    const tailorSales = tailorOpen ? Math.min(tailorDemandKg, TAILOR_SERVE_KG) : 0;
+    const tailorSpend = tailorSales * tailorPrice;
+    const tailorIndirect = tailorSpend * INDIRECT_TAX;
+    const tailorFarmGate = tailorSales * price;                 // farmers paid for the cloth input
+    const tailorMargin = tailorSales * price * TAILOR_MARKUP;    // tailor workers' wage pool
+
+    const totalFarmRev = farmShopRev + farmGovRev + dhabaFarmGate + tailorFarmGate;
     
     let tcRev = roleCount('teacher') * SCHOOL_TEACHER_PAY;
     let colTeachRev = roleCount('college_teacher') * COLLEGE_TEACHER_PAY;
@@ -749,8 +778,14 @@
     roleList('college_teacher').forEach(p => tTax += COLLEGE_TEACHER_PAY * INCOME_TAX[p.edu]);
     roleList('college_staff').forEach(p => tTax += COLLEGE_STAFF_PAY * INCOME_TAX[p.edu]);
 
-    const incomeTax = fTax + sTax + tTax;
-    const netWages = totalFarmRev + totalShopRev + totalTeachRev - incomeTax;
+    // dhaba + tailor workers pay income tax on their slice of the trade margin
+    roleList('dhaba_cook').forEach(p => dTax += (dhabaMargin*(1-DHABA_HELPER_SHARE)) * INCOME_TAX[p.edu]);
+    { const dh=roleList('dhaba_helper'); if(dh.length) dh.forEach(p => dTax += (dhabaMargin*DHABA_HELPER_SHARE/dh.length) * INCOME_TAX[p.edu]); }
+    roleList('tailor_master').forEach(p => tlTax += (tailorMargin*(1-TAILOR_UNEDU_SHARE)) * INCOME_TAX[p.edu]);
+    roleList('tailor_helper').forEach(p => tlTax += (tailorMargin*TAILOR_UNEDU_SHARE) * INCOME_TAX[p.edu]);
+
+    const incomeTax = fTax + sTax + tTax + dTax + tlTax;
+    const netWages = totalFarmRev + totalShopRev + totalTeachRev + dhabaMargin + tailorMargin - incomeTax;
 
     // --- Per-person net daily income Y (drives savings S = sY) ---
     S.people.forEach(p => p.income = 0);
@@ -770,18 +805,22 @@
     roleList('college_teacher').forEach(p => p.income = COLLEGE_TEACHER_PAY * (1 - INCOME_TAX[p.edu]));
     roleList('college_staff').forEach(p => p.income = COLLEGE_STAFF_PAY * (1 - INCOME_TAX[p.edu]));
     if(dhabaOpen){
-      roleList('dhaba_cook').forEach(p => p.income = dhabaAfterTax * (1 - DHABA_HELPER_SHARE));
+      roleList('dhaba_cook').forEach(p => p.income = (dhabaMargin*(1-DHABA_HELPER_SHARE)) * (1 - INCOME_TAX[p.edu]));
       const helpers = roleList('dhaba_helper');
       if(helpers.length > 0){
-        const eachHelper = (dhabaAfterTax * DHABA_HELPER_SHARE) / helpers.length;
-        helpers.forEach(p => p.income = eachHelper);
+        const eachHelper = (dhabaMargin * DHABA_HELPER_SHARE) / helpers.length;
+        helpers.forEach(p => p.income = eachHelper * (1 - INCOME_TAX[p.edu]));
       }
+    }
+    if(tailorOpen){
+      roleList('tailor_master').forEach(p => p.income = (tailorMargin*(1-TAILOR_UNEDU_SHARE)) * (1 - INCOME_TAX[p.edu]));
+      roleList('tailor_helper').forEach(p => p.income = (tailorMargin*TAILOR_UNEDU_SHARE) * (1 - INCOME_TAX[p.edu]));
     }
 
     let totalMorale = S.people.reduce((sum, p) => sum + p.morale, 0);
     let avgMorale = S.people.length ? totalMorale / S.people.length : 0;
 
-    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaIndirect,dhabaAfterTax,dhabaServeFrac};
+    return {prod,fTax,sTax,incomeTax,netWages,sCap,demand,consumed,taxedSales,indirect,spending,price,retailPrice,taxTotal:incomeTax+indirect,effFlow,shopThroughput,keepers,totalTeachRev,avgMorale,dhabaOpen,dhabaSales,dhabaSpend,dhabaIndirect,dhabaMargin,dhabaFarmGate,dhabaServeFrac,tailorOpen,tailorSales,tailorSpend,tailorIndirect,tailorMargin,tailorFarmGate,tailorPrice};
   }
   
   function step(dt){
@@ -891,13 +930,14 @@
       }
     }
 
-    // Dhaba: diners draw grain and pay retail; only the indirect tax leaks
-    // out of villager cash (wages flow back to the same pool, like the shop).
-    if(r.dhabaOpen && r.dhabaSales>0){
-      const sold = r.dhabaSales*frac;
-      S.goods -= sold; if(S.goods<0) S.goods=0;
-      const indD = r.dhabaIndirect*frac;
-      S.villagerCash -= indD; if(S.villagerCash<0) S.villagerCash=0;
+    // Dhaba + Tailor: customers pay full retail and grain is drawn from stock.
+    // Farmgate (to farmers) and worker margins already flow via netWages above;
+    // only the customer spend leaves villager cash and indirect tax hits treasury.
+    if(r.dhabaSales>0 || r.tailorSales>0){
+      S.goods -= (r.dhabaSales + r.tailorSales)*frac; if(S.goods<0) S.goods=0;
+      const spendOut = (r.dhabaSpend + r.tailorSpend)*frac;
+      S.villagerCash -= spendOut; if(S.villagerCash<0) S.villagerCash=0;
+      const indD = (r.dhabaIndirect + r.tailorIndirect)*frac;
       S.treasury += indD;
       S.today.indirect += indD;
     }
@@ -957,6 +997,9 @@
       } else if (S.dhabaBuild > 0) {
         S.dhabaBuild -= activeProgress;
         if (S.dhabaBuild <= 0) { S.dhabaBuild = 0; S.built.dhaba = true; toast('🍲 The <span class="g">Dhaba</span> opens for business'); renderCards(); }
+      } else if (S.tailorBuild > 0) {
+        S.tailorBuild -= activeProgress;
+        if (S.tailorBuild <= 0) { S.tailorBuild = 0; S.built.tailor = true; toast('🧵 The <span class="g">Tailor</span> opens for business'); renderCards(); }
       }
     }
 
@@ -971,6 +1014,7 @@
       S.people.forEach(p => {
         p.dhabaKg = rnd(DHABA_MIN_KG, DHABA_MAX_KG);
         p.s = clamp01(gaussian(SAVE_RATE_MEAN, SAVE_RATE_SD));
+        p.tailorKg = rnd(TAILOR_MIN_KG, TAILOR_MAX_KG);
         if (p.home === -1) {
           p.homelessDays = (p.homelessDays || 0) + 1;
         } else {
@@ -1162,7 +1206,8 @@
     ['farm','school','shop','college'].forEach(k => renderables.push({type: 'building', key: k, y: B[k].gy}));
     if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) renderables.push({type:'building', key:'bank', y:B.bank.gy});
     if(S.ch3Unlocked || S.built.dhaba || S.dhabaBuild>0) renderables.push({type:'building', key:'dhaba', y:B.dhaba.gy});
-    renderables.push({type: 'tree', x: 704, y: 338, scale: 1.05});
+    if(S.ch3Unlocked || S.built.tailor || S.tailorBuild>0) renderables.push({type:'building', key:'tailor', y:B.tailor.gy});
+    renderables.push({type: 'tree', x: 38, y: 352, scale: 0.95});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
     updatePeople();
     S.people.forEach(p => { if (!p.hidden) renderables.push({type: 'person', p: p, y: p.y}); });
@@ -1285,7 +1330,7 @@
   function drawBuilding(key,night,day){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h;
     const isBuilt = (key === 'farm') || S.built[key];
-    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'dhaba' && S.dhabaBuild > 0);
+    const isBuilding = (key === 'college' && S.collegeBuild > 0) || (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'dhaba' && S.dhabaBuild > 0) || (key === 'tailor' && S.tailorBuild > 0);
     
     const sdir=(S.progress-0.5)*-2;
     ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(b.cx+sdir*10,baseY+6,b.w*0.58,9,0,0,7); ctx.fill();
@@ -1313,6 +1358,7 @@
     else if(key==='shop'){ wallTop='#cdb083'; wallBot='#b1936a'; wallEdge='#8f7351'; }
     else if(key==='bank'){ wallTop='#dcd8cf'; wallBot='#bdb8ad'; wallEdge='#8f897d'; }
     else if(key==='dhaba'){ wallTop='#d99a5c'; wallBot='#c0743a'; wallEdge='#94501f'; }
+    else if(key==='tailor'){ wallTop='#5fb0ac'; wallBot='#3f8a8a'; wallEdge='#2c6160'; }
     else { wallTop='#c9b6cc'; wallBot='#a892ad'; wallEdge='#7d6783'; }
     const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,wallTop); wg.addColorStop(1,wallBot);
     ctx.fillStyle=wg; rr(x,topY+12,b.w,b.h-12,3); ctx.fill();
@@ -1367,7 +1413,7 @@
     } else if(key==='college'){
       ctx.fillStyle=shade(wallBot,0.85); rr(x-3,topY+4,b.w+6,14,3); ctx.fill(); ctx.fillStyle=shade(wallBot,0.7); ctx.fillRect(x-3,topY+4,b.w+6,4);
     } else {
-      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='dhaba' ? '#9c4a28' : ROOFS[1];
+      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='dhaba' ? '#9c4a28' : key==='tailor' ? '#2f6f6e' : ROOFS[1];
       ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.closePath(); ctx.fill();
       ctx.strokeStyle=shade(rc,0.78); ctx.lineWidth=1;
       for(let k2=2;k2<=5;k2++){ const ty=topY+16-(k2*((topY+16)-(topY-8))/6); const hw=((x+b.w+7)-(x-7))/2*(1-k2/6.5); ctx.beginPath(); ctx.moveTo(b.cx-hw,ty); ctx.lineTo(b.cx+hw,ty); ctx.stroke(); }
@@ -1383,6 +1429,14 @@
       ctx.strokeStyle='rgba(240,230,210,'+(lit?0.5:0.35)+')'; ctx.lineWidth=1.4;
       ctx.beginPath(); ctx.moveTo(b.cx-18,baseY-14); ctx.quadraticCurveTo(b.cx-22,baseY-22,b.cx-16,baseY-28); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(b.cx-14,baseY-14); ctx.quadraticCurveTo(b.cx-10,baseY-22,b.cx-15,baseY-29); ctx.stroke();
+    }
+    if(key==='tailor'){
+      const ay=topY+16, aw=b.w+8, ax=x-4;
+      for(let i=0;i<6;i++){ ctx.fillStyle=i%2?'#eef3f2':'#2f6f6e'; ctx.beginPath(); ctx.moveTo(ax+i*(aw/6),ay); ctx.lineTo(ax+(i+1)*(aw/6),ay); ctx.lineTo(ax+(i+0.5)*(aw/6),ay+10); ctx.closePath(); ctx.fill(); }
+      // garment on a rail by the door
+      ctx.strokeStyle=shade(wallEdge,0.8); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(b.cx+8,baseY-20); ctx.lineTo(b.cx+22,baseY-20); ctx.stroke();
+      ctx.fillStyle='#c98aa6'; ctx.beginPath(); ctx.moveTo(b.cx+12,baseY-19); ctx.lineTo(b.cx+18,baseY-19); ctx.lineTo(b.cx+20,baseY-4); ctx.lineTo(b.cx+10,baseY-4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#e6c84f'; ctx.fillRect(b.cx+13,baseY-19,4,3);
     }
     if(key==='shop'){
       const ay=topY+16, aw=b.w+8, ax=x-4;
@@ -1492,6 +1546,7 @@
     if(p.role==='school')  return teacherWorking() ? [ZONE.school[0]+p.ox,  ZONE.school[1]+p.oy]  : null;
     if(p.role==='college' || p.role==='college_teacher' || p.role==='college_staff') return teacherWorking() ? [ZONE.college[0]+p.ox, ZONE.college[1]+p.oy] : null;
     if(p.role==='dhaba_cook' || p.role==='dhaba_helper') return shopWorking() ? [ZONE.dhaba[0]+p.ox, ZONE.dhaba[1]+p.oy] : null;
+    if(p.role==='tailor_master' || p.role==='tailor_helper') return shopWorking() ? [ZONE.tailor[0]+p.ox, ZONE.tailor[1]+p.oy] : null;
     return null; 
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
@@ -1695,6 +1750,9 @@
       } else if (key === 'dhaba') {
         elTitle.innerHTML = B.dhaba.name + ' <span class="ln"></span>';
         html += dhabaCard(r);
+      } else if (key === 'tailor') {
+        elTitle.innerHTML = B.tailor.name + ' <span class="ln"></span>';
+        html += tailorCard(r);
       }
     }
     elCont.innerHTML = html;
@@ -1739,7 +1797,7 @@
     }
     if(!S.built.dhaba){
       return card('shop','#c0743a','Dhaba',B.dhaba.sub,'—',
-        'A village eatery. Diners eat <b>0.2–1.5 kg</b>/day of better food at retail price. Run by <b>1 cook</b> (educated) + <b>2 helpers</b> (uneducated); helpers earn <b>'+Math.round(DHABA_HELPER_SHARE*100)+'%</b> of after-tax revenue, the cook the rest. Gives diners a morale lift.',
+        'A village eatery. Diners eat <b>0.2–1.5 kg</b>/day of better food at retail price. Run by <b>1 cook</b> (educated) + <b>2 helpers</b> (uneducated). Farmers are paid for the grain; the cook and helpers split the trade margin (<b>'+Math.round((1-DHABA_HELPER_SHARE)*100)+'%</b> / <b>'+Math.round(DHABA_HELPER_SHARE*100)+'%</b>) and pay income tax. Gives diners a morale lift.',
         '<button class="buildbtn" data-act="builddhaba" '+(S.treasury<DHABA_COST?'disabled':'')+'>'+(S.treasury<DHABA_COST?'Need '+money(DHABA_COST):'Set up Dhaba · '+money(DHABA_COST)+' · '+DHABA_BUILD_UNITS+' units')+'</button>');
     }
     const cooks=roleCount('dhaba_cook'), helpers=roleCount('dhaba_helper'), staffed=(cooks>=1&&helpers>=2);
@@ -1748,9 +1806,32 @@
       : '<b>quiet</b> — villagers dine out only when grain is in surplus';
     return card('shop','#c0743a','Dhaba',B.dhaba.sub,
       (cooks+helpers)+'<small style="font-weight:400;color:var(--ink-faint)">/3</small>',
-      'Cook <b>'+cooks+'</b>/1 (Educated) · Helpers <b>'+helpers+'</b>/2 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Wages: cook '+Math.round((1-DHABA_HELPER_SHARE)*100)+'%, helpers '+Math.round(DHABA_HELPER_SHARE*100)+'% of after-tax revenue.</i>',
+      'Cook <b>'+cooks+'</b>/1 (Educated) · Helpers <b>'+helpers+'</b>/2 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Farmers paid for grain · workers split margin (cook '+Math.round((1-DHABA_HELPER_SHARE)*100)+'% / helpers '+Math.round(DHABA_HELPER_SHARE*100)+'%), taxed.</i>',
       '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Cook (Educated)</div>'+stepper('dhaba_cook')+
       '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Helpers (Uneducated)</div>'+stepper('dhaba_helper'));
+  }
+  function tailorCard(r){
+    if(!S.ch3Unlocked) return '';
+    if(S.tailorBuild>0){
+      const pct=Math.round((TAILOR_BUILD_UNITS-S.tailorBuild)/TAILOR_BUILD_UNITS*100);
+      return card('shop','#3f8a8a','Tailor','Under construction','—',
+        'Construction underway — needs <b>'+Math.ceil(S.tailorBuild)+'</b> units',
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+    }
+    if(!S.built.tailor){
+      return card('shop','#3f8a8a','Tailor',B.tailor.sub,'—',
+        'Turns farm goods into garments sold at a <b>'+Math.round(TAILOR_MARKUP*100)+'%</b> markup. Run by <b>1 master</b> (educated) + <b>1 hand</b> (uneducated). Farmers are paid for the cloth; the master takes <b>'+Math.round((1-TAILOR_UNEDU_SHARE)*100)+'%</b> of the margin and the hand <b>'+Math.round(TAILOR_UNEDU_SHARE*100)+'%</b>, both taxed by slab.',
+        '<button class="buildbtn" data-act="buildtailor" '+(S.treasury<TAILOR_COST?'disabled':'')+'>'+(S.treasury<TAILOR_COST?'Need '+money(TAILOR_COST):'Set up Tailor · '+money(TAILOR_COST)+' · '+TAILOR_BUILD_UNITS+' units')+'</button>');
+    }
+    const masters=roleCount('tailor_master'), hands=roleCount('tailor_helper'), staffed=(masters>=1&&hands>=1);
+    const status = !staffed ? '<b style="color:var(--bad)">closed</b> — needs 1 master + 1 hand'
+      : r.tailorOpen ? '<b style="color:var(--good)">open</b> · selling ~<b>'+r.tailorSales.toFixed(1)+'</b> kg/d → indirect tax <b>'+money(r.tailorIndirect)+'</b>'
+      : '<b>quiet</b> — villagers buy clothes only when grain is in surplus';
+    return card('shop','#3f8a8a','Tailor',B.tailor.sub,
+      (masters+hands)+'<small style="font-weight:400;color:var(--ink-faint)">/2</small>',
+      'Master <b>'+masters+'</b>/1 (Educated) · Hand <b>'+hands+'</b>/1 (Unedu)<br>'+status+'<br><i style="color:var(--ink-faint)">Final price '+money(r.tailorPrice)+'/kg · farmers paid for cloth · margin split '+Math.round((1-TAILOR_UNEDU_SHARE)*100)+'% / '+Math.round(TAILOR_UNEDU_SHARE*100)+'%, taxed.</i>',
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Master (Educated)</div>'+stepper('tailor_master')+
+      '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Hand (Uneducated)</div>'+stepper('tailor_helper'));
   }
   function renderCards(){
     const r=rates(), c=el('cards'); let html='';
@@ -1876,6 +1957,7 @@
 
     if (S.activeBuildTab === 'service') html+=bankCard(r);
     if (S.activeBuildTab === 'service') html+=dhabaCard(r);
+    if (S.activeBuildTab === 'service') html+=tailorCard(r);
 
     c.innerHTML=html;
     renderBuildingInfo();
@@ -1905,6 +1987,8 @@
       else if(role==='college') canAdd=S.built.college && idle().some(p=>p.edu===1);
       else if(role==='dhaba_cook') canAdd=idle().some(p=>p.edu>=1);
       else if(role==='dhaba_helper') canAdd=idle().some(p=>p.edu===0);
+      else if(role==='tailor_master') canAdd=idle().some(p=>p.edu>=1);
+      else if(role==='tailor_helper') canAdd=idle().some(p=>p.edu===0);
       else if(role.endsWith('_driver')) canAdd=idle().some(p=>p.edu===2);
       else canAdd=idle().length>0;
     }
@@ -1936,7 +2020,7 @@
         if(matured>0){ let w=Math.min(matured*BANK_WITHDRAW_RATE, S.treasury/(1+BANK_INTEREST)); bankRate = -w*(1+BANK_INTEREST); }
       }
     }
-    const indirectRate = r.indirect + r.dhabaIndirect;
+    const indirectRate = r.indirect + r.dhabaIndirect + r.tailorIndirect;
     const netFlow = indirectRate + r.incomeTax - r.totalTeachRev + godownRate + bankRate;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
     el('h-net').className = 'sub ' + (netFlow >= 0 ? 'pos' : 'neg');
@@ -2202,6 +2286,14 @@
           renderCards();
        }
     }
+    else if(act==='buildtailor') {
+       if(S.ch3Unlocked && !S.built.tailor && S.tailorBuild<=0 && S.treasury>=TAILOR_COST) {
+          S.treasury-=TAILOR_COST; S.tailorBuild=TAILOR_BUILD_UNITS;
+          toast('🏗 Tailor construction begun — requires <span class="g">'+TAILOR_BUILD_UNITS+' progress units</span>');
+          spawnRupee(B.tailor.cx, B.tailor.gy - B.tailor.h);
+          renderCards();
+       }
+    }
     else if(act==='buy_billing') {
        if(S.ch3Unlocked && S.built.shop && !S.shopBillingCounter && S.treasury>=BILLING_COST) {
           S.treasury-=BILLING_COST; S.shopBillingCounter=true;
@@ -2245,6 +2337,7 @@
      const hitKeys = ['farm', 'school', 'shop', 'college'];
      if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) hitKeys.push('bank');
      if(S.ch3Unlocked || S.built.dhaba || S.dhabaBuild>0) hitKeys.push('dhaba');
+     if(S.ch3Unlocked || S.built.tailor || S.tailorBuild>0) hitKeys.push('tailor');
      for(const key of hitKeys){
         const b = B[key];
         if(clickX >= b.cx - b.w/2 - 10 && clickX <= b.cx + b.w/2 + 10 && clickY >= b.gy - b.h - 10 && clickY <= b.gy + 10){
