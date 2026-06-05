@@ -100,6 +100,20 @@
   #pop-build{right:16px; bottom:74px;}
   #pop-ledger{right:370px;}
   #pop-graphs{right:16px; bottom:74px; width:452px;}
+  #pop-help{right:16px; bottom:74px; width:368px;}
+  #help-body{font-size:13px;line-height:1.55;color:var(--ink-soft);}
+  #help-body .hc-eyebrow{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);}
+  #help-body .hc-title{font-family:'Fraunces',serif;font-weight:600;color:var(--ink);font-size:19px;margin:2px 0 10px;line-height:1.15;}
+  #help-body .hc-stats{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 12px;padding:10px 12px;background:rgba(180,150,90,.10);border:1px solid var(--line);border-radius:10px;font-size:12.5px;}
+  #help-body .hc-stats b{color:var(--ink);}
+  #help-body .hc-goal{margin:14px 0 0;color:var(--ink);font-weight:700;font-size:11px;letter-spacing:.4px;text-transform:uppercase;}
+  #help-body .hc-bar{height:7px;background:rgba(120,90,50,.18);border-radius:4px;overflow:hidden;margin:7px 0 4px;}
+  #help-body .hc-bar i{display:block;height:100%;background:var(--good);border-radius:4px;transition:width .3s;}
+  #help-body .hc-prog{font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums;margin:0 0 4px;}
+  #help-body .hc-done{color:var(--good);font-weight:600;}
+  #help-body ul{margin:8px 0 0;padding-left:18px;}
+  #help-body li{margin:5px 0;}
+  #help-body li b{color:var(--ink);}
 
   .sub-ribbon {
     position: absolute; right: 16px; bottom: 16px;
@@ -400,6 +414,10 @@
       <h3 class="section-h">Graphs <span class="ln"></span></h3>
       <canvas id="graphCanvas" width="420" height="840" style="width:100%;height:auto;display:block"></canvas>
     </div>
+    <div class="ui-popup" id="pop-help">
+      <h3 class="section-h">Help &amp; Progress <span class="ln"></span></h3>
+      <div id="help-body"></div>
+    </div>
     
     <div class="ui-popup" id="pop-building-info">
       <h3 class="section-h" id="binfo-title">Building <span class="ln"></span></h3>
@@ -469,6 +487,9 @@
       </button>
       <button class="r-btn" id="btn-toggle-graphs" data-tip="Graphs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M7 14l3.5-4 3 3L21 7"></path></svg>
+      </button>
+      <button class="r-btn" id="btn-toggle-help" data-tip="Help &amp; Progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       </button>
     </div> 
   </div>
@@ -1963,6 +1984,70 @@
       '<b>'+away+'</b> away travelling · <b>'+vis+'</b> visiting<br><i style="color:var(--ink-faint)">Fares '+CUR+FARE_MIN+'–'+CUR+FARE_MAX+' to treasury · visitors pay direct + indirect tax · needs a sewak.</i>','');
   }
 
+  /* ============ HELP & PROGRESS ============ */
+  function renderHelp(){
+    const body=el('help-body'); if(!body) return;
+    const pop=S.people.length;
+    const am=pop ? S.people.reduce((s,p)=>s+p.morale,0)/pop : 0;
+    const dayN=totalDaysElapsed();
+    const status='<div class="hc-stats">'
+      +'<span>Year <b>'+S.year+'</b> · Day <b>'+S.day+'</b></span>'
+      +'<span>People <b>'+pop+'</b></span>'
+      +'<span>Morale <b>'+Math.round(am)+'%</b></span>'
+      +'<span>Treasury <b>'+money(S.treasury)+'</b></span>'
+      +'<span>Grain <b>'+Math.floor(S.goods)+' kg</b></span>'
+      +(homeless()>0 ? '<span>Homeless <b style="color:var(--bad)">'+homeless()+'</b></span>' : '')
+      +'</div>';
+    const progBar=(frac,label)=>'<div class="hc-bar"><i style="width:'+Math.round(Math.max(0,Math.min(1,frac))*100)+'%"></i></div><div class="hc-prog">'+label+'</div>';
+    let eyebrow, title, goal='', bar='', tips='';
+
+    if(!S.godownUnlocked){
+      eyebrow='Chapter One'; title='The Laws of Demand &amp; Supply';
+      const frac=dayN/CH2_UNLOCK_DAY;
+      goal='<div class="hc-goal">Next: Chapter Two — Governance</div>';
+      bar=progBar(frac, frac>=1 ? '<span class="hc-done">Unlocking…</span>' : 'Day '+dayN+' of '+CH2_UNLOCK_DAY);
+      tips='<ul>'
+        +'<li>Assign idle villagers to the <b>Farm</b> to grow grain and the <b>Shop</b> to sell it — the shop is where your tax revenue comes from.</li>'
+        +'<li>Keep <b>grain ≥ population</b> and <b>everyone housed</b>: a clean census brings <b>immigrants</b>, a failed one brings <b>deaths</b>.</li>'
+        +'<li>Build <b>houses</b> from the Residential panel as the village grows.</li>'
+        +'<li>Watch <b>morale</b> — hunger and homelessness drain it fast.</li>'
+        +'</ul>';
+    } else if(!S.ch3Unlocked){
+      eyebrow='Chapter Two'; title='Governance';
+      const pct=pop ? S.people.filter(p=>p.edu>=1).length/pop : 0;
+      goal='<div class="hc-goal">Next: Chapter Three — Institutions &amp; Services</div>';
+      bar=progBar(pct/COLLEGE_UNLOCK_FRAC, Math.round(pct*100)+'% schooled to Basic · need '+Math.round(COLLEGE_UNLOCK_FRAC*100)+'%');
+      tips='<ul>'
+        +(S.built.school ? '' : '<li>Build a <b>School</b> (Service panel) — your route to an educated, more productive workforce.</li>')
+        +'<li>Assign at least <b>'+TEACH_MIN+' Teachers</b> plus students; each year of class lifts Uneducated villagers to <b>Basic</b>.</li>'
+        +'<li>Use the <b>Panchayat Godown</b> (Production) to release or procure grain and steady prices.</li>'
+        +'<li>Hire <b>Swacchh Sewakars</b> to stop buildings wearing down, and open the <b>Sewa Ashram</b> to shelter the homeless.</li>'
+        +'</ul>';
+    } else if(!S.busUnlocked){
+      eyebrow='Chapter Three'; title='Institutions and Services';
+      const meets=pop>=BUS_POP && am>=BUS_MORALE;
+      goal='<div class="hc-goal">Next: Chapter Four — Expansions</div>';
+      bar=progBar(S.busStreak/YEAR_DAYS, (meets?'On track — ':'')+'streak '+S.busStreak+'/'+YEAR_DAYS+' days · need '+BUS_POP+' people at '+BUS_MORALE+'%+ (now '+pop+' at '+Math.round(am)+'%)');
+      tips='<ul>'
+        +'<li>Grow and educate further — build the <b>College</b> to raise Basic villagers to higher tiers.</li>'
+        +(S.built.bank ? '' : '<li>Build the <b>Bank</b> (Service panel) to channel citizens\' savings into your treasury.</li>')
+        +'<li>Add a <b>Billing Counter</b> to ease shop queues, and keep the <b>Bar</b> staffed for extra revenue.</li>'
+        +'<li>Hold <b>morale at '+BUS_MORALE+'%+</b> with good housing, cottages and steady food so the bus-stop streak keeps building.</li>'
+        +'</ul>';
+    } else {
+      eyebrow='Chapter Four'; title='Expansions';
+      goal='<div class="hc-goal">The current frontier</div>';
+      tips='<ul>'
+        +(S.builtBusStop ? '' : '<li>Build the <b>Bus Stop</b> from the Service panel ('+money(BUS_COST)+') to open travel and welcome visitors.</li>')
+        +(S.builtBusStop ? '<li>Keep a <b>Sewak</b> assigned so the bus stop stays maintained.</li>' : '')
+        +'<li>Watch the <b>health</b> meter: the sick need their own cash to bus out for treatment, or their output and morale slide.</li>'
+        +'<li>Never let morale fall to <b>'+MORALE_REFUSE+'%</b> — at that point a villager downs tools and refuses to work.</li>'
+        +'<li>Use the <b>extra house plots</b>, and welcome <b>visitors</b> — they inject outside money through both taxes.</li>'
+        +'</ul>';
+    }
+    body.innerHTML='<div class="hc-eyebrow">You are in</div><div class="hc-title">'+eyebrow+' — '+title+'</div>'+status+goal+bar+tips;
+  }
+
   /* ============ DOM RENDER ============ */
   function svg(path,color){ return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" style="color:'+(color||'currentColor')+'">'+path+'</svg>'; }
   function dots(role){ return roleList(role).map(p=>'<span class="dot" style="background:'+EDU_COLOR[p.edu]+'" title="'+EDU[p.edu]+'"></span>').join(''); }
@@ -2438,6 +2523,7 @@
     if(dt<0) dt=0; if(dt>FG_MAX_DT) dt=FG_MAX_DT;
     step(dt); draw(); updateHUD();
     if(tick%20===0){ const gp=el('pop-graphs'); if(gp && gp.classList.contains('active')) renderGraphs(); }
+    if(tick%30===0){ const hp=el('pop-help'); if(hp && hp.classList.contains('active')) renderHelp(); }
     raf=requestAnimationFrame(frame);
   }
   function bgTick(){
@@ -2465,7 +2551,7 @@
   function togglePause(){ if(S.over) return; setSpeed(S.speed===0 ? lastPlaySpeed : 0); }
 
 /* ============ UI TOGGLES ============ */
-  const popups = ['pop-build', 'pop-ledger', 'pop-graphs', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
+  const popups = ['pop-build', 'pop-ledger', 'pop-graphs', 'pop-help', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
   
   function togglePopup(targetId) {
     popups.forEach(id => {
@@ -2480,6 +2566,7 @@
 
   el('btn-toggle-ledger').addEventListener('click', () => { togglePopup('pop-ledger'); el('sub-ribbon-build').classList.remove('active'); });
   el('btn-toggle-graphs').addEventListener('click', () => { togglePopup('pop-graphs'); el('sub-ribbon-build').classList.remove('active'); renderGraphs(); });
+  el('btn-toggle-help').addEventListener('click', () => { togglePopup('pop-help'); el('sub-ribbon-build').classList.remove('active'); renderHelp(); });
   el('btn-toggle-build').addEventListener('click', () => { 
     el('sub-ribbon-build').classList.toggle('active');
     popups.forEach(id => { const node = el(id); if(node) node.classList.remove('active'); });
