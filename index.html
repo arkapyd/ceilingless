@@ -99,6 +99,7 @@
   .ui-popup.active{opacity:1;transform:translateY(0);pointer-events:auto;}
   #pop-build{right:16px; bottom:74px;}
   #pop-ledger{right:370px;}
+  #pop-graphs{right:16px; bottom:74px; width:452px;}
 
   .sub-ribbon {
     position: absolute; right: 16px; bottom: 16px;
@@ -352,6 +353,10 @@
         </div>
       </div>
     </div>
+    <div class="ui-popup" id="pop-graphs">
+      <h3 class="section-h">Graphs <span class="ln"></span></h3>
+      <canvas id="graphCanvas" width="420" height="840" style="width:100%;height:auto;display:block"></canvas>
+    </div>
     
     <div class="ui-popup" id="pop-building-info">
       <h3 class="section-h" id="binfo-title">Building <span class="ln"></span></h3>
@@ -419,6 +424,9 @@
       <button class="r-btn" id="btn-toggle-build" data-tip="Build">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       </button>
+      <button class="r-btn" id="btn-toggle-graphs" data-tip="Graphs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M7 14l3.5-4 3 3L21 7"></path></svg>
+      </button>
     </div> 
   </div>
 </div>
@@ -469,6 +477,12 @@
   const WEAR_RATE=0.005, WEAR_REPAIR=0.01, WEAR_CAP=0.5, WORN_HOUSE_MORALE=14;
   const SEWAK_PAY=2, SEWAK_MORALE=12;
   const ASHRAM_COST=250, ASHRAM_CAP=6, ASHRAM_DEBUFF=0.2;
+  const HOLIDAY_EVERY=4;                                   // every 4th day is a holiday
+  const BUS_COST=50, BUS_POP=30, BUS_MORALE=80;            // unlock: 30 people at 80% morale for a year
+  const FARE_MIN=3, FARE_MAX=10, TRAVEL_CHANCE=0.16, TRAVEL_MIN_DAYS=1, TRAVEL_MAX_DAYS=3, TRAVEL_MORALE=8;
+  const VISIT_CHANCE=0.7, VISIT_MAX=5, VISIT_MIN_DAYS=1, VISIT_MAX_DAYS=3, VISIT_SPEND_MIN=2, VISIT_SPEND_MAX=5, VISITOR_DIRECT_TAX=0.12;
+  const BUS_CX=736, BUS_GY=372;
+  const HISTORY_MAX=120;
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
     harvester:{ name:'Harvester', cost:1000, out:8 },
@@ -512,6 +526,8 @@
       collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0,
       built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false},
       wear:{farm:0, shop:0, bar:0}, builtAshram:false, totalGrain:0, totalAlcohol:0,
+      busUnlocked:false, builtBusStop:false, busStreak:0,
+      travelers:[], visitors:[], nextVid:0, history:[],
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
@@ -572,9 +588,11 @@
     let n = 1; // farm always stands
     if(S.built.shop) n++;
     if(S.built.bar) n++;
+    if(S.builtBusStop) n++;   // the bus stop needs a sewak too
     S.houses.forEach(h=>{ if(h.tier>=0) n++; });
     return n;
   }
+  function isHoliday(){ return totalDaysElapsed() % HOLIDAY_EVERY === 0; }   // days 4,8,12… are holidays
   function maintainFrac(){ const c=maintainableCount(); return c>0 ? Math.min(1, roleCount('sewak')/c) : 1; }
   function avgBuildingWear(){
     let sum=0, n=0;
@@ -694,6 +712,7 @@
       prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p) * drunkMult * ashMult;
     });
     prod *= (1 - (S.wear.farm||0));   // building wear cuts farm efficiency
+    if(isHoliday()) prod = 0;         // farm closed on holidays — no new harvest (stored grain still sells)
     
     let sCap=0, shopEffSum=0, shopN=0;
     roleList('shop').forEach(p=>{
@@ -926,7 +945,7 @@
       if (p.inAshram && p.morale > 100*(1-ASHRAM_DEBUFF)) p.morale = 100*(1-ASHRAM_DEBUFF);  // ashram morale ceiling
     });
 
-    if(S.built.bank){
+    if(S.built.bank && !isHoliday()){
       const bpop=S.people.length;
       const goodTimes = r.avgMorale>=65 && S.goods>=bpop;
       const badTimes = r.avgMorale<45 || S.goods<bpop;
@@ -1074,6 +1093,26 @@
         if(S.built.bar)  S.wear.bar  = clampW(S.wear.bar  + wd);
         S.houses.forEach(h=>{ if(h.tier>=0) h.wear = clampW((h.wear||0) + wd); });
       }
+
+      // --- daily travel, visitors, history sampling & bus-stop unlock ---
+      processReturns();
+      if(isHoliday()) processHolidayTravel();
+      processVisitors(r);
+
+      if(!S.busUnlocked){
+        if(S.people.length>=BUS_POP && r.avgMorale>=BUS_MORALE) S.busStreak++; else S.busStreak=0;
+        if(S.busStreak>=YEAR_DAYS){ S.busUnlocked=true; toast('🚌 Tawapur has earned a <span class="g">Bus Stop</span> — build it from the Service panel'); renderCards(); }
+      }
+
+      S.history.push({
+        treasury:S.treasury, tIncome:r.incomeTax, tIndirect:r.indirect+r.dhabaIndirect+r.barIndirect,
+        tWages:r.totalTeachRev+r.sewakRev, tGodown:r.effFlow*r.price, tBank:bankRateNow(r),
+        grain:S.goods, gProd:r.prod, gEaten:r.consumed, gProc:r.dhabaSales+r.barSales, gGodown:r.effFlow,
+        pop:S.people.length, idle:idle().length, homeless:homeless(),
+        e0:S.people.filter(p=>p.edu===0).length, e1:S.people.filter(p=>p.edu===1).length,
+        e2:S.people.filter(p=>p.edu===2).length, e3:S.people.filter(p=>p.edu===3).length, e4:S.people.filter(p=>p.edu===4).length
+      });
+      if(S.history.length>HISTORY_MAX) S.history.shift();
 
       if(S.day>YEAR_DAYS){ S.day=1; S.year++; advanceYear(); }
       if(S.daysSinceCensus>=CENSUS_DAYS){ S.daysSinceCensus=0; census(); }
@@ -1261,8 +1300,11 @@
     if(S.ch3Unlocked || S.built.bar || S.barBuild>0) renderables.push({type:'building', key:'bar', y:B.bar.gy});
     renderables.push({type: 'tree', x: 38, y: 352, scale: 0.95});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
+    if(S.builtBusStop) renderables.push({type:'busstop', y: BUS_GY});
     updatePeople();
+    updateVisitors();
     S.people.forEach(p => { if (!p.hidden) renderables.push({type: 'person', p: p, y: p.y}); });
+    S.visitors.forEach(v => renderables.push({type: 'person', p: v, y: v.y}));
 
     renderables.sort((a,b) => a.y - b.y);
 
@@ -1278,6 +1320,7 @@
         }
       }
       else if(r.type === 'building') drawBuilding(r.key, night, day);
+      else if(r.type === 'busstop') drawBusStop(night);
       else if(r.type === 'tree') drawTree(r.x, r.y, r.scale, night, day);
       else if(r.type === 'person') drawPerson(r.p);
     });
@@ -1579,9 +1622,9 @@
   const FARM_BLOCKS=12;                          
 
   function hash01(n){ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
-  function teacherWorking(){ return S.progress>=TEACH_START && S.progress<TEACH_END; }
+  function teacherWorking(){ return !isHoliday() && S.progress>=TEACH_START && S.progress<TEACH_END; }
   function shopWorking(){ return (S.progress>=SHOP_AM_START && S.progress<SHOP_AM_END) || (S.progress>=SHOP_PM_START && S.progress<SHOP_PM_END); }
-  function farmerWorking(p){ const blk=Math.floor(S.progress*FARM_BLOCKS); return hash01(p.id*7.13 + S.day*3.7 + blk*1.9) > 0.45; }
+  function farmerWorking(p){ if(isHoliday()) return false; const blk=Math.floor(S.progress*FARM_BLOCKS); return hash01(p.id*7.13 + S.day*3.7 + blk*1.9) > 0.45; }
 
   function shopOpen(){ return S.built.shop && shopWorking(); }
   function atShop(p){ if(!shopOpen()) return false; return Math.abs(p.x-ZONE.shop[0])<48 && Math.abs(p.y-ZONE.shop[1])<42; }
@@ -1642,7 +1685,7 @@
     const t=targetFor(p); const moving=Math.abs(p.x-t[0])>2 || Math.abs(p.y-t[1])>2;
     const bob=moving?Math.abs(Math.sin(tick*0.25+p.ph))*1.4:Math.sin(tick*0.07+p.ph)*0.5;
     const x=p.x, y=p.y-bob;
-    const garment=lerpC(EDU_COLOR[p.edu],'#6f665a',0.18);
+    const garment=p.visitor ? '#4f7e9c' : lerpC(EDU_COLOR[p.edu],'#6f665a',0.18);
     ctx.fillStyle='rgba(20,14,6,0.22)'; ctx.beginPath(); ctx.ellipse(x,p.y+6,6,2.2,0,0,7); ctx.fill();
     ctx.strokeStyle='#4f4334'; ctx.lineWidth=2; ctx.lineCap='round';
     const stride=moving?Math.sin(tick*0.25+p.ph)*2:0;
@@ -1653,6 +1696,183 @@
     ctx.fillStyle='#3a2c1f'; ctx.beginPath(); ctx.arc(x,y-10.5,3,Math.PI,0); ctx.fill();
     if(p.role==='school'||p.role==='college'){ ctx.fillStyle='#e9d8a6'; rr(x+2,y-5,5,4,1); ctx.fill(); ctx.strokeStyle='rgba(60,40,20,.5)'; ctx.lineWidth=0.6; ctx.stroke(); }
     if(p.needFood){ ctx.fillStyle='#d8643c'; ctx.beginPath(); ctx.arc(x,y-19,1.7,0,7); ctx.fill(); }
+    if(p.visitor){ ctx.fillStyle='#caa24a'; rr(x+3.5,y-5,3.5,4.5,1); ctx.fill(); }   // traveller's bag
+  }
+
+  /* ============ TRAVEL & VISITORS ============ */
+  function bankRateNow(r){
+    if(!S.built.bank) return 0;
+    const bpop=S.people.length;
+    const good = r.avgMorale>=65 && S.goods>=bpop;
+    const bad = r.avgMorale<45 || S.goods<bpop;
+    if(good){
+      let want=0; for(const q of S.people){ if(q.income>0) want += q.s*q.income; }
+      const headroom = S.villagerCash - bpop*BANK_BUFFER_PER;
+      return Math.min(want, headroom>0?headroom:0);
+    } else if(bad){
+      const matured=bankMatured();
+      if(matured>0){ const w=Math.min(matured*BANK_WITHDRAW_RATE, S.treasury/(1+BANK_INTEREST)); return -w*(1+BANK_INTEREST); }
+    }
+    return 0;
+  }
+
+  // residents ride off-map on holidays — removed from the workforce until they return
+  function processHolidayTravel(){
+    if(!S.builtBusStop) return;
+    const now=totalDaysElapsed();
+    const residents=S.people.slice();
+    for(const p of residents){
+      if(S.people.length<=4) break;                 // keep a skeleton crew in the village
+      if(Math.random()>TRAVEL_CHANCE) continue;
+      const dur=TRAVEL_MIN_DAYS+Math.floor(Math.random()*(TRAVEL_MAX_DAYS-TRAVEL_MIN_DAYS+1));
+      const fare=FARE_MIN+(dur-1)*((FARE_MAX-FARE_MIN)/(TRAVEL_MAX_DAYS-1));   // 1d→3, 2d→6.5, 3d→10
+      if(S.villagerCash<fare) continue;
+      const idx=S.people.indexOf(p); if(idx<0) continue;
+      S.villagerCash-=fare; S.treasury+=fare;        // fare is panchayat bus revenue
+      S.people.splice(idx,1);
+      p.away=true; p.hidden=true;
+      S.travelers.push({ p:p, returnDay:now+dur });
+    }
+    reassignHomes(); renderCards();
+  }
+  function processReturns(){
+    const now=totalDaysElapsed(); let back=false;
+    for(let i=S.travelers.length-1;i>=0;i--){
+      if(S.travelers[i].returnDay<=now){
+        const p=S.travelers[i].p;
+        p.away=false; p.hidden=false; p.role='idle';
+        p.morale=Math.min(100, p.morale+TRAVEL_MORALE);   // refreshed by the trip
+        p.x=704; p.y=360; p.wx=p.x; p.wy=p.y; p.wt=0;
+        S.people.push(p); S.travelers.splice(i,1); back=true;
+      }
+    }
+    if(back){ reassignHomes(); renderCards(); }
+  }
+  // visitors arrive, spend at the shop/dhaba/bar (external money), and leave — never join the workforce
+  function processVisitors(r){
+    const now=totalDaysElapsed();
+    for(let i=S.visitors.length-1;i>=0;i--){ if(S.visitors[i].leaveDay<=now) S.visitors.splice(i,1); }
+    if(S.builtBusStop && S.visitors.length<VISIT_MAX && Math.random()<VISIT_CHANCE){
+      const dur=VISIT_MIN_DAYS+Math.floor(Math.random()*(VISIT_MAX_DAYS-VISIT_MIN_DAYS+1));
+      S.visitors.push({ id:S.nextVid++, visitor:true, role:'visitor', edu:Math.floor(Math.random()*3),
+        x:704, y:360, ox:rnd(-22,22), oy:rnd(-14,14), ph:Math.random()*7,
+        wx:704, wy:360, wt:0, _spd:1.0+Math.random()*0.7, hidden:false, leaveDay:now+dur });
+    }
+    const venueOpen = (S.built.shop && roleCount('shop')>0) || r.dhabaOpen || r.barOpen;
+    if(venueOpen && S.goods > S.people.length){       // visitors buy only from surplus
+      for(const v of S.visitors){
+        let spend=VISIT_SPEND_MIN+Math.random()*(VISIT_SPEND_MAX-VISIT_SPEND_MIN);
+        spend=Math.min(spend, S.goods - S.people.length);
+        if(spend<=0) break;
+        S.goods-=spend;
+        const gross=r.retailPrice*spend;              // outside money entering the village
+        const indirect=gross*INDIRECT_TAX;            // indirect-tax channel → treasury
+        const direct=gross*VISITOR_DIRECT_TAX;        // direct-tax channel → treasury
+        S.treasury+=indirect+direct;
+        S.villagerCash+=gross-direct;                 // residents earn the sale, net of direct tax
+        S.today.indirect+=indirect; S.today.income+=direct;
+      }
+    }
+  }
+  function updateVisitors(){
+    S.visitors.forEach(v=>{
+      if(v._spd===undefined) v._spd=1.0+Math.random()*0.7;
+      v.wt=(v.wt||0)-1;
+      const dx=v.wx-v.x, dy=v.wy-v.y;
+      if(v.wt<=0 || (dx*dx+dy*dy)<25){ const sp=pickRoam(v); v.wx=sp[0]; v.wy=sp[1]; v.wt=120+Math.floor(Math.random()*200); }
+      const ex=v.wx-v.x, ey=v.wy-v.y, d=Math.sqrt(ex*ex+ey*ey);
+      if(d>0.01){ const m=Math.min(d, v._spd); v.x+=ex/d*m; v.y+=ey/d*m; }
+      v.hidden=false;
+    });
+  }
+  function drawBusStop(night){
+    const cx=BUS_CX, gy=BUS_GY;
+    ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(cx-4,gy+5,18,5,0,0,7); ctx.fill();
+    ctx.fillStyle='#5b6b7a'; rr(cx-22,gy-34,32,6,2); ctx.fill();               // shelter roof
+    ctx.strokeStyle='#7e8893'; ctx.lineWidth=3; ctx.beginPath();
+    ctx.moveTo(cx-20,gy-31); ctx.lineTo(cx-20,gy); ctx.moveTo(cx+8,gy-31); ctx.lineTo(cx+8,gy); ctx.stroke();
+    ctx.fillStyle='#8a6a45'; rr(cx-18,gy-9,24,4,1); ctx.fill();                 // bench
+    ctx.strokeStyle='#9a9a9a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx+15,gy); ctx.lineTo(cx+15,gy-30); ctx.stroke();
+    ctx.fillStyle='#2c6e8a'; rr(cx+9,gy-32,15,11,2); ctx.fill();                // sign
+    ctx.fillStyle='#fff'; ctx.font='700 8px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('BUS',cx+16.5,gy-26.5);
+    ctx.font='600 10px Outfit'; const label='Bus Stop', tw=ctx.measureText(label).width+12;
+    ctx.fillStyle='#3a2c1d'; rr(cx-5-tw/2,gy+8,tw,15,4); ctx.fill();
+    ctx.fillStyle='#f2e6cd'; ctx.fillText(label,cx-5,gy+15.5);
+  }
+
+  /* ============ GRAPHS ============ */
+  function rrPath(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+  function drawChart(g,x,y,w,h,series,title){
+    g.fillStyle='#fbf3df'; g.strokeStyle='#c8b48c'; g.lineWidth=1; rrPath(g,x,y,w,h,8); g.fill(); g.stroke();
+    g.fillStyle='#3a2c1d'; g.font='600 12px Outfit'; g.textAlign='left'; g.textBaseline='top'; g.fillText(title,x+10,y+8);
+    const padL=44, padR=10, padT=26, padB=18;
+    const x0=x+padL, y0=y+padT, cw=w-padL-padR, ch=h-padT-padB;
+    const n = series.length ? series[0].data.length : 0;
+    if(n<2){ g.fillStyle='#9b8a72'; g.font='11px Outfit'; g.textBaseline='middle'; g.fillText('collecting data…',x+padL,y+h/2); return; }
+    let mn=Infinity, mx=-Infinity;
+    series.forEach(s=>s.data.forEach(v=>{ if(v<mn)mn=v; if(v>mx)mx=v; }));
+    if(mn>0) mn=0;                       // anchor flows/counts at zero
+    if(mn===mx){ mx=mn+1; }
+    g.strokeStyle='rgba(168,143,99,.28)'; g.fillStyle='#9b8a72'; g.font='9px Outfit'; g.textAlign='right'; g.textBaseline='middle';
+    for(let i=0;i<=2;i++){
+      const yy=y0+ch*(i/2), val=mx-(mx-mn)*(i/2);
+      g.beginPath(); g.moveTo(x0,yy); g.lineTo(x0+cw,yy); g.stroke();
+      g.fillText(Math.round(val).toLocaleString(),x0-4,yy);
+    }
+    series.forEach(s=>{
+      g.strokeStyle=s.color; g.lineWidth=1.6; g.beginPath();
+      s.data.forEach((v,i)=>{ const px=x0+cw*(i/(n-1)), py=y0+ch*(1-(v-mn)/(mx-mn)); if(i===0)g.moveTo(px,py); else g.lineTo(px,py); });
+      g.stroke();
+    });
+    let lx=x+padL, ly=y+h-9; g.font='9px Outfit'; g.textAlign='left'; g.textBaseline='middle';
+    series.forEach(s=>{ g.fillStyle=s.color; g.fillRect(lx,ly-3,8,6); g.fillStyle='#6d5b46'; g.fillText(s.label,lx+11,ly); lx+=11+g.measureText(s.label).width+12; });
+  }
+  function renderGraphs(){
+    const c=el('graphCanvas'); if(!c) return;
+    const g=c.getContext('2d'); g.clearRect(0,0,c.width,c.height);
+    const H=S.history, col=(k)=>H.map(e=>e[k]);
+    const x=8, w=c.width-16, ch=128, gap=10; let y=8;
+    drawChart(g,x,y,w,ch,[{label:'Treasury',color:'#d4a13c',data:col('treasury')}],'Treasury balance ('+CUR+')'); y+=ch+gap;
+    drawChart(g,x,y,w,ch,[
+      {label:'Income tax',color:'#5c8a4e',data:col('tIncome')},
+      {label:'Indirect tax',color:'#3f8a8a',data:col('tIndirect')},
+      {label:'Wages out',color:'#bd5a3f',data:col('tWages')},
+      {label:'Godown',color:'#8a6a9a',data:col('tGodown')},
+      {label:'Bank',color:'#6b7a8f',data:col('tBank')}],'Treasury flows ('+CUR+'/day)'); y+=ch+gap;
+    drawChart(g,x,y,w,ch,[{label:'Grain stock',color:'#c87a55',data:col('grain')}],'Grain stock (kg)'); y+=ch+gap;
+    drawChart(g,x,y,w,ch,[
+      {label:'Produced',color:'#5c8a4e',data:col('gProd')},
+      {label:'Eaten',color:'#bd5a3f',data:col('gEaten')},
+      {label:'Processed',color:'#c0743a',data:col('gProc')},
+      {label:'Godown',color:'#8a6a9a',data:col('gGodown')}],'Grain flows (kg/day)'); y+=ch+gap;
+    drawChart(g,x,y,w,ch,[
+      {label:'Population',color:'#3a2c1d',data:col('pop')},
+      {label:'Idle',color:'#9b8a72',data:col('idle')},
+      {label:'Homeless',color:'#bd5a3f',data:col('homeless')}],'Population'); y+=ch+gap;
+    drawChart(g,x,y,w,ch,[
+      {label:'Unedu',color:EDU_COLOR[0],data:col('e0')},
+      {label:'Basic',color:EDU_COLOR[1],data:col('e1')},
+      {label:'Inter',color:EDU_COLOR[2],data:col('e2')},
+      {label:'Adv',color:EDU_COLOR[3],data:col('e3')},
+      {label:'Skilled',color:EDU_COLOR[4],data:col('e4')}],'Education tiers'); y+=ch+gap;
+  }
+  function busCard(){
+    if(!S.busUnlocked){
+      if(S.godownUnlocked){
+        return lockedCard('warehouse','#3f7a8a','Bus Stop','Travel · regional link',
+          'Reach '+BUS_POP+' people at '+BUS_MORALE+'% morale, sustained for a year',
+          Math.min(1,S.busStreak/YEAR_DAYS), S.busStreak+'/'+YEAR_DAYS+' qualifying days');
+      }
+      return '';
+    }
+    if(!S.builtBusStop){
+      return card('warehouse','#3f7a8a','Bus Stop','Travel · regional link','—',
+        'Connect Tawapur to the wider region. On holidays villagers ride off-map (fare '+CUR+FARE_MIN+'–'+CUR+FARE_MAX+' to the treasury) and leave the workforce until they return — while visitors arrive to spend at the shop, dhaba &amp; bar. Needs a sewak to maintain.',
+        '<button class="buildbtn" data-act="buildbus" '+(S.treasury<BUS_COST?'disabled':'')+'>'+(S.treasury<BUS_COST?'Need '+money(BUS_COST):'Build Bus Stop · '+money(BUS_COST))+'</button>');
+    }
+    const away=S.travelers.length, vis=S.visitors.length;
+    return card('warehouse','#3f7a8a','Bus Stop','Travel · regional link','🚌',
+      '<b>'+away+'</b> away travelling · <b>'+vis+'</b> visiting<br><i style="color:var(--ink-faint)">Fares '+CUR+FARE_MIN+'–'+CUR+FARE_MAX+' to treasury · visitors pay direct + indirect tax · needs a sewak.</i>','');
   }
 
   /* ============ DOM RENDER ============ */
@@ -1960,6 +2180,7 @@
       html += businessCard(r);
       html += bankCard(r);
       html += barCard(r);
+      html += busCard();
     }
     c.innerHTML=html;
     renderBuildingInfo();
@@ -2009,20 +2230,7 @@
     el('h-treasury').textContent=money(S.treasury);
     
     const godownRate = r.effFlow * r.price;            // + when selling stock, − when buying
-    let bankRate = 0;
-    if(S.built.bank){
-      const bpop=S.people.length;
-      const good = r.avgMorale>=65 && S.goods>=bpop;
-      const bad = r.avgMorale<45 || S.goods<bpop;
-      if(good){
-        let want=0; for(const q of S.people){ if(q.income>0) want += q.s*q.income; }
-        const headroom = S.villagerCash - bpop*BANK_BUFFER_PER;
-        bankRate = Math.min(want, headroom>0?headroom:0);
-      } else if(bad){
-        const matured=bankMatured();
-        if(matured>0){ let w=Math.min(matured*BANK_WITHDRAW_RATE, S.treasury/(1+BANK_INTEREST)); bankRate = -w*(1+BANK_INTEREST); }
-      }
-    }
+    const bankRate = bankRateNow(r);
     const indirectRate = r.indirect + r.dhabaIndirect + r.barIndirect;
     const netFlow = indirectRate + r.incomeTax - r.totalTeachRev - r.sewakRev + godownRate + bankRate;
     el('h-net').textContent = (netFlow >= 0 ? '+' : '') + money(netFlow) + '/day';
@@ -2041,7 +2249,7 @@
     const ok=S.goods>=pop && housingCap()>=pop;
     el('h-census-s').textContent=ok?'+'+BIRTHS+' due':'−1 risk';
     el('h-census-s').className='sub '+(ok?'pos':'neg');
-    el('h-date').textContent='Y'+S.year+' · Day '+S.day;
+    el('h-date').textContent='Y'+S.year+' · Day '+S.day+(isHoliday()?' · Holiday':'');
     const p=S.progress;
     el('h-time').textContent=p<0.16?'Dawn':p<0.45?'Morning':p<0.6?'Midday':p<0.8?'Evening':'Night';
     const ang=p*Math.PI*2-Math.PI/2; const isNight=p<0.16||p>0.84;
@@ -2136,6 +2344,7 @@
     let dt=now-lastT; lastT=now;
     if(dt<0) dt=0; if(dt>FG_MAX_DT) dt=FG_MAX_DT;
     step(dt); draw(); updateHUD();
+    if(tick%20===0){ const gp=el('pop-graphs'); if(gp && gp.classList.contains('active')) renderGraphs(); }
     raf=requestAnimationFrame(frame);
   }
   function bgTick(){
@@ -2163,7 +2372,7 @@
   function togglePause(){ if(S.over) return; setSpeed(S.speed===0 ? lastPlaySpeed : 0); }
 
 /* ============ UI TOGGLES ============ */
-  const popups = ['pop-build', 'pop-ledger', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
+  const popups = ['pop-build', 'pop-ledger', 'pop-graphs', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
   
   function togglePopup(targetId) {
     popups.forEach(id => {
@@ -2177,6 +2386,7 @@
   }
 
   el('btn-toggle-ledger').addEventListener('click', () => { togglePopup('pop-ledger'); el('sub-ribbon-build').classList.remove('active'); });
+  el('btn-toggle-graphs').addEventListener('click', () => { togglePopup('pop-graphs'); el('sub-ribbon-build').classList.remove('active'); renderGraphs(); });
   el('btn-toggle-build').addEventListener('click', () => { 
     el('sub-ribbon-build').classList.toggle('active');
     popups.forEach(id => { const node = el(id); if(node) node.classList.remove('active'); });
@@ -2305,6 +2515,13 @@
        if(S.godownUnlocked && !S.builtAshram && S.treasury>=ASHRAM_COST) {
           S.treasury-=ASHRAM_COST; S.builtAshram=true; reassignHomes();
           toast('🏠 The <span class="g">Sewa Ashram</span> opens its doors');
+          renderCards();
+       }
+    }
+    else if(act==='buildbus') {
+       if(S.busUnlocked && !S.builtBusStop && S.treasury>=BUS_COST) {
+          S.treasury-=BUS_COST; S.builtBusStop=true;
+          toast('🚌 The <span class="g">Bus Stop</span> opens — Tawapur is on the map');
           renderCards();
        }
     }
