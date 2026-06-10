@@ -1254,10 +1254,12 @@
   function bankOwed(){ return S.bank.deposits.reduce((s,d)=>s+d.amt,0); }
   function bankMatured(){ const now=totalDaysElapsed(); return S.bank.deposits.reduce((s,d)=>s+(now-d.day>=YEAR_DAYS?d.amt:0),0); }
 
-  function checkUnlocks(){
+ function checkUnlocks(){
     if(!S.godownUnlocked){
-      const dayCount=(S.year-1)*YEAR_DAYS+S.day;
-      if(dayCount>=CH2_UNLOCK_DAY){
+      const pop = S.people.length;
+      const am = pop ? S.people.reduce((sum, p) => sum + p.morale, 0) / pop : 0;
+      const hasHut = S.houses.some(h => h.tier >= 1);
+      if(pop >= GROW_TARGET && hasHut && am >= 70){
         S.godownUnlocked=true; S.shownCh2=true;
         setSpeed(0); el('chapter2').classList.remove('hidden');
         renderCards();
@@ -1853,7 +1855,8 @@
         // else: untreated — health keeps falling and the morale/output debuffs grow
       } else {
         if(p.health<100) p.health=Math.min(100, p.health + HEALTH_RECOVER);
-        if(Math.random() < (p.sickProb||0)){ p.sick=true; p.treatCost=Math.round(rnd(SICK_COST_MIN, SICK_COST_MAX)); }
+        // villagers only risk falling ill once the bus stop chapter is unlocked
+        if(S.busUnlocked && Math.random() < (p.sickProb||0)){ p.sick=true; p.treatCost=Math.round(rnd(SICK_COST_MIN, SICK_COST_MAX)); }
       }
     }
   }
@@ -2001,11 +2004,12 @@
     const progBar=(frac,label)=>'<div class="hc-bar"><i style="width:'+Math.round(Math.max(0,Math.min(1,frac))*100)+'%"></i></div><div class="hc-prog">'+label+'</div>';
     let eyebrow, title, goal='', bar='', tips='';
 
-    if(!S.godownUnlocked){
+   if(!S.godownUnlocked){
       eyebrow='Chapter One'; title='The Laws of Demand &amp; Supply';
-      const frac=dayN/CH2_UNLOCK_DAY;
+      const hasHut = S.houses.some(h=>h.tier>=1);
+      const score = ((pop>=GROW_TARGET?1:pop/GROW_TARGET)*0.4) + (hasHut?0.3:0) + ((am>=70?1:am/70)*0.3);
       goal='<div class="hc-goal">Next: Chapter Two — Governance</div>';
-      bar=progBar(frac, frac>=1 ? '<span class="hc-done">Unlocking…</span>' : 'Day '+dayN+' of '+CH2_UNLOCK_DAY);
+      bar=progBar(score, (score>=1 ? '<span class="hc-done">Unlocking…</span>' : 'Need '+GROW_TARGET+' pop, a Hut, &amp; 70%+ avg morale'));
       tips='<ul>'
         +'<li>Assign idle villagers to the <b>Farm</b> to grow grain and the <b>Shop</b> to sell it — the shop is where your tax revenue comes from.</li>'
         +'<li>Keep <b>grain ≥ population</b> and <b>everyone housed</b>: a clean census brings <b>immigrants</b>, a failed one brings <b>deaths</b>.</li>'
