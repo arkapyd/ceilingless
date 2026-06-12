@@ -697,7 +697,7 @@
   function capacityOf(role){
     if(role==='teacher') return S.built.school ? TEACH_MAX : 0;
     if(role==='school') return S.built.school ? (roleCount('teacher')>=TEACH_MIN ? roleCount('teacher')*STUDENTS_PER_TEACHER : 0) : 0;
-    if(role==='shop') return S.built.shop ? (B.shop.cap + (S.shopBillingCounter ? BILLING_KEEPERS : 0)) : 0;
+    if(role==='shop') return (S.built.shop && !S.built.dhaba) ? (B.shop.cap + (S.shopBillingCounter ? BILLING_KEEPERS : 0)) : 0;
     if(role==='college_teacher') return S.built.college ? 5 : 0;
     if(role==='college_staff') return S.built.college ? 3 : 0;
     if(role==='dhaba_cook') return S.built.dhaba ? 1 : 0;
@@ -804,8 +804,11 @@
     prod *= (1 - (S.wear.farm||0));   // building wear cuts farm efficiency
     if(isHoliday()) prod = 0;         // farm closed on holidays — no new harvest (stored grain still sells)
     
+    // the dhaba, once built, takes over the food counter from the shop
+    const dhabaTakeover = S.built.dhaba;
+    const counterStaff = dhabaTakeover ? [...roleList('dhaba_cook'), ...roleList('dhaba_helper')] : roleList('shop');
     let sCap=0, shopEffSum=0, shopN=0;
-    roleList('shop').forEach(p=>{
+    counterStaff.forEach(p=>{
       const we = workEff(p);
       sCap += SHOP_SELL * EDU_MULT[p.edu] * getHomelessMultiplier(p) * we;
       shopEffSum += we; shopN++;
@@ -827,7 +830,7 @@
     }
 
     const demand=S.people.reduce((s,p)=>s+(CONSUME_RATE[p.edu]||0),0);  
-    const keepers=roleCount('shop');
+    const keepers = counterStaffed() ? counterStaff.length : 0;   // shopkeepers, or the dhaba crew after takeover
     
     let avgBuyAmount = 1;
     if (S.people.length > 0) {
@@ -844,7 +847,8 @@
 
     const farmShopRev = taxedSales * price;
     const farmGovRev = (effFlow < 0) ? Math.abs(effFlow) * price : 0;
-    const totalShopRev = taxedSales * price * SHOP_MARKUP;
+    const stapleMargin = taxedSales * price * SHOP_MARKUP;        // margin on staple counter sales
+    const totalShopRev = dhabaTakeover ? 0 : stapleMargin;        // shopkeepers earn it only before the dhaba
 
     // --- Dhaba (eatery) sales --- supplied by the farm, like the shop
     const dhabaStaffed = S.built.dhaba && roleCount('dhaba_cook')>=1 && roleCount('dhaba_helper')>=2;
@@ -864,7 +868,7 @@
     const dhabaSpend = dhabaSales * retailPrice;                // price * (1 + SHOP_MARKUP)
     const dhabaIndirect = dhabaSpend * INDIRECT_TAX;
     const dhabaFarmGate = dhabaSales * price;                   // farmers paid for the grain
-    const dhabaMargin = dhabaSales * price * SHOP_MARKUP;       // dhaba workers' wage pool
+    const dhabaMargin = dhabaSales * price * SHOP_MARKUP + (dhabaTakeover ? stapleMargin : 0);   // dhaba workers' wage pool (incl. staple counter after takeover)
 
     // --- Bar (alcohol) sales --- grain distilled, 75% markup
     const barStaffed = S.built.bar && roleCount('bar_master')>=1 && roleCount('bar_helper')>=1;
@@ -943,7 +947,7 @@
     roleList('teacher').forEach(p => p.income = SCHOOL_TEACHER_PAY * (1 - INCOME_TAX[p.edu]));
     roleList('college_teacher').forEach(p => p.income = COLLEGE_TEACHER_PAY * (1 - INCOME_TAX[p.edu]));
     roleList('college_staff').forEach(p => p.income = COLLEGE_STAFF_PAY * (1 - INCOME_TAX[p.edu]));
-    if(dhabaOpen){
+    if(dhabaMargin>0){
       roleList('dhaba_cook').forEach(p => p.income = (dhabaMargin*(1-DHABA_HELPER_SHARE)) * (1 - INCOME_TAX[p.edu]));
       const helpers = roleList('dhaba_helper');
       if(helpers.length > 0){
@@ -1028,6 +1032,7 @@
       if (p.returnBuff>0) drift += RETURN_MORALE_BUFF;                          // refreshed from a trip
       if (r.dhabaOpen && isFed && p.role!=='dhaba_cook' && p.role!=='dhaba_helper') {
         drift += DHABA_MORALE * ((p.dhabaKg||0) * r.dhabaServeFrac / DHABA_MAX_KG);
+        if (p.kg < 3) p.kg = Math.min(3, p.kg + (p.dhabaKg||0) * r.dhabaServeFrac * frac);   // a hot meal also fills the belly (capped at 3 kg)
       }
       if (r.barOpen && isFed && p.role!=='bar_master' && p.role!=='bar_helper') {
         const drinkFrac = (p.barProp||0) * r.barServeFrac;   // share of max actually drunk
@@ -1152,7 +1157,7 @@
         if (S.bankBuild <= 0) { S.bankBuild = 0; S.built.bank = true; toast('🏦 The <span class="g">Bank</span> opens its vault'); renderCards(); }
       } else if (S.dhabaBuild > 0) {
         S.dhabaBuild -= activeProgress;
-        if (S.dhabaBuild <= 0) { S.dhabaBuild = 0; S.built.dhaba = true; toast('🍲 The <span class="g">Dhaba</span> opens at the shop'); renderCards(); }
+        if (S.dhabaBuild <= 0) { S.dhabaBuild = 0; S.built.dhaba = true; roleList('shop').forEach(p=>p.role='idle'); toast('🍲 The <span class="g">Dhaba</span> opens — it replaces the Shop counter'); renderCards(); }
       } else if (S.barBuild > 0) {
         S.barBuild -= activeProgress;
         if (S.barBuild <= 0) { S.barBuild = 0; S.built.bar = true; toast('🍺 The <span class="g">Bar</span> opens for business'); renderCards(); }
@@ -1331,6 +1336,14 @@
   }
   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
   function spawnSpark(){ if(S.spark.length>20) return; S.spark.push({x:B.shop.cx+rnd(-22,22), y:B.shop.gy-B.shop.h+rnd(-6,10), life:1}); }
+  function lampGlow(seed){   // oil-lamp flicker — there is no electricity in tawapur
+    const f=0.62 + 0.22*Math.sin(tick*0.21+seed*5.7) + 0.16*Math.sin(tick*0.53+seed*11.3);
+    return f<0.35?0.35:f>1?1:f;
+  }
+  function lampFill(seed){
+    const g=lampGlow(seed);
+    return 'rgba('+Math.round(216+30*g)+','+Math.round(122+48*g)+','+Math.round(42+28*g)+','+(0.55+0.4*g).toFixed(3)+')';
+  }
 
   const HORIZON=150;
   const ROOFS=['#b5562f','#a9512c','#9c4a28','#c2673a','#8f4324','#b65d36','#a34d2a'];
@@ -1578,8 +1591,8 @@
       ctx.strokeStyle='#e6d5c3'; ctx.lineWidth=2; rr(b.cx-14, baseY-26, 28, 26, 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(b.cx-14, baseY-26); ctx.lineTo(b.cx+14, baseY); ctx.moveTo(b.cx+14, baseY-26); ctx.lineTo(b.cx-14, baseY); ctx.stroke();
       ctx.fillStyle='#6e4f3c'; ctx.fillRect(x+b.w-16,topY-18,6,12); 
-      if(lit){ ctx.fillStyle='rgba(255,206,120,.4)'; rr(b.cx-8, topY, 16, 16, 3); ctx.fill(); }
-      ctx.fillStyle=lit?'#ffce78':'#6f7d86'; rr(b.cx-5, topY+3, 10, 10, 2); ctx.fill();
+      if(lit){ ctx.fillStyle='rgba(255,170,80,'+(0.14+0.24*lampGlow(b.cx)).toFixed(3)+')'; rr(b.cx-8, topY, 16, 16, 3); ctx.fill(); }
+      ctx.fillStyle=lit?lampFill(b.cx):'#6f7d86'; rr(b.cx-5, topY+3, 10, 10, 2); ctx.fill();
       ctx.strokeStyle='rgba(40,30,18,.5)'; ctx.lineWidth=1; rr(b.cx-5, topY+3, 10, 10, 2); ctx.stroke();
       
       if(S.farmUpgrades.tractor){
@@ -1651,8 +1664,8 @@
       const wy=topY+30, cols=3;
       for(let i=0;i<cols;i++){
         const wx=x+18+i*((b.w-36)/(cols-1))-6;
-        if(lit){ ctx.fillStyle='rgba(255,206,120,.4)'; rr(wx-3,wy-3,18,18,3); ctx.fill(); }
-        ctx.fillStyle=lit?'#ffce78':'#6f7d86'; rr(wx,wy,12,13,2); ctx.fill();
+        if(lit){ ctx.fillStyle='rgba(255,170,80,'+(0.14+0.24*lampGlow(wx+b.cx)).toFixed(3)+')'; rr(wx-3,wy-3,18,18,3); ctx.fill(); }
+        ctx.fillStyle=lit?lampFill(wx+b.cx):'#6f7d86'; rr(wx,wy,12,13,2); ctx.fill();
         ctx.strokeStyle='rgba(40,30,18,.5)'; ctx.lineWidth=1; rr(wx,wy,12,13,2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(wx+6,wy); ctx.lineTo(wx+6,wy+13); ctx.moveTo(wx,wy+6.5); ctx.lineTo(wx+12,wy+6.5); ctx.stroke();
       }
@@ -1660,7 +1673,7 @@
     ctx.fillStyle=shade(wallEdge,0.7); rr(b.cx-9,baseY-24,18,24,2); ctx.fill();
     ctx.fillStyle=shade(wallEdge,0.55); rr(b.cx-9,baseY-24,18,4,2); ctx.fill();
     ctx.font='600 11px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    const label=b.name; const tw=ctx.measureText(label).width+16;
+    const label=(key==='shop' && S.built.dhaba) ? 'Dhaba' : b.name; const tw=ctx.measureText(label).width+16;
     ctx.fillStyle='#3a2c1d'; rr(b.cx-tw/2,baseY+9,tw,17,4); ctx.fill();
     ctx.fillStyle='#f2e6cd'; ctx.fillText(label,b.cx,baseY+18.5);
   }
@@ -1689,7 +1702,7 @@
         ctx.strokeStyle='#75624a'; ctx.lineWidth=1; rr(cx-w/2,topY+8,w,h-8,2); ctx.stroke();
         ctx.fillStyle='#6b5b4e'; ctx.beginPath(); ctx.moveTo(cx-w/2-3,topY+10); ctx.lineTo(cx,topY-2); ctx.lineTo(cx+w/2+3,topY+10); ctx.closePath(); ctx.fill();
         ctx.fillStyle='#5c442f'; rr(cx-5,gy-14,10,14,2); ctx.fill();
-        ctx.fillStyle=lit?'#ffce78':'#526069'; rr(cx+6,topY+14,6,6,1); ctx.fill();
+        ctx.fillStyle=lit?lampFill(i*3+1):'#526069'; rr(cx+6,topY+14,6,6,1); ctx.fill();
     } else if (targetTier === 1) {
         const w=46, h=38, topY=gy-h;
         const wg=ctx.createLinearGradient(0,topY,0,gy); wg.addColorStop(0,'#d8b98c'); wg.addColorStop(1,'#bd9a6d');
@@ -1699,7 +1712,7 @@
         ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(cx-w/2-5,topY+16); ctx.lineTo(cx,topY-5); ctx.lineTo(cx+w/2+5,topY+16); ctx.closePath(); ctx.fill();
         ctx.strokeStyle=shade(rc,1.12); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(cx-w/2-5,topY+16); ctx.lineTo(cx,topY-5); ctx.lineTo(cx+w/2+5,topY+16); ctx.stroke();
         ctx.fillStyle='#8a5f3c'; rr(cx-6,gy-16,12,16,2); ctx.fill();
-        ctx.fillStyle=lit?'#ffce78':'#8fa0aa'; rr(cx+8,topY+18,8,8,1); ctx.fill();
+        ctx.fillStyle=lit?lampFill(i*3+2):'#8fa0aa'; rr(cx+8,topY+18,8,8,1); ctx.fill();
         if(lit && tick%26===((i*7)%26)) S.smoke.push({x:cx+w/2-12, y:topY-2, vx:rnd(-.1,.2), vy:-.4, life:.6, r:2});
     } else {
         const w=56, h=46, topY=gy-h;
@@ -1710,7 +1723,7 @@
         ctx.fillStyle=shade('#c2a679',0.8); ctx.fillRect(cx-w/2-2,topY,w+4,3);
         ctx.fillStyle='#9c7b50'; ctx.fillRect(cx-w/2,topY-3,4,3); ctx.fillRect(cx+w/2-4,topY-3,4,3);
         ctx.fillStyle='#734a2c'; rr(cx-7,gy-18,14,18,2); ctx.fill();
-        ctx.fillStyle=lit?'#ffce78':'#8fa0aa'; rr(cx-18,topY+18,8,10,1); ctx.fill(); rr(cx+10,topY+18,8,10,1); ctx.fill();
+        ctx.fillStyle=lit?lampFill(i*3+3):'#8fa0aa'; rr(cx-18,topY+18,8,10,1); ctx.fill(); rr(cx+10,topY+18,8,10,1); ctx.fill();
         if(lit && tick%26===((i*7)%26)) S.smoke.push({x:cx, y:topY-4, vx:rnd(-.1,.2), vy:-.4, life:.6, r:2});
     }
   }
@@ -1723,9 +1736,10 @@
   function hash01(n){ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
   function teacherWorking(){ return !isHoliday() && S.progress>=TEACH_START && S.progress<TEACH_END; }
   function shopWorking(){ return (S.progress>=SHOP_AM_START && S.progress<SHOP_AM_END) || (S.progress>=SHOP_PM_START && S.progress<SHOP_PM_END); }
-  function farmerWorking(p){ if(isHoliday()) return false; const blk=Math.floor(S.progress*FARM_BLOCKS); return hash01(p.id*7.13 + S.day*3.7 + blk*1.9) > 0.45; }
+  function farmerWorking(p){ return !isHoliday() && S.progress>=6/24 && S.progress<18/24; }   // a steady field day, 6am–6pm
 
   function shopOpen(){ return S.built.shop && shopWorking(); }
+  function counterStaffed(){ return S.built.dhaba ? (roleCount('dhaba_cook')>=1 && roleCount('dhaba_helper')>=2) : roleCount('shop')>0; }
   function atShop(p){ if(!shopOpen()) return false; return Math.abs(p.x-ZONE.shop[0])<48 && Math.abs(p.y-ZONE.shop[1])<42; }
 
   function workTarget(p){
@@ -1742,15 +1756,57 @@
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
 
   function pickRoam(p){
-    if(Math.random()<0.2) return [388+rnd(-30,30), 360+rnd(-16,16)];
-    const a=Math.random()*Math.PI*2, r=rnd(18,70);
-    let x=p.x+Math.cos(a)*r, y=p.y+Math.sin(a)*r;
-    if(x<60)x=60; else if(x>704)x=704;
-    if(y<318)y=318; else if(y>456)y=456;
-    return [x,y];
+    let sp=[p.x,p.y];
+    for(let k=0;k<4;k++){   // try a few spots, keep a little personal space
+      if(Math.random()<0.2) sp=[388+rnd(-30,30), 360+rnd(-16,16)];
+      else {
+        const a=Math.random()*Math.PI*2, r=rnd(18,70);
+        let x=p.x+Math.cos(a)*r, y=p.y+Math.sin(a)*r;
+        if(x<60)x=60; else if(x>704)x=704;
+        if(y<318)y=318; else if(y>456)y=456;
+        sp=[x,y];
+      }
+      const crowded=S.people.some(q=>q!==p && !q.hidden && (q.x-sp[0])*(q.x-sp[0])+(q.y-sp[1])*(q.y-sp[1])<130);
+      if(!crowded) break;
+    }
+    return sp;
+  }
+  function endChat(p){
+    if(p.chatWith>=0){
+      const mate=S.people.find(q=>q.id===p.chatWith);
+      if(mate && mate.chatWith===p.id){ mate.chatWith=-1; mate.act='stand'; mate.actT=120+Math.floor(Math.random()*240); }
+    }
+    p.chatWith=-1;
+  }
+  function pickIdleAct(p){
+    endChat(p);
+    const roll=Math.random();
+    if(roll<0.25){            // a short stroll to a fresh spot
+      const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1];
+      p.act='stroll'; p.actT=600;
+    } else if(roll<0.55){     // stand around
+      p.wx=p.x; p.wy=p.y; p.act='stand'; p.actT=240+Math.floor(Math.random()*420);
+    } else if(roll<0.78){     // sit for a while
+      p.wx=p.x; p.wy=p.y; p.act='sit'; p.actT=420+Math.floor(Math.random()*600);
+    } else {                  // find someone nearby to chat with
+      let mate=null, best=8100;
+      for(const q of S.people){
+        if(q===p || q.hidden || q.chatWith>=0) continue;
+        if(q.act!=='stand' && q.act!=='sit') continue;
+        const dd=(q.x-p.x)*(q.x-p.x)+(q.y-p.y)*(q.y-p.y);
+        if(dd<best){ best=dd; mate=q; }
+      }
+      if(mate){
+        const t=300+Math.floor(Math.random()*420);
+        p.act='chat'; p.chatWith=mate.id; p.actT=t+60;
+        mate.act='chat'; mate.chatWith=p.id; mate.actT=t;
+        mate.wx=mate.x; mate.wy=mate.y;
+        p.wx=mate.x+(p.x<mate.x?-9:9); p.wy=mate.y+rnd(-2,2);
+      } else { p.wx=p.x; p.wy=p.y; p.act='stand'; p.actT=240+Math.floor(Math.random()*300); }
+    }
   }
   function targetFor(p){
-    if(p.needFood && shopOpen() && roleCount('shop')>0 && !p.inAshram) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
+    if(p.needFood && shopOpen() && counterStaffed() && !p.inAshram) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
     const w=workTarget(p);
     if(w) return w;            
     return [p.wx, p.wy];       
@@ -1759,23 +1815,26 @@
     S.people.forEach(p=>{
       if(p.wx===undefined){ p.wx=p.x; p.wy=p.y; p.wt=0; }
       if(p._spd===undefined) p._spd=1.0+Math.random()*0.7;   
-      const hungryBound = p.needFood && shopOpen() && roleCount('shop')>0;
+      const hungryBound = p.needFood && shopOpen() && counterStaffed();
       if(!hungryBound && workTarget(p)===null){              
-        p.wt=(p.wt||0)-1;
-        const dx=p.wx-p.x, dy=p.wy-p.y;
-        if(p.wt<=0 || (dx*dx+dy*dy)<25){ const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1]; p.wt=160+Math.floor(Math.random()*260); }
+        if(p.act===undefined){ p.act='stand'; p.actT=Math.floor(Math.random()*180); p.chatWith=-1; }
+        p.actT--;
+        if(p.act==='chat'){
+          const mate=S.people.find(q=>q.id===p.chatWith);
+          if(!mate || mate.hidden || mate.chatWith!==p.id || Math.abs(mate.x-p.x)+Math.abs(mate.y-p.y)>48){ endChat(p); p.act='stand'; p.actT=90; }
+        }
+        const ddx=p.wx-p.x, ddy=p.wy-p.y;
+        if(p.actT<=0 || (p.act==='stroll' && (ddx*ddx+ddy*ddy)<25)) pickIdleAct(p);
+      } else {
+        if(p.act==='chat') endChat(p);   // called away — to a shift or the counter
+        p.act=undefined;
       }
       const t=targetFor(p);
       const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);    
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
       
-      // Dynamic rendering filter:
-      // if destination is work while at work OR destination is home while at home, fade character logic
-      if ((workTarget(p) !== null && d < 5) || (workTarget(p) === null && p.home >= 0 && dx*dx+dy*dy < 100)) {
-         p.hidden = true;
-      } else {
-         p.hidden = false;
-      }
+      // on shift: tucked away inside the building; otherwise always visible in the lanes
+      p.hidden = (workTarget(p) !== null && d < 5);
     });
   }
 
@@ -1783,18 +1842,27 @@
     if (p.hidden) return; // Do not render if absorbed by a building
     
     const t=targetFor(p); const moving=Math.abs(p.x-t[0])>2 || Math.abs(p.y-t[1])>2;
+    const sitting = p.act==='sit' && !moving;
     const bob=moving?Math.abs(Math.sin(tick*0.25+p.ph))*1.4:Math.sin(tick*0.07+p.ph)*0.5;
-    const x=p.x, y=p.y-bob;
+    const x=p.x, y=p.y-bob+(sitting?3:0);
     const garment=p.visitor ? '#4f7e9c' : lerpC(EDU_COLOR[p.edu],'#6f665a',0.18);
     ctx.fillStyle='rgba(20,14,6,0.22)'; ctx.beginPath(); ctx.ellipse(x,p.y+6,6,2.2,0,0,7); ctx.fill();
     ctx.strokeStyle='#4f4334'; ctx.lineWidth=2; ctx.lineCap='round';
-    const stride=moving?Math.sin(tick*0.25+p.ph)*2:0;
-    ctx.beginPath(); ctx.moveTo(x-1.5,y+1); ctx.lineTo(x-1.5+stride*0.4,y+6); ctx.moveTo(x+1.5,y+1); ctx.lineTo(x+1.5-stride*0.4,y+6); ctx.stroke(); ctx.lineCap='butt';
+    if(sitting){   // legs folded on the ground
+      ctx.beginPath(); ctx.moveTo(x-1.5,y+1.5); ctx.lineTo(x-5,y+3.5); ctx.moveTo(x+1.5,y+1.5); ctx.lineTo(x+5,y+3.5); ctx.stroke(); ctx.lineCap='butt';
+    } else {
+      const stride=moving?Math.sin(tick*0.25+p.ph)*2:0;
+      ctx.beginPath(); ctx.moveTo(x-1.5,y+1); ctx.lineTo(x-1.5+stride*0.4,y+6); ctx.moveTo(x+1.5,y+1); ctx.lineTo(x+1.5-stride*0.4,y+6); ctx.stroke(); ctx.lineCap='butt';
+    }
     ctx.fillStyle=garment; ctx.beginPath(); ctx.moveTo(x-4,y+2); ctx.lineTo(x-3,y-6); ctx.quadraticCurveTo(x,y-8,x+3,y-6); ctx.lineTo(x+4,y+2); ctx.closePath(); ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=0.8; ctx.stroke();
     ctx.fillStyle='#c79a6b'; ctx.beginPath(); ctx.arc(x,y-9,3,0,7); ctx.fill();
     ctx.fillStyle='#3a2c1f'; ctx.beginPath(); ctx.arc(x,y-10.5,3,Math.PI,0); ctx.fill();
     if(p.role==='school'||p.role==='college'){ ctx.fillStyle='#e9d8a6'; rr(x+2,y-5,5,4,1); ctx.fill(); ctx.strokeStyle='rgba(60,40,20,.5)'; ctx.lineWidth=0.6; ctx.stroke(); }
+    if(p.act==='chat' && !moving && (((tick>>4)+p.id)%2===0)){   // taking a turn speaking
+      ctx.fillStyle='rgba(58,44,29,0.65)';
+      for(let k=0;k<3;k++){ ctx.beginPath(); ctx.arc(x+4.5+k*2.6, y-14.5-k*1.4, 0.85, 0, 7); ctx.fill(); }
+    }
     if(p.needFood){ ctx.fillStyle='#d8643c'; ctx.beginPath(); ctx.arc(x,y-19,1.7,0,7); ctx.fill(); }
     if(p.sick){ ctx.strokeStyle='#c0392b'; ctx.lineWidth=1.5; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y-22.5); ctx.lineTo(x,y-18); ctx.moveTo(x-2.2,y-20.25); ctx.lineTo(x+2.2,y-20.25); ctx.stroke(); ctx.lineCap='butt'; }
     if(p.visitor){ ctx.fillStyle='#caa24a'; rr(x+3.5,y-5,3.5,4.5,1); ctx.fill(); }   // traveller's bag
@@ -1890,7 +1958,7 @@
         x:704, y:360, ox:rnd(-22,22), oy:rnd(-14,14), ph:Math.random()*7,
         wx:704, wy:360, wt:0, _spd:1.0+Math.random()*0.7, hidden:false, leaveDay:now+dur });
     }
-    const venueOpen = (S.built.shop && roleCount('shop')>0) || r.dhabaOpen || r.barOpen;
+    const venueOpen = (S.built.shop && counterStaffed()) || r.dhabaOpen || r.barOpen;
     if(venueOpen && S.goods > S.people.length){       // visitors buy only from surplus
       for(const v of S.visitors){
         let spend=VISIT_SPEND_MIN+Math.random()*(VISIT_SPEND_MAX-VISIT_SPEND_MIN);
@@ -1956,7 +2024,7 @@
     const rc=ROOFS[i%ROOFS.length];
     ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(cx-w/2-5,topY+16); ctx.lineTo(cx,topY-5); ctx.lineTo(cx+w/2+5,topY+16); ctx.closePath(); ctx.fill();
     ctx.fillStyle='#8a5f3c'; rr(cx-6,gy-16,12,16,2); ctx.fill();
-    ctx.fillStyle=lit?'#ffce78':'#8fa0aa'; rr(cx+8,topY+18,8,8,1); ctx.fill();
+    ctx.fillStyle=lit?lampFill(cx):'#8fa0aa'; rr(cx+8,topY+18,8,8,1); ctx.fill();
   }
   function drawDispensary(night){
     const x=DISP_CX-DISP_W/2, baseY=DISP_GY, topY=DISP_GY-DISP_H, lit=night>0.25;
@@ -1967,7 +2035,7 @@
     ctx.fillStyle='#9a3b2e'; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(DISP_CX,topY-8); ctx.lineTo(x+DISP_W+7,topY+16); ctx.closePath(); ctx.fill();
     for(let i=0;i<3;i++){
       const wx=x+20+i*((DISP_W-40)/2)-6;
-      ctx.fillStyle=lit?'#ffce78':'#6f7d86'; rr(wx,topY+32,12,13,2); ctx.fill();
+      ctx.fillStyle=lit?lampFill(wx):'#6f7d86'; rr(wx,topY+32,12,13,2); ctx.fill();
       ctx.strokeStyle='rgba(40,30,18,.5)'; ctx.lineWidth=1; rr(wx,topY+32,12,13,2); ctx.stroke();
     }
     ctx.fillStyle='#8a7a6a'; rr(DISP_CX-9,baseY-24,18,24,2); ctx.fill();
@@ -2234,6 +2302,20 @@
           '<button class="buildbtn" data-act="buildshop" ' + (S.treasury < SHOP_COST ? 'disabled' : '') + '>' + (S.treasury < SHOP_COST ? 'Need ' + money(SHOP_COST) : 'Build Shop · ' + money(SHOP_COST) + ' · ' + SHOP_BUILD_UNITS + ' units') + '</button>');
       }
     }
+    if (S.built.dhaba) {   // the dhaba has replaced the shop counter
+      const cooks = roleCount('dhaba_cook'), helpers = roleCount('dhaba_helper'), staffed = (cooks >= 1 && helpers >= 2);
+      const hungryD = S.people.filter(p => p.needFood).length;
+      const status = !staffed ? '<b style="color:var(--bad)">closed</b> — needs 1 cook + 2 helpers (nobody eats!)'
+        : r.dhabaOpen ? '<b style="color:var(--good)">open</b> · dining ~<b>' + r.dhabaSales.toFixed(1) + '</b> kg/d → tax <b>' + money(r.dhabaIndirect) + '</b>'
+        : '<b style="color:var(--good)">open</b> · staple counter only — dining resumes with grain surplus';
+      const statD = 'The Dhaba has <b>replaced the Shop</b> — all meals are served here.<br>'
+        + 'Serves <b>' + (staffed ? (cooks + helpers) * SERVE_PER_KEEPER : 0) + '</b> · <b>' + hungryD + '</b> hungry · Retail <b>' + money(r.retailPrice) + '</b>/kg<br>'
+        + 'Staple sales ~<b>' + r.taxedSales.toFixed(1) + '</b> kg/d → tax <b>' + money(r.indirect) + '</b><br>' + status
+        + '<br><i style="color:var(--ink-faint)">Hot meals also fill bellies — diners top up their own food store.</i>';
+      const ctrlD = '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Cook (Educated)</div>' + stepper('dhaba_cook')
+        + '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Helpers (Unedu)</div>' + stepper('dhaba_helper');
+      return card('shop', '#c0743a', 'Business', 'Dhaba · replaced the Shop', (cooks + helpers) + '<small style="font-weight:400;color:var(--ink-faint)">/3</small>', statD, ctrlD);
+    }
     const keepers = roleCount('shop'), slots = keepers * SERVE_PER_KEEPER, hungry = S.people.filter(p => p.needFood).length;
     let stat = 'Serves <b>' + slots + '</b> · <b>' + hungry + '</b> hungry<br>Retail: <b>' + money(r.retailPrice) + '</b>/kg · Sales ~<b>' + r.taxedSales.toFixed(1) + '</b> kg/d → Tax <b>' + money(r.indirect) + '</b>';
     let ctrl = '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:2px">Shopkeepers</div>' + stepper('shop') + billingBtnHTML();
@@ -2245,19 +2327,12 @@
         const pct = Math.round((DHABA_BUILD_UNITS - S.dhabaBuild) / DHABA_BUILD_UNITS * 100);
         stat += 'Dhaba: Building (needs <b>' + Math.ceil(S.dhabaBuild) + '</b> units)';
         ctrl += '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:' + pct + '%"></i></div>';
-      } else if (!S.built.dhaba) {
-        stat += 'Add a Dhaba to the shop so fed villagers can dine out on surplus grain for a morale boost.';
-        ctrl += '<button class="buildbtn" data-act="builddhaba" ' + (S.treasury < DHABA_COST ? 'disabled' : '') + '>' + (S.treasury < DHABA_COST ? 'Need ' + money(DHABA_COST) : 'Add Dhaba · ' + money(DHABA_COST) + ' · ' + DHABA_BUILD_UNITS + ' units') + '</button>';
       } else {
-        const cooks = roleCount('dhaba_cook'), helpers = roleCount('dhaba_helper'), staffed = (cooks >= 1 && helpers >= 2);
-        const status = !staffed ? '<b style="color:var(--bad)">closed</b> — needs 1 cook + 2 helpers' : r.dhabaOpen ? '<b style="color:var(--good)">open</b> · serving ~<b>' + r.dhabaSales.toFixed(1) + '</b> kg/d → tax <b>' + money(r.dhabaIndirect) + '</b>' : '<b>quiet</b> — needs grain surplus';
-        stat += 'Dhaba: Cook <b>' + cooks + '</b>/1 · Helpers <b>' + helpers + '</b>/2<br>' + status;
-        ctrl += '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:9px">Cook (Educated)</div>' + stepper('dhaba_cook') +
-          '<div style="font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:5px">Helpers (Unedu)</div>' + stepper('dhaba_helper');
-        badge = (keepers + cooks + helpers) + '<small style="font-weight:400;color:var(--ink-faint)">/' + (capacityOf('shop') + 3) + '</small>';
+        stat += 'Upgrade the shop into a <b>Dhaba</b> — hot meals feed the village <b>and</b> lift morale. It <b>replaces the shop counter</b>: shopkeepers retire, the cook and helpers serve everyone.';
+        ctrl += '<button class="buildbtn" data-act="builddhaba" ' + (S.treasury < DHABA_COST ? 'disabled' : '') + '>' + (S.treasury < DHABA_COST ? 'Need ' + money(DHABA_COST) : 'Upgrade to Dhaba · ' + money(DHABA_COST) + ' · ' + DHABA_BUILD_UNITS + ' units') + '</button>';
       }
     }
-    return card('shop', '#c87a55', 'Business', S.built.dhaba ? 'Shop & Dhaba' : 'Shop', badge, stat, ctrl);
+    return card('shop', '#c87a55', 'Business', 'Shop', badge, stat, ctrl);
   }
 
   function renderBuildingInfo() {
