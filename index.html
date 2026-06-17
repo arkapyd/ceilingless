@@ -14,7 +14,10 @@
     --line:#c8b48c; --line-strong:#a98f63;
     --gold:#d4a13c; --terra:#c87a55; --slate:#6b7a8f; --plum:#8a6a9a; --brick:#b5764f;
     --good:#5c8a4e; --bad:#bd5a3f;
-    --shadow:0 2px 0 rgba(120,96,64,.25), 0 6px 18px rgba(60,44,24,.10);
+    --shadow:0 2px 0 rgba(120,96,64,.22), 0 10px 26px rgba(48,34,18,.14);
+    --gold-2:#e6bb5c; --gold-deep:#b9842a;
+    --gold-grad:linear-gradient(177deg, var(--gold-2) 0%, var(--gold) 54%, #c4912f 100%);
+    --hair:rgba(120,96,64,.16); --edge-hi:rgba(255,250,238,.55);
   }
   *{box-sizing:border-box}
   /* themed scrollbars + keyboard focus, page-wide */
@@ -29,7 +32,10 @@
   html,body{margin:0;padding:0}
   body{
     font-family:'Outfit',system-ui,sans-serif;color:var(--ink);
-    background:#1d160e;
+    background:
+      repeating-linear-gradient(48deg, rgba(255,235,200,.012) 0 2px, rgba(0,0,0,0) 2px 5px),
+      radial-gradient(150% 120% at 50% -10%, #2a2013 0%, #1d160d 52%, #140d07 100%);
+    background-color:#160f08;
     height:100vh;margin:0;padding:0;overflow:hidden;-webkit-font-smoothing:antialiased;
   }
   .wrap{
@@ -40,7 +46,8 @@
     background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 120px),
       repeating-linear-gradient(135deg, rgba(168,143,99,.05) 0 2px, rgba(168,143,99,0) 2px 7px),
       var(--cream);
-    border:1px solid var(--line-strong);border-radius:16px;box-shadow:var(--shadow);
+    border:1px solid var(--line-strong);border-radius:16px;
+    box-shadow:var(--shadow), 0 1px 0 var(--edge-hi) inset, 0 0 0 1px rgba(120,96,64,.06) inset;
   }
   .ribbon{
     flex:none;background:var(--cream);border-top:1px solid var(--line-strong);
@@ -85,7 +92,7 @@
   [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%) translateY(4px);background:#3a2c1d;color:#f2e6cd;font-family:'Outfit',sans-serif;font-weight:500;font-size:11.5px;letter-spacing:.3px;white-space:nowrap;padding:5px 10px;border-radius:8px;border:1px solid rgba(212,161,60,.55);box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .14s ease, transform .14s ease;z-index:60;}
   [data-tip]::before{content:'';position:absolute;left:50%;bottom:calc(100% + 5px);transform:translateX(-50%) translateY(4px);border:5px solid transparent;border-top-color:#3a2c1d;opacity:0;pointer-events:none;transition:opacity .14s ease, transform .14s ease;z-index:60;}
   [data-tip]:hover::after,[data-tip]:hover::before{opacity:1;transform:translateX(-50%) translateY(0);}
-  .stage{flex:1;position:relative;background:#1d160e;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
+  .stage{flex:1;position:relative;background:#160f08;overflow:hidden;line-height:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;width:100%;height:100%;object-fit:contain;background:#12100c;transition:cursor .1s;}
   
   .ui-popup{
@@ -193,6 +200,21 @@
   .modal .lead b{font-weight:600}
   @keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .hidden{display:none!important}
+
+  /* ---- classy polish: refined craft on the warm village-ledger identity ---- */
+  .chip .val{font-family:'Fraunces',serif;font-weight:600;letter-spacing:.1px;}
+  .card{background:linear-gradient(180deg, rgba(255,251,240,.6), rgba(255,251,240,0) 38%), var(--cream);
+        transition:transform .14s ease, box-shadow .14s ease;}
+  .card:hover{transform:translateY(-1px); box-shadow:0 3px 0 rgba(120,96,64,.18), 0 12px 24px rgba(48,34,18,.14);}
+  .r-btn,.buildbtn,.modal .play{background:var(--gold-grad); border-color:var(--gold-deep);
+        box-shadow:0 1px 0 rgba(255,245,220,.55) inset, 0 2px 5px rgba(80,52,8,.22);}
+  .r-btn:hover,.buildbtn:hover,.modal .play:hover{filter:brightness(1.05) saturate(1.04);}
+  .buildbtn:disabled{background:var(--cream-3); box-shadow:none;}
+  .sbtn.on{background:var(--gold-grad);}
+  .toast{backdrop-filter:blur(3px); border-color:rgba(212,161,60,.5);
+        box-shadow:0 8px 22px rgba(20,12,4,.4), 0 1px 0 rgba(255,235,190,.15) inset;}
+  .section-h{letter-spacing:.2px;}
+  @media (prefers-reduced-motion: reduce){ .card,.card:hover{transition:none; transform:none;} }
 </style>
 </head>
 <body>
@@ -357,7 +379,7 @@
     <div class="ov hidden" id="chapter4">
       <div class="modal">
         <div class="eyebrow">Book Two · Beyond the Village</div>
-        <div class="chapter-title">Chapter Four<span>Expansions</span></div>
+        <div class="chapter-title">Chapter Four<span>Layers</span></div>
         <div class="anim-stage">
           <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
             <line x1="10" y1="124" x2="270" y2="124" stroke="#a98f63" stroke-width="1.5"/>
@@ -385,12 +407,12 @@
           </svg>
           <div class="anim-cap">The bus links Tawapur to the region — residents ride out, visitors come in to spend.</div>
         </div>
-        <p class="lead">Tawapur has thrived — <b>30 souls at high spirits for a full year</b>. Word spreads, and the village earns a place on the map. A <b>Bus Stop</b> may now be built, and with it, <b>Expansions</b>.</p>
+        <p class="lead">Tawapur has thrived — <b>30 souls at high spirits for a full year</b>. The village gains new <b>layers</b> of life: a <b>Dispensary</b> to treat the sick, and a <b>Bus Stop</b> that carries villagers on journeys beyond the fields.</p>
         <ul>
           <li>On <b>holidays</b>, villagers ride off-map for a small <b>fare</b> (to your treasury) and come back <b>refreshed</b> — a morale &amp; productivity lift for three days. While away, they leave the workforce.</li>
           <li><b>Visitors</b> arrive to spend surplus grain at the shop, dhaba &amp; bar, paying both <b>direct and indirect tax</b> — outside money flowing into Tawapur.</li>
-          <li>Every villager now carries a <b>health</b> meter. The sick ride the bus to <b>Sonalagi's dispensary</b> if a dose is in stock and they can afford it (₹10–50 of their own); if not, their <b>output and morale</b> slide until they recover.</li>
-          <li>Click the <b>Bus Stop</b> to visit <b>Sonalagi</b>, the neighbouring village — and stock its <b>Dispensary</b> with medicine (₹5/g) from your treasury.</li>
+          <li>Every villager now carries a <b>health</b> meter. The sick walk to the <b>Dispensary</b> if a dose is in stock and they can afford it (₹10–50 of their own); if not, their <b>output and morale</b> slide until they recover.</li>
+          <li>Build the <b>Dispensary</b> in the village and keep it stocked with medicine (₹5/g) from your treasury, so no one is turned away.</li>
           <li>Any villager whose <b>morale falls to 20%</b> now downs tools and <b>refuses to work</b>.</li>
           <li>Prosperity makes room to grow: <b>one extra house plot</b> opened with Chapter Three, and <b>two more</b> open now.</li>
         </ul>
@@ -553,10 +575,8 @@
   const SICK_DECLINE=8, HEALTH_RECOVER=6;                  // health change per day while ill / recovering
   const SICK_PROD_FLOOR=0.3, SICK_MORALE_BASE=2, SICK_MORALE=10;
   const SICK_COST_MIN=10, SICK_COST_MAX=50, SICK_TRIP_DAYS=2;
-  const MED_PRICE=5, MED_DOSE_G=10, MED_CURE_FULL=0.8, MED_PARTIAL_HEALTH=80;   // sonalagi dispensary medicine
-  const SON_BUS_CX=60, SON_BUS_GY=372;                     // sonalagi bus stop (left edge)
-  const DISP_CX=420, DISP_GY=264, DISP_W=128, DISP_H=86;   // sonalagi dispensary footprint
-  const SON_HUT_X=[560,640,720];                           // sonalagi hut positions
+  const MED_PRICE=5, MED_DOSE_G=10, MED_CURE_FULL=0.8, MED_PARTIAL_HEALTH=80;   // village dispensary medicine
+  const DISP_COST=350, DISP_BUILD_UNITS=15;                                     // dispensary (built in tawapur)
   const FARM_UPGRADES = {
     tractor:  { name:'Tractor',   cost:500,  out:4 },
     harvester:{ name:'Harvester', cost:1000, out:8 },
@@ -575,8 +595,9 @@
     bank   :{name:'Bank', role:'bank', sub:'Holds citizen savings', cx:263, gy:250, w:104, h:80, color:'#6b7a8f', cap:0},
     dhaba  :{name:'Dhaba', role:'dhaba', sub:'Eatery · 18% tax', cx:600, gy:250, w:96, h:74, color:'#c0743a', cap:0},
     bar :{name:'Bar', role:'bar', sub:'Alcohol · 75% markup', cx:702, gy:250, w:84, h:70, color:'#9a6a3a', cap:0},
+    dispensary:{name:'Dispensary', role:'dispensary', sub:'Treats the sick · medicine', cx:490, gy:250, w:92, h:74, color:'#b04a3e', cap:0},
   };
-  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[392,304], idle:[388,358], dhaba:[600,302], bar:[700,302] }; 
+  const ZONE={ farm:[140,302], teacher:[346,300], school:[392,304], shop:[600,302], college:[392,304], idle:[388,358], dhaba:[600,302], bar:[700,302], dispensary:[490,302] }; 
   const ICON={
     warehouse:'<path d="M3 21V9l9-5 9 5v12z"/><path d="M9 21v-7h6v7"/><path d="M10 10h4v2h-4z"/>',
     farm:'<path d="M3 21V10l9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/><path d="M12 7v4m-2-2h4"/>',
@@ -597,12 +618,12 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0,wear:0},{tier:0,build:0,pendingTier:0,wear:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0,
-      built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0, dispBuild:0,
+      built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false, dispensary:false},
       wear:{farm:0, shop:0, bar:0}, builtAshram:false, totalGrain:0, totalAlcohol:0,
       busUnlocked:false, builtBusStop:false, busStreak:0, shownCh4:false,
       travelers:[], visitors:[], nextVid:0, history:[],
-      view:'tawapur', medStock:0, totalMedicine:0, sonPeople:[],
+      medStock:0, totalMedicine:0,
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
       ch3Unlocked:false, shownCh3:false, shopBillingCounter:false, bank:{deposits:[]},
       farmUpgrades:{tractor:false, harvester:false, combiner:false},
@@ -615,12 +636,6 @@
     for(let i=0;i<7;i++) addPerson(0);
     for(let i=0;i<3;i++) addPerson(1);
     reassignHomes();
-    for(let i=0;i<3;i++){   // sonalagi dispensary staff: 2 basic + 1 uneducated
-      const sx=rnd(330,520), sy=rnd(335,440);
-      S.sonPeople.push({ edu:i<2?1:0, role:'dispensary', morale:80, needFood:false, sick:false, inAshram:false,
-        x:sx, y:sy, ox:rnd(-18,18), oy:rnd(-10,10), ph:Math.random()*7,
-        wx:sx, wy:sy, wt:Math.floor(Math.random()*120), _spd:1.0+Math.random()*0.5, hidden:false, kg:2, home:0 });
-    }
   }
   function addPerson(edu){
     const sx=ZONE.idle[0]+rnd(-55,55), sy=ZONE.idle[1]+rnd(-22,22);
@@ -1161,6 +1176,9 @@
       } else if (S.barBuild > 0) {
         S.barBuild -= activeProgress;
         if (S.barBuild <= 0) { S.barBuild = 0; S.built.bar = true; toast('🍺 The <span class="g">Bar</span> opens for business'); renderCards(); }
+      } else if (S.dispBuild > 0) {
+        S.dispBuild -= activeProgress;
+        if (S.dispBuild <= 0) { S.dispBuild = 0; S.built.dispensary = true; toast('💊 The <span class="g">Dispensary</span> opens its doors'); renderCards(); }
       }
     }
 
@@ -1351,7 +1369,6 @@
 
   let tick=0;
   function draw(){
-    if(S.view==='sonalagi'){ drawSonalagi(); return; }
     tick++;
     const p=S.progress;
     const night=(p<0.16?(0.16-p)/0.16:p>0.84?(p-0.84)/0.16:0);
@@ -1410,6 +1427,7 @@
     ['farm','school','shop'].forEach(k => renderables.push({type: 'building', key: k, y: B[k].gy}));
     if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) renderables.push({type:'building', key:'bank', y:B.bank.gy});
     if(S.ch3Unlocked || S.built.bar || S.barBuild>0) renderables.push({type:'building', key:'bar', y:B.bar.gy});
+    if(S.busUnlocked || S.built.dispensary || S.dispBuild>0) renderables.push({type:'building', key:'dispensary', y:B.dispensary.gy});
     renderables.push({type: 'tree', x: 38, y: 352, scale: 0.95});
     renderables.push({type: 'tree', x: 20, y: 300, scale: 0.8});
     if(S.builtBusStop) renderables.push({type:'busstop', y: BUS_GY});
@@ -1537,7 +1555,7 @@
   function drawBuilding(key,night,day){
     const b=B[key]; const x=b.cx-b.w/2, baseY=b.gy, topY=b.gy-b.h;
     const isBuilt = (key === 'farm') || S.built[key];
-    const isBuilding = (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'bar' && S.barBuild > 0);
+    const isBuilding = (key === 'school' && S.schoolBuild > 0) || (key === 'shop' && S.shopBuild > 0) || (key === 'bank' && S.bankBuild > 0) || (key === 'bar' && S.barBuild > 0) || (key === 'dispensary' && S.dispBuild > 0);
     
     const sdir=(S.progress-0.5)*-2;
     ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(b.cx+sdir*10,baseY+6,b.w*0.58,9,0,0,7); ctx.fill();
@@ -1565,6 +1583,7 @@
     else if(key==='shop'){ wallTop='#cdb083'; wallBot='#b1936a'; wallEdge='#8f7351'; }
     else if(key==='bank'){ wallTop='#dcd8cf'; wallBot='#bdb8ad'; wallEdge='#8f897d'; }
     else if(key==='bar'){ wallTop='#c08a4e'; wallBot='#9a6a3a'; wallEdge='#6e4824'; }
+    else if(key==='dispensary'){ wallTop='#f1ece0'; wallBot='#dcd3c2'; wallEdge='#b3a78d'; }
     else { wallTop='#c9b6cc'; wallBot='#a892ad'; wallEdge='#7d6783'; }
     const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,wallTop); wg.addColorStop(1,wallBot);
     ctx.fillStyle=wg; rr(x,topY+12,b.w,b.h-12,3); ctx.fill();
@@ -1617,7 +1636,7 @@
         ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(cx+8,cy-4,8,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(cx+24,cy-4,5,0,7); ctx.fill();
       }
     } else {
-      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='bar' ? '#7a4a26' : ROOFS[1];
+      const rc = key==='school' ? '#b05a34' : key==='bank' ? '#9a958c' : key==='bar' ? '#7a4a26' : key==='dispensary' ? '#9a3b2e' : ROOFS[1];
       ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(b.cx,topY-8); ctx.lineTo(x+b.w+7,topY+16); ctx.closePath(); ctx.fill();
       ctx.strokeStyle=shade(rc,0.78); ctx.lineWidth=1;
       for(let k2=2;k2<=5;k2++){ const ty=topY+16-(k2*((topY+16)-(topY-8))/6); const hw=((x+b.w+7)-(x-7))/2*(1-k2/6.5); ctx.beginPath(); ctx.moveTo(b.cx-hw,ty); ctx.lineTo(b.cx+hw,ty); ctx.stroke(); }
@@ -1645,6 +1664,12 @@
         ctx.beginPath(); ctx.moveTo(b.cx-18,baseY-14); ctx.quadraticCurveTo(b.cx-22,baseY-22,b.cx-16,baseY-28); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(b.cx-14,baseY-14); ctx.quadraticCurveTo(b.cx-10,baseY-22,b.cx-15,baseY-29); ctx.stroke();
       }
+    }
+    if(key==='dispensary'){
+      ctx.fillStyle='#ffffff'; rr(b.cx-11,topY+2,22,18,3); ctx.fill();
+      ctx.strokeStyle='#c2b59a'; ctx.lineWidth=1; rr(b.cx-11,topY+2,22,18,3); ctx.stroke();
+      ctx.fillStyle='#c0392b'; ctx.fillRect(b.cx-2.5,topY+5,5,12); ctx.fillRect(b.cx-6,topY+8.5,12,5);
+      const ay=baseY-26; ctx.fillStyle='#b04a3e'; rr(b.cx-16,ay,32,5,2); ctx.fill();
     }
     if(key==='school'){
       ctx.strokeStyle='#9a9a9a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(b.cx,topY-8); ctx.lineTo(b.cx,topY-30); ctx.stroke();
@@ -1806,6 +1831,7 @@
     }
   }
   function targetFor(p){
+    if(p.sick && S.built.dispensary && S.medStock>=MED_DOSE_G && !p.inAshram) return [ZONE.dispensary[0]+p.ox, ZONE.dispensary[1]+p.oy];   // walk to the clinic
     if(p.needFood && shopOpen() && counterStaffed() && !p.inAshram) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
     const w=workTarget(p);
     if(w) return w;            
@@ -1833,8 +1859,8 @@
       const dx=t[0]-p.x, dy=t[1]-p.y, d=Math.sqrt(dx*dx+dy*dy);    
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
       
-      // on shift: tucked away inside the building; otherwise always visible in the lanes
-      p.hidden = (workTarget(p) !== null && d < 5);
+      // on shift: tucked away inside the building; sick/hungry stay out front, otherwise visible in the lanes
+      p.hidden = (workTarget(p) !== null && !p.sick && !p.needFood && d < 5);
     });
   }
 
@@ -1900,7 +1926,7 @@
       S.villagerCash-=fare; S.treasury+=fare;        // fare is panchayat bus revenue
       S.people.splice(idx,1);
       p.away=true; p.hidden=true;
-      S.travelers.push({ p:p, returnDay:now+dur, reason:'leisure' });
+      S.travelers.push({ p:p, returnDay:now+dur, reason:'leisure', savedRole:p.role });
     }
     reassignHomes(); renderCards();
   }
@@ -1909,13 +1935,10 @@
     for(let i=S.travelers.length-1;i>=0;i--){
       if(S.travelers[i].returnDay<=now){
         const e=S.travelers[i], p=e.p;
-        p.away=false; p.hidden=false; p.role='idle';
-        if(e.reason==='medical'){                                               // the dose works…
-          if(Math.random()<MED_CURE_FULL) p.health=100;                         // …fully (80%)
-          else p.health=Math.max(p.health, MED_PARTIAL_HEALTH);                 // …or only up to 80 health (20%)
-          p.sick=false;
-        }
-        else { p.returnBuff=RETURN_BUFF_DAYS; p.morale=Math.min(100, p.morale+RETURN_MORALE_BUFF); }  // 3-day refreshment
+        p.away=false; p.hidden=false;
+        if(e.savedRole && e.savedRole!=='idle' && capacityOf(e.savedRole) > roleCount(e.savedRole)) p.role=e.savedRole;   // rejoin the old job if its seat is still open
+        else p.role='idle';
+        p.returnBuff=RETURN_BUFF_DAYS; p.morale=Math.min(100, p.morale+RETURN_MORALE_BUFF);   // 3-day refreshment
         p.x=704; p.y=360; p.wx=p.x; p.wy=p.y; p.wt=0;
         S.people.push(p); S.travelers.splice(i,1); back=true;
       }
@@ -1930,15 +1953,14 @@
       if(p.returnBuff>0) p.returnBuff--;
       if(p.sick){
         p.health=Math.max(0, p.health - SICK_DECLINE);
-        if(S.builtBusStop && S.medStock>=MED_DOSE_G && S.villagerCash >= p.treatCost){   // needs the bus, stocked medicine, and cash
-          const idx=S.people.indexOf(p); if(idx<0) continue;
+        if(S.built.dispensary && S.medStock>=MED_DOSE_G && S.villagerCash >= p.treatCost){   // a built, stocked village dispensary
           S.villagerCash -= p.treatCost;                            // patient buys the dose
-          S.treasury += p.treatCost;                                // the sale recoups the panchayat's stocking cost
-          S.medStock -= MED_DOSE_G;                                 // one dose leaves the dispensary shelf
+          S.treasury += p.treatCost;                                // fees recoup the panchayat's stocking cost
+          S.medStock -= MED_DOSE_G;                                 // one dose leaves the shelf
           S.totalMedicine += MED_DOSE_G;
-          S.people.splice(idx,1);
-          p.away=true; p.hidden=true;
-          S.travelers.push({ p:p, returnDay:now+SICK_TRIP_DAYS, reason:'medical' });
+          if(Math.random()<MED_CURE_FULL) p.health=100;             // cured fully (80%)
+          else p.health=Math.max(p.health, MED_PARTIAL_HEALTH);     // or up to 80 health (20%)
+          p.sick=false;
         }
         // else: untreated — health keeps falling and the morale/output debuffs grow
       } else {
@@ -1998,92 +2020,6 @@
     ctx.font='600 10px Outfit'; const label='Bus Stop', tw=ctx.measureText(label).width+12;
     ctx.fillStyle='#3a2c1d'; rr(cx-5-tw/2,gy+8,tw,15,4); ctx.fill();
     ctx.fillStyle='#f2e6cd'; ctx.fillText(label,cx-5,gy+15.5);
-  }
-
-  /* ============ SONALAGI ============ */
-  function updateSonPeople(){
-    S.sonPeople.forEach(v=>{
-      v.wt=(v.wt||0)-1;
-      const dx=v.wx-v.x, dy=v.wy-v.y;
-      if(v.wt<=0 || (dx*dx+dy*dy)<25){
-        const a=Math.random()*Math.PI*2, r=rnd(16,60);
-        v.wx=Math.min(700,Math.max(120,v.x+Math.cos(a)*r));
-        v.wy=Math.min(452,Math.max(320,v.y+Math.sin(a)*r));
-        v.wt=140+Math.floor(Math.random()*220);
-      }
-      const ex=v.wx-v.x, ey=v.wy-v.y, d=Math.sqrt(ex*ex+ey*ey);
-      if(d>0.01){ const m=Math.min(d, v._spd); v.x+=ex/d*m; v.y+=ey/d*m; }
-    });
-  }
-  function drawSonHut(cx,i,night){
-    const gy=434, w=46, h=38, topY=gy-h, lit=night>0.25;
-    ctx.fillStyle='rgba(30,22,10,0.18)'; ctx.beginPath(); ctx.ellipse(cx,gy+4,30,6,0,0,7); ctx.fill();
-    const wg=ctx.createLinearGradient(0,topY,0,gy); wg.addColorStop(0,'#d8b98c'); wg.addColorStop(1,'#bd9a6d');
-    ctx.fillStyle=wg; rr(cx-w/2,topY+12,w,h-12,3); ctx.fill();
-    ctx.strokeStyle='#a8895f'; ctx.lineWidth=1; rr(cx-w/2,topY+12,w,h-12,3); ctx.stroke();
-    const rc=ROOFS[i%ROOFS.length];
-    ctx.fillStyle=rc; ctx.beginPath(); ctx.moveTo(cx-w/2-5,topY+16); ctx.lineTo(cx,topY-5); ctx.lineTo(cx+w/2+5,topY+16); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#8a5f3c'; rr(cx-6,gy-16,12,16,2); ctx.fill();
-    ctx.fillStyle=lit?lampFill(cx):'#8fa0aa'; rr(cx+8,topY+18,8,8,1); ctx.fill();
-  }
-  function drawDispensary(night){
-    const x=DISP_CX-DISP_W/2, baseY=DISP_GY, topY=DISP_GY-DISP_H, lit=night>0.25;
-    ctx.fillStyle='rgba(30,22,10,0.20)'; ctx.beginPath(); ctx.ellipse(DISP_CX,baseY+6,DISP_W*0.58,9,0,0,7); ctx.fill();
-    const wg=ctx.createLinearGradient(x,topY,x,baseY); wg.addColorStop(0,'#f1ece0'); wg.addColorStop(1,'#d9d0bd');
-    ctx.fillStyle=wg; rr(x,topY+12,DISP_W,DISP_H-12,3); ctx.fill();
-    ctx.strokeStyle='#b3a78d'; ctx.lineWidth=1.2; rr(x,topY+12,DISP_W,DISP_H-12,3); ctx.stroke();
-    ctx.fillStyle='#9a3b2e'; ctx.beginPath(); ctx.moveTo(x-7,topY+16); ctx.lineTo(DISP_CX,topY-8); ctx.lineTo(x+DISP_W+7,topY+16); ctx.closePath(); ctx.fill();
-    for(let i=0;i<3;i++){
-      const wx=x+20+i*((DISP_W-40)/2)-6;
-      ctx.fillStyle=lit?lampFill(wx):'#6f7d86'; rr(wx,topY+32,12,13,2); ctx.fill();
-      ctx.strokeStyle='rgba(40,30,18,.5)'; ctx.lineWidth=1; rr(wx,topY+32,12,13,2); ctx.stroke();
-    }
-    ctx.fillStyle='#8a7a6a'; rr(DISP_CX-9,baseY-24,18,24,2); ctx.fill();
-    ctx.fillStyle='#ffffff'; rr(DISP_CX-11,topY-2,22,18,3); ctx.fill();
-    ctx.strokeStyle='#b3a78d'; ctx.lineWidth=1; rr(DISP_CX-11,topY-2,22,18,3); ctx.stroke();
-    ctx.fillStyle='#c0392b'; ctx.fillRect(DISP_CX-2.5,topY+1,5,12); ctx.fillRect(DISP_CX-6,topY+4.5,12,5);
-    ctx.font='600 11px Outfit'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    const label='Dispensary', tw=ctx.measureText(label).width+16;
-    ctx.fillStyle='#3a2c1d'; rr(DISP_CX-tw/2,baseY+9,tw,17,4); ctx.fill();
-    ctx.fillStyle='#f2e6cd'; ctx.fillText(label,DISP_CX,baseY+18.5);
-    ctx.font='600 9px Outfit'; ctx.fillStyle='#6d5b46';
-    ctx.fillText(Math.floor(S.medStock)+' g in stock', DISP_CX, topY-14);
-  }
-  function drawSonalagi(){
-    tick++;
-    const p=S.progress;
-    const night=(p<0.16?(0.16-p)/0.16:p>0.84?(p-0.84)/0.16:0);
-    const day=1-night;
-    const sc=skyColors(p);
-    const sg=ctx.createLinearGradient(0,0,0,HORIZON+30); sg.addColorStop(0,sc.top); sg.addColorStop(1,sc.bot);
-    ctx.fillStyle=sg; ctx.fillRect(0,0,LW,HORIZON+30);
-    const sun=sunPos(p);
-    ctx.fillStyle=(p>0.13&&p<0.87)?'#fff0c4':'#e7ecff'; ctx.beginPath(); ctx.arc(sun.x,sun.y,(p>0.13&&p<0.87)?12:9,0,7); ctx.fill();
-    treeline(HORIZON+4,'#5f7150',0.5+0.3*day,30,18);
-    treeline(HORIZON+10,'#516447',0.7,46,26);
-    const gg=ctx.createLinearGradient(0,HORIZON,0,LH);
-    gg.addColorStop(0,'#a9b083'); gg.addColorStop(0.5,'#929e66'); gg.addColorStop(1,'#7b9151');
-    ctx.fillStyle=gg; ctx.fillRect(0,HORIZON,LW,LH-HORIZON);
-    road(40,262,690,26); road(40,432,690,22);
-    drawTree(120,310,0.85,night,day); drawTree(700,300,0.9,night,day);
-    drawDispensary(night);
-    SON_HUT_X.forEach((hx,i)=>drawSonHut(hx,i,night));
-    drawBusStop(night, SON_BUS_CX, SON_BUS_GY);
-    updateSonPeople();
-    S.sonPeople.forEach(v=>drawPerson(v));
-    let qi=0;
-    S.travelers.forEach(t=>{                       // sick tawapuris queue at the dispensary
-      if(t.reason!=='medical') return;
-      const q=t.p; q.x=DISP_CX-58+(qi%6)*18; q.y=DISP_GY+34+Math.floor(qi/6)*14;
-      q.wx=q.x; q.wy=q.y; q.hidden=false; qi++;
-      drawPerson(q);
-    });
-    if(night>0){ ctx.fillStyle='rgba(20,24,56,'+(night*0.36)+')'; ctx.fillRect(0,HORIZON,LW,LH-HORIZON); }
-    ctx.fillStyle='#3a2c1d'; rr(14,14,150,24,6); ctx.fill();
-    ctx.font='600 13px Outfit'; ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillStyle='#f2e6cd'; ctx.fillText('Sonalagi · village', 24, 26);
-    ctx.fillStyle='rgba(58,44,29,0.85)'; rr(14,42,196,18,5); ctx.fill();
-    ctx.font='500 10px Outfit'; ctx.fillStyle='#f2e6cd'; ctx.fillText('click the bus stop to return home', 22, 51);
   }
 
   /* ============ GRAPHS ============ */
@@ -2159,19 +2095,28 @@
     const away=S.travelers.length, vis=S.visitors.length;
     return card('warehouse','#3f7a8a','Bus Stop','Travel · regional link','🚌',
       '<b>'+away+'</b> away travelling · <b>'+vis+'</b> visiting<br>'
-      +'Dispensary stock <b>'+Math.floor(S.medStock)+' g</b><br>'
-      +'<i style="color:var(--ink-faint)">Fares '+CUR+FARE_MIN+'–'+CUR+FARE_MAX+' to treasury · visitors pay direct + indirect tax · needs a sewak. Click the bus stop on the map to visit <b>Sonalagi</b>.</i>','');
+      +'<i style="color:var(--ink-faint)">Fares '+CUR+FARE_MIN+'–'+CUR+FARE_MAX+' to treasury · visitors pay direct + indirect tax · needs a sewak. Travellers rejoin their old jobs when they return.</i>','');
   }
 
   function dispensaryCard(){
+    if(S.dispBuild>0){
+      const pct=Math.round((DISP_BUILD_UNITS-S.dispBuild)/DISP_BUILD_UNITS*100);
+      return card('house','#b04a3e','Dispensary','Under construction','—',
+        'Construction underway — needs <b>'+Math.ceil(S.dispBuild)+'</b> units',
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+    }
+    if(!S.built.dispensary){
+      return card('house','#b04a3e','Dispensary',B.dispensary.sub,'—',
+        'A village clinic staffed by trained health workers. Sick villagers walk in, pay their own <b>'+CUR+SICK_COST_MIN+'–'+CUR+SICK_COST_MAX+'</b> (to the treasury), and take a <b>'+MED_DOSE_G+' g</b> dose — curing them fully ('+Math.round(MED_CURE_FULL*100)+'%) or up to <b>'+MED_PARTIAL_HEALTH+'</b> health ('+Math.round((1-MED_CURE_FULL)*100)+'%). You keep it stocked from the treasury at '+CUR+MED_PRICE+'/g.',
+        '<button class="buildbtn" data-act="builddisp" '+(S.treasury<DISP_COST?'disabled':'')+'>'+(S.treasury<DISP_COST?'Need '+money(DISP_COST):'Build Dispensary · '+money(DISP_COST)+' · '+DISP_BUILD_UNITS+' units')+'</button>');
+    }
     const doses=Math.floor(S.medStock/MED_DOSE_G);
-    return card('house','#b04a3e','Dispensary','Sonalagi · medicines',
+    return card('house','#b04a3e','Dispensary','Village clinic · medicine',
       Math.floor(S.medStock)+'g',
       'Stock <b>'+Math.floor(S.medStock)+' g</b> ('+doses+' dose'+(doses===1?'':'s')+')<br>'
-      +'Staff: <b>2</b> Basic + <b>1</b> Uneducated<br>'
       +'A <b>'+MED_DOSE_G+' g</b> dose cures fully ('+Math.round(MED_CURE_FULL*100)+'%) or up to <b>'+MED_PARTIAL_HEALTH+'</b> health ('+Math.round((1-MED_CURE_FULL)*100)+'%)<br>'
       +'Dispensed to date <b>'+Math.floor(S.totalMedicine)+' g</b><br>'
-      +'<i style="color:var(--ink-faint)">Stocked from your treasury at '+CUR+MED_PRICE+'/g. Sick villagers bus in, pay their own '+CUR+SICK_COST_MIN+'–'+CUR+SICK_COST_MAX+' (to treasury), and take one dose. No stock — no cure.</i>',
+      +'<i style="color:var(--ink-faint)">Stocked from your treasury at '+CUR+MED_PRICE+'/g. Sick villagers pay '+CUR+SICK_COST_MIN+'–'+CUR+SICK_COST_MAX+' (to treasury) per dose. No stock — no cure.</i>',
       '<button class="buildbtn" data-act="buy_med" data-g="10" '+(S.treasury<10*MED_PRICE?'disabled':'')+'>Stock +10 g · '+money(10*MED_PRICE)+'</button>'
       +'<button class="buildbtn" data-act="buy_med" data-g="50" '+(S.treasury<50*MED_PRICE?'disabled':'')+'>Stock +50 g · '+money(50*MED_PRICE)+'</button>');
   }
@@ -2219,7 +2164,7 @@
     } else if(!S.busUnlocked){
       eyebrow='Chapter Three'; title='Institutions and Services';
       const meets=pop>=BUS_POP && am>=BUS_MORALE;
-      goal='<div class="hc-goal">Next: Chapter Four — Expansions</div>';
+      goal='<div class="hc-goal">Next: Chapter Four — Layers</div>';
       bar=progBar(S.busStreak/YEAR_DAYS, (meets?'On track — ':'')+'streak '+S.busStreak+'/'+YEAR_DAYS+' days · need '+BUS_POP+' people at '+BUS_MORALE+'%+ (now '+pop+' at '+Math.round(am)+'%)');
       tips='<ul>'
         +'<li>Grow and educate further — build the <b>College</b> to raise Basic villagers to higher tiers.</li>'
@@ -2228,12 +2173,12 @@
         +'<li>Hold <b>morale at '+BUS_MORALE+'%+</b> with good housing, cottages and steady food so the bus-stop streak keeps building.</li>'
         +'</ul>';
     } else {
-      eyebrow='Chapter Four'; title='Expansions';
+      eyebrow='Chapter Four'; title='Layers';
       goal='<div class="hc-goal">The current frontier</div>';
       tips='<ul>'
         +(S.builtBusStop ? '' : '<li>Build the <b>Bus Stop</b> from the Service panel ('+money(BUS_COST)+') to open travel and welcome visitors.</li>')
         +(S.builtBusStop ? '<li>Keep a <b>Sewak</b> assigned so the bus stop stays maintained.</li>' : '')
-        +(S.builtBusStop ? '<li>Click the <b>Bus Stop</b> on the map to visit <b>Sonalagi</b> and stock its <b>Dispensary</b> ('+CUR+MED_PRICE+'/g) — no medicine, no cures.</li>' : '')
+        +(S.built.dispensary ? '<li>Keep the <b>Dispensary</b> stocked ('+CUR+MED_PRICE+'/g) — sick villagers walk in and pay for a dose; no medicine, no cures.</li>' : '<li>Build a <b>Dispensary</b> in the village and stock it ('+CUR+MED_PRICE+'/g) so the sick can be treated.</li>')
         +'<li>Watch the <b>health</b> meter: the sick need their own cash and a stocked dispensary, or their output and morale slide.</li>'
         +'<li>Never let morale fall to <b>'+MORALE_REFUSE+'%</b> — at that point a villager downs tools and refuses to work.</li>'
         +'<li>Use the <b>extra house plots</b>, and welcome <b>visitors</b> — they inject outside money through both taxes.</li>'
@@ -2408,10 +2353,12 @@
         html += bankCard(r);
       } else if (key === 'bar') {
         html += barCard(r);
+      } else if (key === 'dispensary') {
+        html += dispensaryCard();
       }
-    } else if (S.selectedEntity.type === 'dispensary') {
-      elTitle.innerHTML = 'Sonalagi Dispensary <span class="ln"></span>';
-      html += dispensaryCard();
+    } else if (S.selectedEntity.type === 'busstop') {
+      elTitle.innerHTML = 'Bus Stop <span class="ln"></span>';
+      html += busCard();
     }
     elCont.innerHTML = html;
   }
@@ -2910,11 +2857,18 @@
           renderCards();
        }
     }
+    else if(act==='builddisp') {
+       if(S.busUnlocked && !S.built.dispensary && S.dispBuild<=0 && S.treasury>=DISP_COST) {
+          S.treasury-=DISP_COST; S.dispBuild=DISP_BUILD_UNITS;
+          toast('💊 The <span class="g">Dispensary</span> is under construction');
+          renderCards();
+       }
+    }
     else if(act==='buy_med') {
        const g=parseInt(b.dataset.g||'0',10), cost=g*MED_PRICE;
-       if(S.busUnlocked && g>0 && S.treasury>=cost) {
+       if(S.built.dispensary && g>0 && S.treasury>=cost) {
           S.treasury-=cost; S.medStock+=g;
-          toast('💊 Stocked <span class="g">'+g+' g</span> of medicine at the Sonalagi dispensary');
+          toast('💊 Stocked <span class="g">'+g+' g</span> of medicine at the dispensary');
           renderCards();
        }
     }
@@ -2953,11 +2907,6 @@
      const clickX = ((e.clientX - rect.left - offsetX) / renderW) * LW;
      const clickY = ((e.clientY - rect.top - offsetY) / renderH) * LH;
 
-     if(S.view==='sonalagi'){
-        if(clickX >= SON_BUS_CX-32 && clickX <= SON_BUS_CX+32 && clickY >= SON_BUS_GY-44 && clickY <= SON_BUS_GY+12) return {type: 'sonbus'};
-        if(clickX >= DISP_CX-DISP_W/2-10 && clickX <= DISP_CX+DISP_W/2+10 && clickY >= DISP_GY-DISP_H-10 && clickY <= DISP_GY+10) return {type: 'dispensary'};
-        return null;
-     }
      if(S.builtBusStop && clickX >= BUS_CX-32 && clickX <= BUS_CX+32 && clickY >= BUS_GY-44 && clickY <= BUS_GY+12) return {type: 'busstop'};
      
      for(let i=0; i<maxHouses(); i++){
@@ -2969,6 +2918,7 @@
      const hitKeys = ['farm', 'school', 'shop'];
      if(S.ch3Unlocked || S.built.bank || S.bankBuild>0) hitKeys.push('bank');
      if(S.ch3Unlocked || S.built.bar || S.barBuild>0) hitKeys.push('bar');
+     if(S.busUnlocked || S.built.dispensary || S.dispBuild>0) hitKeys.push('dispensary');
      for(const key of hitKeys){
         const b = B[key];
         if(clickX >= b.cx - b.w/2 - 10 && clickX <= b.cx + b.w/2 + 10 && clickY >= b.gy - b.h - 10 && clickY <= b.gy + 10){
@@ -2986,14 +2936,6 @@
   el('town').addEventListener('pointerdown', e => {
       const hit = getHit(e);
       if (hit) {
-         if (hit.type === 'busstop' || hit.type === 'sonbus') {
-            S.view = hit.type === 'busstop' ? 'sonalagi' : 'tawapur';
-            S.selectedEntity = null;
-            popups.forEach(id => { const n = el(id); if(n) n.classList.remove('active'); });
-            el('sub-ribbon-build').classList.remove('active');
-            toast(S.view === 'sonalagi' ? '🚌 The bus rolls out to <span class="g">Sonalagi</span>' : '🚌 Back home in <span class="g">Tawapur</span>');
-            return;
-         }
          if (S.selectedEntity && S.selectedEntity.type === hit.type && S.selectedEntity.idx === hit.idx && S.selectedEntity.key === hit.key && el('pop-building-info').classList.contains('active')) {
              el('pop-building-info').classList.remove('active');
              S.selectedEntity = null;
