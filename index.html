@@ -386,7 +386,7 @@
     <div class="ov hidden" id="chapter4">
       <div class="modal">
         <div class="eyebrow">Book Two · Beyond the Village</div>
-        <div class="chapter-title">Chapter Four<span>Layers</span></div>
+        <div class="chapter-title">Chapter Four<span>Seasons of Change</span></div>
         <div class="anim-stage">
           <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
             <line x1="10" y1="124" x2="270" y2="124" stroke="#a98f63" stroke-width="1.5"/>
@@ -414,8 +414,11 @@
           </svg>
           <div class="anim-cap">The bus links Tawapur to the region — residents ride out, visitors come in to spend.</div>
         </div>
-        <p class="lead">Tawapur has thrived — <b>30 souls at high spirits for a full year</b>. The village gains new <b>layers</b> of life: a <b>Dispensary</b> to treat the sick, and a <b>Bus Stop</b> that carries villagers on journeys beyond the fields.</p>
+        <p class="lead">Tawapur has thrived — <b>30 souls at high spirits for a full year</b>. Now life turns with the <b>seasons</b>, and the village gains new <b>layers</b>: a <b>Dispensary</b> to treat the sick, and a <b>Bus Stop</b> for journeys beyond the fields.</p>
         <ul>
+          <li>The year now turns through <b>five seasons</b> of six days each — <b>Winter, Spring, Summer, Monsoon</b> (the rains arrive) and <b>Autumn</b>. The current season shows beside the date.</li>
+          <li><b>Spring</b> is planting and <b>Autumn</b> is the <b>harvest</b> — the whole year's grain is gathered then, set by your farmers and implements, and it must <b>last until the next harvest</b>. Ration it.</li>
+          <li>Through the <b>offseason</b> (Winter, Summer, Monsoon) the fields rest and your <b>farmhands are laid off</b> — redeploy them to other work, or let them wait for Spring.</li>
           <li>On <b>holidays</b>, villagers ride off-map for a small <b>fare</b> (to your treasury) and come back <b>refreshed</b> — a morale &amp; productivity lift for three days. While away, they leave the workforce.</li>
           <li><b>Visitors</b> arrive to spend surplus grain at the shop, dhaba &amp; bar, paying both <b>direct and indirect tax</b> — outside money flowing into Tawapur.</li>
           <li>Every villager now carries a <b>health</b> meter. The sick walk to the <b>Dispensary</b> if a dose is in stock and they can afford it (₹10–50 of their own); if not, their <b>output and morale</b> slide until they recover.</li>
@@ -531,6 +534,7 @@
   /* ============ CONFIG ============ */
   const LW=760, LH=480, SKY=112;
   const DAY_MS=60000, YEAR_DAYS=30, CENSUS_DAYS=5, BIRTHS=2;
+  const SEASON_LEN=6, HARVEST_MULT=YEAR_DAYS/6;   // 5 seasons of 6 days; the autumn harvest must feed the whole year
   const CUR='₹';
   const EDU=['Uneducated','Basic','Intermediate','Advanced','Highly Skilled'];
   const EDU_COLOR=['#9a8f80','#6fae5f','#4f9fd4','#8a6fd4','#e0b020'];
@@ -631,7 +635,7 @@
       collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0, dispBuild:0,
       built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false, dispensary:false},
       wear:{farm:0, shop:0, bar:0}, builtAshram:false, totalGrain:0, totalAlcohol:0,
-      busUnlocked:false, builtBusStop:false, busStreak:0, shownCh4:false,
+      busUnlocked:false, builtBusStop:false, busStreak:0, shownCh4:false, farmFurlough:[],
       travelers:[], visitors:[], nextVid:0, history:[],
       medStock:0, totalMedicine:0,
       unlocked:{college:false}, godownUnlocked:false, shownCh2:false,
@@ -737,6 +741,37 @@
     return n;
   }
   function isHoliday(){ return totalDaysElapsed() % HOLIDAY_EVERY === 0; }   // days 4,8,12… are holidays
+  function season(){
+    const d=S.day;
+    if(d>=28 || d<=3) return 'winter';
+    if(d<=9) return 'spring';
+    if(d<=15) return 'summer';
+    if(d<=21) return 'monsoon';
+    return 'autumn';                         // days 22-27
+  }
+  function seasonLabel(){ const s=season(); return s.charAt(0).toUpperCase()+s.slice(1); }
+  function isFarmSeason(){ const s=season(); return s==='spring' || s==='autumn'; }   // fields are worked in planting & harvest
+  function farmSeasonNote(){
+    if(!S.busUnlocked) return '';
+    const s=season();
+    if(s==='autumn') return '<br><b style="color:var(--good)">\U0001f33e Autumn — the harvest is in</b>';
+    if(s==='spring') return '<br><b style="color:var(--good)">\U0001f331 Spring — planting season</b>';
+    const ic = s==='monsoon' ? '\U0001f327' : (s==='winter' ? '\u2744' : '\u2600');
+    return '<br><b style="color:var(--bad)">'+ic+' '+seasonLabel()+' — offseason; hands seek other work</b>';
+  }
+  // at offseason, field hands are laid off and look for other work; they return when a farming season comes
+  function manageFarmSeason(){
+    if(!S.busUnlocked) return;
+    if(!isFarmSeason()){
+      let n=0;
+      S.people.forEach(p=>{ if(p.role==='farm' || p.role.endsWith('_driver')){ if(!S.farmFurlough.some(f=>f.id===p.id)) S.farmFurlough.push({id:p.id, role:p.role}); p.role='idle'; n++; } });
+      if(n) toast('\u2744 '+seasonLabel()+' offseason — <span class="g">'+n+'</span> farmhand'+(n===1?'':'s')+' laid off, seeking other work');
+    } else {
+      let back=0;
+      S.farmFurlough.forEach(rec=>{ const p=S.people.find(x=>x.id===rec.id); if(p && p.role==='idle' && roleCount(rec.role)<capacityOf(rec.role)){ p.role=rec.role; back++; } });
+      if(S.farmFurlough.length){ S.farmFurlough=[]; if(back) toast('\U0001f331 '+seasonLabel()+' — <span class="g">'+back+'</span> hand'+(back===1?'':'s')+' return to the farm'); }
+    }
+  }
   function maintainFrac(){ const c=maintainableCount(); const w=roleList('sewak').filter(willing).length; return c>0 ? Math.min(1, w/c) : 1; }
   function avgBuildingWear(){
     let sum=0, n=0;
@@ -759,7 +794,8 @@
     if(role==='bar_helper') return S.built.bar ? 1 : 0;
     if(role==='sewak') return S.godownUnlocked ? maintainableCount() : 0;
     if(role==='college') return S.built.college && roleCount('college_teacher')===5 && roleCount('college_staff')===3 ? B.college.cap : 0;
-    if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return 1;
+    if(role==='farm') return (S.busUnlocked && !isFarmSeason()) ? 0 : B.farm.cap;
+    if(['tractor_driver','harvester_driver','combiner_driver'].includes(role)) return (S.busUnlocked && !isFarmSeason()) ? 0 : 1;
     return B[role]?B[role].cap:0;
   }
 
@@ -844,7 +880,12 @@
       prod += baseOut * EDU_MULT[p.edu] * getHomelessMultiplier(p) * workEff(p);
     });
     prod *= (1 - (S.wear.farm||0));   // building wear cuts farm efficiency
-    if(isHoliday()) prod = 0;         // farm closed on holidays — no new harvest (stored grain still sells)
+    if(S.busUnlocked){
+      if(season()!=='autumn') prod = 0;   // grain is gathered only at the autumn harvest
+      else prod *= HARVEST_MULT;          // a whole season's harvest, sized to feed the year ahead
+    } else if(isHoliday()) {
+      prod = 0;                           // before Seasons: steady year-round farming, resting on holidays
+    }
     
     // the dhaba, once built, takes over the food counter from the shop
     const dhabaTakeover = S.built.dhaba && S.activeCounter==='dhaba';
@@ -1248,6 +1289,7 @@
       if(isHoliday()) processHolidayTravel();
       processVisitors(r);
       processSchool();
+      manageFarmSeason();
 
       if(!S.busUnlocked){
         if(S.people.length>=BUS_POP && r.avgMorale>=BUS_MORALE) S.busStreak++; else S.busStreak=0;
@@ -1511,6 +1553,12 @@
       ctx.fillStyle='rgba(255,250,230,'+(0.12*day)+')'; ctx.beginPath(); ctx.arc(mx,my,1.1,0,7); ctx.fill(); } }
     if(day>0.4){ for(let i=0;i<3;i++){ const bx=((tick*0.7)+(i*240))%(LW+80)-40, by=60+i*14+Math.sin(tick*0.03+i)*4; bird(bx,by,4+(i%2)); } }
 
+    if(S.busUnlocked && season()==='monsoon'){
+      ctx.fillStyle='rgba(70,82,98,0.20)'; ctx.fillRect(0,0,LW,LH);
+      ctx.strokeStyle='rgba(205,220,240,0.34)'; ctx.lineWidth=1;
+      for(let i=0;i<110;i++){ const rx=(i*53 + tick*9)%(LW+30)-15, ry=(i*71 + tick*26)%(LH+30)-15;
+        ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx+2,ry+11); ctx.stroke(); }
+    }
     if(night>0){ ctx.fillStyle='rgba(20,24,56,'+(night*0.36)+')'; ctx.fillRect(0,HORIZON,LW,LH-HORIZON); }
     const vg=ctx.createRadialGradient(LW/2,LH*0.52,LH*0.34,LW/2,LH*0.5,LW*0.72);
     vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(18,12,6,0.34)');
@@ -1789,7 +1837,7 @@
   function hash01(n){ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
   function teacherWorking(){ return !isHoliday() && S.progress>=TEACH_START && S.progress<TEACH_END; }
   function shopWorking(){ return (S.progress>=SHOP_AM_START && S.progress<SHOP_AM_END) || (S.progress>=SHOP_PM_START && S.progress<SHOP_PM_END); }
-  function farmerWorking(p){ return !isHoliday() && S.progress>=6/24 && S.progress<18/24; }   // a steady field day, 6am–6pm
+  function farmerWorking(p){ return S.progress>=6/24 && S.progress<18/24 && (S.busUnlocked ? isFarmSeason() : !isHoliday()); }   // a steady field day, 6am–6pm
 
   function shopOpen(){ return S.built.shop && shopWorking(); }
   function counterStaffed(){ if(S.built.dhaba && S.activeCounter==='dhaba') return roleCount('dhaba_cook')>=1 && roleCount('dhaba_helper')>=2; return roleCount('shop')>0; }
@@ -2192,7 +2240,7 @@
     } else if(!S.busUnlocked){
       eyebrow='Chapter Three'; title='Institutions and Services';
       const meets=pop>=BUS_POP && am>=BUS_MORALE;
-      goal='<div class="hc-goal">Next: Chapter Four — Layers</div>';
+      goal='<div class="hc-goal">Next: Chapter Four — Seasons of Change</div>';
       bar=progBar(S.busStreak/YEAR_DAYS, (meets?'On track — ':'')+'streak '+S.busStreak+'/'+YEAR_DAYS+' days · need '+BUS_POP+' people at '+BUS_MORALE+'%+ (now '+pop+' at '+Math.round(am)+'%)');
       tips='<ul>'
         +'<li>Grow and educate further — build the <b>College</b> to raise Basic villagers to higher tiers.</li>'
@@ -2201,7 +2249,7 @@
         +'<li>Hold <b>morale at '+BUS_MORALE+'%+</b> with good housing, cottages and steady food so the bus-stop streak keeps building.</li>'
         +'</ul>';
     } else {
-      eyebrow='Chapter Four'; title='Layers';
+      eyebrow='Chapter Four'; title='Seasons of Change';
       goal='<div class="hc-goal">The current frontier</div>';
       tips='<ul>'
         +(S.builtBusStop ? '' : '<li>Build the <b>Bus Stop</b> from the Service panel ('+money(BUS_COST)+') to open travel and welcome visitors.</li>')
@@ -2396,7 +2444,7 @@
 
         html += card('farm', B.farm.color, B.farm.name, B.farm.sub,
           roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':''),
+          'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':'')+farmSeasonNote(),
           eduPicker('farm') + stepper('farm') + upgHtml);
       } else if (key === 'school') {
         html += educationCard(r);
@@ -2539,7 +2587,7 @@
 
       html+=card('farm',B.farm.color,B.farm.name,B.farm.sub,
         roleCount('farm')+'<small style="font-weight:400;color:var(--ink-faint)">/'+B.farm.cap+'</small>',
-        'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':''),
+        'Output <b>'+r.prod.toFixed(1)+'</b> kg/day<br>Earns from Shop/Godown demand at <b>'+money(r.price)+'</b> wholesale/kg'+(S.godownUnlocked?'<br>Condition <b>'+Math.round((1-(S.wear.farm||0))*100)+'%</b>':'')+farmSeasonNote(),
         eduPicker('farm') + stepper('farm') + upgHtml);
 
       if(S.godownUnlocked){
@@ -2616,7 +2664,7 @@
     const ok=S.goods>=pop && housingCap()>=pop;
     el('h-census-s').textContent=ok?'+'+BIRTHS+' due':'−1 risk';
     el('h-census-s').className='sub '+(ok?'pos':'neg');
-    el('h-date').textContent='Y'+S.year+' · Day '+S.day+(isHoliday()?' · Holiday':'');
+    el('h-date').textContent='Y'+S.year+' · Day '+S.day+(S.busUnlocked?' · '+seasonLabel():'')+(isHoliday()?' · Holiday':'');
     const p=S.progress;
     el('h-time').textContent=p<0.16?'Dawn':p<0.45?'Morning':p<0.6?'Midday':p<0.8?'Evening':'Night';
     const ang=p*Math.PI*2-Math.PI/2; const isNight=p<0.16||p>0.84;
