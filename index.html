@@ -611,7 +611,11 @@
   const FUEL_HOUSE=[50,70,100];                                               // shack / hut / cottage -- grams of charcoal per night
   const FUEL_SHOP=100, FUEL_DHABA=250, FUEL_BAR=200, FUEL_SCHOOL=400, FUEL_COLLEGE=1000, FUEL_FARM=20;  // grams/night (farm: per worked day)
   const FUEL_MORALE=3;                  // charcoal smoke -- a small, constant morale drag (from Chapter One)
-  const FUEL_HEALTH_CAP=12;             // once health is in play, charcoal smoke caps healthy villagers below 100  
+  const FUEL_HEALTH_CAP=12;             // once health is in play, charcoal smoke caps healthy villagers below 100
+  const PUMP_COST=1500, PUMP_BUILD_UNITS=25;                                  // Chapter 3: a water pumping station replaces the well
+  const PUMP_CAPACITY=10000, PUMP_CHARCOAL=5;                                 // ~10,000 cc of water/day; burns 5 kg of charcoal/day to run
+  const WATER_HOME=10, WATER_DHABA=100, WATER_BAR=250, WATER_SCHOOL=400, WATER_BANK=300, WATER_COLLEGE=1000, WATER_FARM=100;  // cc/day per plumbed building (cottages+ only; the shop has none)
+  const PLUMB_MORALE_UP=4, PLUMB_MORALE_DOWN=12;                              // plumbed homes: a slight lift; unplumbed homes: a large drain  
 
   const B = {
     farm   :{name:'Farm', role:'farm', sub:'Harvests grain', cx:140, gy:250, w:124, h:88, color:'#5c8a4e', cap:6},
@@ -644,8 +648,8 @@
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0,wear:0},{tier:0,build:0,pendingTier:0,wear:0}], 
-      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0, dispBuild:0,
-      built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false, dispensary:false},
+      collegeBuild:0, schoolBuild:0, shopBuild:0, bankBuild:0, dhabaBuild:0, barBuild:0, dispBuild:0, pumpBuild:0,
+      built:{college:false, school:false, shop:false, bank:false, dhaba:false, bar:false, dispensary:false, pump:false},
       wear:{farm:0, shop:0, bar:0}, builtAshram:false, totalGrain:0, totalAlcohol:0,
       busUnlocked:false, builtBusStop:false, busStreak:0, shownCh4:false, farmFurlough:[],
       travelers:[], visitors:[], nextVid:0, history:[],
@@ -795,8 +799,22 @@
     const hands = roleCount('farm')+roleCount('tractor_driver')+roleCount('harvester_driver')+roleCount('combiner_driver');
     const farmDay = S.busUnlocked ? isFarmSeason() : !isHoliday();           // the farm only burns fuel on days it is worked
     if(hands>0 && farmDay) g += FUEL_FARM;
+    if(S.built.pump) g += PUMP_CHARCOAL*1000;   // the pumping station runs on charcoal too
     return g;
   }
+  // cc of water the plumbed buildings draw each day (cottages and up; the shop has none)
+  function waterDemand(){
+    let cc=0;
+    S.houses.forEach(h=>{ if(h.tier>=2) cc += WATER_HOME; });
+    if(S.built.dhaba) cc += WATER_DHABA;
+    if(S.built.bar) cc += WATER_BAR;
+    if(S.built.school) cc += WATER_SCHOOL;
+    if(S.built.bank) cc += WATER_BANK;
+    if(S.built.college) cc += WATER_COLLEGE;
+    cc += WATER_FARM;                            // the farm is always present
+    return cc;
+  }
+  function plumbingOn(){ return S.built.pump && S.forestCharcoal>0 && waterDemand()<=PUMP_CAPACITY; }
   function maintainFrac(){ const c=maintainableCount(); const w=roleList('sewak').filter(willing).length; return c>0 ? Math.min(1, w/c) : 1; }
   function avgBuildingWear(){
     let sum=0, n=0;
@@ -1137,6 +1155,7 @@
         else drift += -26;
       }
       if (inCottage) drift += 10;
+      if (plumbingOn() && p.home>=0) drift += (S.houses[p.home].tier>=2) ? PLUMB_MORALE_UP : -PLUMB_MORALE_DOWN;   // plumbing: cottages gain, shacks/huts suffer
       if (p.home>=0) drift -= WORN_HOUSE_MORALE * (S.houses[p.home].wear||0);   // a worn home grates
       if (p.role==='sewak') drift -= SEWAK_MORALE;                              // sanitation duty is thankless
       if (p.sick) drift -= SICK_MORALE_BASE + SICK_MORALE * (1 - (p.health||100)/100);   // illness wears on morale
@@ -1276,6 +1295,9 @@
       } else if (S.dispBuild > 0) {
         S.dispBuild -= activeProgress;
         if (S.dispBuild <= 0) { S.dispBuild = 0; S.built.dispensary = true; toast('💊 The <span class="g">Dispensary</span> opens its doors'); renderCards(); }
+      } else if (S.pumpBuild > 0) {
+        S.pumpBuild -= activeProgress;
+        if (S.pumpBuild <= 0) { S.pumpBuild = 0; S.built.pump = true; toast('🚰 The <span class="g">Water Pump</span> is online — the old well is retired'); renderCards(); }
       }
     }
 
@@ -1537,7 +1559,7 @@
     renderables.sort((a,b) => a.y - b.y);
 
     renderables.forEach(r => {
-      if(r.type === 'well') drawWell(388, 360, night);
+      if(r.type === 'well'){ if(S.built.pump) drawPump(388, 360, night); else drawWell(388, 360, night); }
       else if(r.type === 'house') {
         if(r.idx < S.houses.length) drawHouse(r.idx, night);
         else {
@@ -1642,6 +1664,24 @@
     ctx.strokeStyle='rgba(120,98,62,.35)'; ctx.lineWidth=1.5; rr(x,y,w,h,Math.min(h/2,11)); ctx.stroke();
     ctx.strokeStyle='rgba(150,128,90,.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x+6,y+h*0.4); ctx.lineTo(x+w-6,y+h*0.4); ctx.stroke();
     ctx.fillStyle='rgba(110,90,60,.3)'; for(let i=0;i<w/22;i++){ const px=x+8+i*22+((i*13)%7), py=y+4+((i*29)%(h-8)); ctx.beginPath(); ctx.arc(px,py,1,0,7); ctx.fill(); } }
+  function drawPump(cx,cy,night){
+    const lit=night>0.25;
+    ctx.save();
+    ctx.fillStyle='#8d9498'; ctx.beginPath(); ctx.ellipse(cx,cy+10,30,9,0,0,7); ctx.fill();          // concrete pad
+    ctx.fillStyle='#5f8aa6'; ctx.fillRect(cx+6,cy-30,20,32);                                          // storage tank
+    ctx.fillStyle='#6f9cb8'; ctx.fillRect(cx+6,cy-30,7,32);
+    ctx.strokeStyle='rgba(40,60,72,.5)'; ctx.lineWidth=1; ctx.strokeRect(cx+6,cy-30,20,32);
+    ctx.fillStyle='#48748c'; ctx.beginPath(); ctx.ellipse(cx+16,cy-30,10,3.5,0,0,7); ctx.fill();
+    ctx.fillStyle='#c9ccce'; ctx.fillRect(cx-24,cy-18,26,20);                                         // pump housing
+    ctx.fillStyle='#b0b4b7'; ctx.fillRect(cx-24,cy-18,26,5);
+    ctx.strokeStyle='rgba(40,50,56,.45)'; ctx.strokeRect(cx-24,cy-18,26,20);
+    ctx.strokeStyle='#7a8488'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx-22,cy-8); ctx.lineTo(cx-30,cy-8); ctx.lineTo(cx-30,cy+2); ctx.stroke();   // spout
+    ctx.strokeStyle='#5a6266'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx+2,cy-2); ctx.lineTo(cx+8,cy-2); ctx.stroke();                              // pipe to tank
+    ctx.strokeStyle='#7a8488'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx-11,cy-8,4,0,7); ctx.stroke();                                                 // valve wheel
+    ctx.fillStyle='rgba(120,180,210,'+(0.45+0.3*Math.sin(tick*0.1))+')'; ctx.beginPath(); ctx.arc(cx-30,cy+4,2,0,7); ctx.fill();                          // water glint
+    if(lit){ ctx.fillStyle='rgba(255,220,140,.55)'; ctx.fillRect(cx-20,cy-14,5,5); }                  // night indicator lamp
+    ctx.restore();
+  }
   function drawWell(cx,cy,night){ const lit=night>0.25;
     ctx.fillStyle='rgba(30,22,10,0.2)'; ctx.beginPath(); ctx.ellipse(cx,cy+10,30,9,0,0,7); ctx.fill();
     ctx.fillStyle='#b3a481'; ctx.beginPath(); ctx.ellipse(cx,cy+6,30,12,0,0,7); ctx.fill();
@@ -1899,6 +1939,8 @@
     return null; 
   }
   function homeSpot(p){ if(p.home<0) return ZONE.idle; return [58+p.home*70, 446]; }
+  function atHomeHour(){ return S.progress>=0.80 || S.progress<0.16; }            // dusk through dawn
+  function homeBound(p){ return p.home>=0 && (atHomeHour() || p.act==='home'); }   // retire at night, or an idle visit home
 
   function pickRoam(p){
     let sp=[p.x,p.y];
@@ -1926,7 +1968,10 @@
   function pickIdleAct(p){
     endChat(p);
     const roll=Math.random();
-    if(roll<0.25){            // a short stroll to a fresh spot
+    if(p.home>=0 && roll<0.20){   // step inside the home for a spell
+      const h=homeSpot(p); p.wx=h[0]; p.wy=h[1];
+      p.act='home'; p.actT=360+Math.floor(Math.random()*540);
+    } else if(roll<0.25){            // a short stroll to a fresh spot
       const sp=pickRoam(p); p.wx=sp[0]; p.wy=sp[1];
       p.act='stroll'; p.actT=600;
     } else if(roll<0.55){     // stand around
@@ -1954,7 +1999,8 @@
     if(p.sick && S.built.dispensary && S.medStock>=MED_DOSE_G && !p.inAshram) return [ZONE.dispensary[0]+p.ox, ZONE.dispensary[1]+p.oy];   // walk to the clinic
     if(p.needFood && shopOpen() && counterStaffed() && !p.inAshram) return [ZONE.shop[0]+p.ox, ZONE.shop[1]+p.oy]; 
     const w=workTarget(p);
-    if(w) return w;            
+    if(w) return w;
+    if(homeBound(p)) return homeSpot(p);            
     return [p.wx, p.wy];       
   }
   function updatePeople(){
@@ -1962,7 +2008,7 @@
       if(p.wx===undefined){ p.wx=p.x; p.wy=p.y; p.wt=0; }
       if(p._spd===undefined) p._spd=1.0+Math.random()*0.7;   
       const hungryBound = p.needFood && shopOpen() && counterStaffed();
-      if(!hungryBound && workTarget(p)===null){              
+      if(!hungryBound && workTarget(p)===null && !atHomeHour()){              
         if(p.act===undefined){ p.act='stand'; p.actT=Math.floor(Math.random()*180); p.chatWith=-1; }
         p.actT--;
         if(p.act==='chat'){
@@ -1980,7 +2026,7 @@
       if(d>0.01){ const m=Math.min(d, p._spd); p.x+=dx/d*m; p.y+=dy/d*m; }
       
       // on shift: tucked away inside the building; sick/hungry stay out front, otherwise visible in the lanes
-      p.hidden = (workTarget(p) !== null && !p.sick && !p.needFood && d < 5);
+      p.hidden = ((workTarget(p) !== null || homeBound(p)) && !p.sick && !p.needFood && d < 5);
     });
   }
 
@@ -2516,6 +2562,36 @@
     return '<button class="buildbtn" data-act="buy_billing" '+(S.treasury<BILLING_COST?'disabled':'')+'>'+(S.treasury<BILLING_COST?'Need '+money(BILLING_COST):'Add Billing Counter · '+money(BILLING_COST)+' · boosts shop & dhaba')+'</button>';
   }
 
+  function pumpCard(r){
+    if(!S.ch3Unlocked) return '';
+    if(S.pumpBuild>0){
+      const pct=Math.round((PUMP_BUILD_UNITS-S.pumpBuild)/PUMP_BUILD_UNITS*100);
+      return card('warehouse','#4f8fae','Water Pump','Replacing the well','—',
+        'Construction underway — needs <b>'+Math.ceil(S.pumpBuild)+'</b> units',
+        '<div style="width:100%;height:8px;border-radius:4px;background:var(--cream-2);border:1px solid var(--line);overflow:hidden;margin-top:9px"><i style="display:block;height:100%;background:var(--gold);width:'+pct+'%"></i></div>');
+    }
+    if(!S.built.pump){
+      return card('warehouse','#4f8fae','Water Pump','Plumbing · Chapter Three','—',
+        'Installs in place of the village well. Pipes running water to <b>cottages</b> and key buildings — plumbed homes gain a little morale, while shacks &amp; huts without it suffer a <b>large</b> drain. Supplies <b>'+PUMP_CAPACITY.toLocaleString()+' cc/day</b> and burns <b>'+PUMP_CHARCOAL+' kg</b> of charcoal daily.',
+        '<button class="buildbtn" data-act="buildpump" '+(S.treasury<PUMP_COST?'disabled':'')+'>'+(S.treasury<PUMP_COST?'Need '+money(PUMP_COST):'Install Water Pump · '+money(PUMP_COST)+' · '+PUMP_BUILD_UNITS+' units')+'</button>');
+    }
+    const dem=waterDemand(), on=plumbingOn(), cots=S.houses.filter(h=>h.tier>=2).length;
+    const wr=(lab,cc)=> cc>0 ? '<div style="display:flex;justify-content:space-between"><span>'+lab+'</span><span>'+cc.toLocaleString()+' cc</span></div>' : '';
+    const detail = 'Supply <b>'+PUMP_CAPACITY.toLocaleString()+' cc/day</b> · demand <b style="color:'+(on?'var(--good)':'var(--bad)')+'">'+dem.toLocaleString()+' cc</b><br>'
+      + 'Burns <b>'+PUMP_CHARCOAL+' kg</b> charcoal/day · plumbed homes <b style="color:var(--good)">+'+PLUMB_MORALE_UP+'</b>, unplumbed <b style="color:var(--bad)">−'+PLUMB_MORALE_DOWN+'</b>'
+      + '<div style="margin-top:7px;font-size:11px;color:var(--ink-faint)">'
+        + wr('Cottages ×'+cots, cots*WATER_HOME)
+        + (S.built.dhaba?wr('Dhaba',WATER_DHABA):'')
+        + (S.built.bar?wr('Bar',WATER_BAR):'')
+        + (S.built.school?wr('School',WATER_SCHOOL):'')
+        + (S.built.bank?wr('Bank',WATER_BANK):'')
+        + (S.built.college?wr('College',WATER_COLLEGE):'')
+        + wr('Farm',WATER_FARM)
+      + '</div>';
+    return card('warehouse','#4f8fae','Water Pump','Plumbing · running',
+      Math.round(dem/PUMP_CAPACITY*100)+'%<small style="font-weight:400;color:var(--ink-faint)"> load</small>',
+      detail, '');
+  }
   function bankCard(r){
     if(!S.ch3Unlocked) return '';
     if(S.bankBuild>0){
@@ -2652,6 +2728,7 @@
     if (S.activeBuildTab === 'service') {
       html += educationCard(r);
       html += businessCard(r);
+      html += pumpCard(r);
       html += bankCard(r);
       html += barCard(r);
       html += busCard();
@@ -2992,6 +3069,14 @@
           S.treasury-=BANK_COST; S.bankBuild=BANK_BUILD_UNITS;
           toast('🏗 Bank construction begun — requires <span class="g">'+BANK_BUILD_UNITS+' progress units</span>');
           spawnRupee(B.bank.cx, B.bank.gy - B.bank.h);
+          renderCards();
+       }
+    }
+    else if(act==='buildpump') {
+       if(S.ch3Unlocked && !S.built.pump && S.pumpBuild<=0 && S.treasury>=PUMP_COST) {
+          S.treasury-=PUMP_COST; S.pumpBuild=PUMP_BUILD_UNITS;
+          toast('🏗 Water pump construction begun — requires <span class="g">'+PUMP_BUILD_UNITS+' progress units</span>');
+          spawnRupee(388, 320);
           renderCards();
        }
     }
