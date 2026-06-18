@@ -63,6 +63,7 @@
   #pop-hud-people{left:260px;bottom:76px;}
   #pop-hud-morale{left:340px;bottom:76px;}
   #pop-hud-census{left:480px;bottom:76px;}
+  #pop-hud-fuel{left:560px;bottom:76px;}
   #pop-building-info{left:50%;bottom:90px;transform:translate(-50%, 20px);width:360px;}
   #pop-building-info.active{transform:translate(-50%, 0);}
 
@@ -478,6 +479,10 @@
       <div class="ledger" id="hud-ledger-census"></div>
       <button class="buildbtn" id="btn-toggle-immigration" data-act="toggle_immigration" style="margin-top:10px;"></button>
     </div>
+    <div class="ui-popup" id="pop-hud-fuel">
+      <h3 class="section-h">Forest &amp; Fuel <span class="ln"></span></h3>
+      <div class="ledger" id="hud-ledger-fuel"></div>
+    </div>
 
     <div class="sub-ribbon" id="sub-ribbon-build">
       <button class="r-btn" data-tab="residential" data-tip="Residential">
@@ -502,6 +507,7 @@
       <div class="chip" id="chip-morale"><span class="lab">Morale</span><span class="val" id="h-morale">60%</span></div>
       <div class="chip" id="chip-prosp"><span class="lab">Prosperity</span><span class="val" id="h-prosp">₹300</span></div>
       <div class="chip" id="chip-census"><span class="lab">Census</span><span class="val" id="h-census">5d</span><span class="sub" id="h-census-s">−1 risk</span></div>
+      <div class="chip" id="chip-fuel"><span class="lab">Charcoal</span><span class="val" id="h-fuel">400,000</span><span class="sub" id="h-fuel-sub">kg in forest</span></div>
       <div class="hud-right">
         <div class="clock"><div class="dial"><div class="sun" id="h-sun"></div></div>
           <div class="txt"><span id="h-time">Dawn</span><b id="h-date">Y1 · Day 1</b></div></div>
@@ -599,7 +605,13 @@
   
   const NONRES_BUILD_DAYS=5;                             
   const CH2_UNLOCK_DAY=20;                               
-  const START_TREASURY=5000, START_GOODS=15, GROW_TARGET=14;  
+  const START_TREASURY=5000, START_GOODS=15, GROW_TARGET=14;
+  const FOREST_TREES=1000, WOOD_PER_TREE_KG=2000, CHARCOAL_YIELD=0.2;          // 1000 trees x 2 t of wood; 1 t wood -> 200 kg charcoal
+  const TOTAL_CHARCOAL_KG=FOREST_TREES*WOOD_PER_TREE_KG*CHARCOAL_YIELD;        // = 400,000 kg of sourcable charcoal
+  const FUEL_HOUSE=[50,70,100];                                               // shack / hut / cottage -- grams of charcoal per night
+  const FUEL_SHOP=100, FUEL_DHABA=250, FUEL_BAR=200, FUEL_SCHOOL=400, FUEL_COLLEGE=1000, FUEL_FARM=20;  // grams/night (farm: per worked day)
+  const FUEL_MORALE=3;                  // charcoal smoke -- a small, constant morale drag (from Chapter One)
+  const FUEL_HEALTH_CAP=12;             // once health is in play, charcoal smoke caps healthy villagers below 100  
 
   const B = {
     farm   :{name:'Farm', role:'farm', sub:'Harvests grain', cx:140, gy:250, w:124, h:88, color:'#5c8a4e', cap:6},
@@ -628,7 +640,7 @@
 
   function newState(){
     S={
-      treasury:START_TREASURY, goods:START_GOODS, villagerCash:0,
+      treasury:START_TREASURY, goods:START_GOODS, villagerCash:0, forestCharcoal:TOTAL_CHARCOAL_KG,
       stockO:0, flowO:0,
       day:1, year:1, elapsed:0, progress:0, speed:1, over:false,
       houses:[{tier:0,build:0,pendingTier:0,wear:0},{tier:0,build:0,pendingTier:0,wear:0}], 
@@ -771,6 +783,19 @@
       S.farmFurlough.forEach(rec=>{ const p=S.people.find(x=>x.id===rec.id); if(p && p.role==='idle' && roleCount(rec.role)<capacityOf(rec.role)){ p.role=rec.role; back++; } });
       if(S.farmFurlough.length){ S.farmFurlough=[]; if(back) toast('\U0001f331 '+seasonLabel()+' — <span class="g">'+back+'</span> hand'+(back===1?'':'s')+' return to the farm'); }
     }
+  }
+  // total charcoal (grams) the village burns in a night -- villagers source it themselves from the forest
+  function nightlyFuel(){
+    let g=0;
+    S.houses.forEach(h=>{ if(h.tier>=0) g += FUEL_HOUSE[h.tier]; });         // every standing dwelling burns fuel
+    if(S.built.shop) g += (S.built.dhaba && S.activeCounter==='dhaba') ? FUEL_DHABA : FUEL_SHOP;
+    if(S.built.school) g += FUEL_SCHOOL;
+    if(S.built.college) g += FUEL_COLLEGE;
+    if(S.built.bar) g += FUEL_BAR;
+    const hands = roleCount('farm')+roleCount('tractor_driver')+roleCount('harvester_driver')+roleCount('combiner_driver');
+    const farmDay = S.busUnlocked ? isFarmSeason() : !isHoliday();           // the farm only burns fuel on days it is worked
+    if(hands>0 && farmDay) g += FUEL_FARM;
+    return g;
   }
   function maintainFrac(){ const c=maintainableCount(); const w=roleList('sewak').filter(willing).length; return c>0 ? Math.min(1, w/c) : 1; }
   function avgBuildingWear(){
@@ -1125,6 +1150,7 @@
         drift += BAR_MORALE * drinkFrac;                     // big morale lift
         p.drankToday = true; p.barDrinkFrac = drinkFrac;      // flag a day of lower output
       }
+      drift -= FUEL_MORALE;                          // charcoal smoke -- a small, constant drag on everyone
       p.morale += drift * frac;
       if (p.morale < 0) p.morale = 0;
       if (p.morale > 100) p.morale = 100;
@@ -1260,6 +1286,7 @@
     while(S.elapsed>=DAY_MS){
       S.elapsed-=DAY_MS; S.day++; S.daysSinceCensus++;
       S.today={indirect:0,income:0,godown:0,bank:0};
+      S.forestCharcoal = Math.max(0, S.forestCharcoal - nightlyFuel()/1000);   // the forest only shrinks -- no replanting
 
       S.people.forEach(p => {
         p.dhabaKg = rnd(DHABA_MIN_KG, DHABA_MAX_KG);
@@ -1476,6 +1503,7 @@
     treeline(HORIZON+4,'#5f7150',0.5+0.3*day,30,18);
     temple(666,HORIZON+6,day);
     treeline(HORIZON+10,'#516447',0.7,46,26);
+    drawForest(day);
 
     /* ground */
     const gg=ctx.createLinearGradient(0,HORIZON,0,LH);
@@ -1581,6 +1609,22 @@
   /* scene helpers */
   function cloud(x,y,s,a){ ctx.fillStyle='rgba(248,246,238,'+a+')'; ctx.beginPath();
     ctx.arc(x,y,s,0,7); ctx.arc(x+s*0.9,y+4,s*0.78,0,7); ctx.arc(x-s*0.9,y+5,s*0.7,0,7); ctx.arc(x+s*0.3,y-s*0.5,s*0.6,0,7); ctx.fill(); }
+  function drawForest(day){
+    const yb=HORIZON, tint=0.55+0.45*day;
+    for(let i=0;i<60;i++){                       // far, hazy back rank
+      const x=(i*13.1)%(LW+24)-12, r=6+(i*7%4);
+      ctx.fillStyle='rgba('+Math.round(74*tint)+','+Math.round(98*tint)+','+Math.round(66*tint)+',0.92)';
+      ctx.beginPath(); ctx.arc(x, yb-10-(i%3), r, 0, 7); ctx.fill();
+    }
+    for(let i=0;i<40;i++){                        // near rank -- darker, fuller, trunks hinted
+      const x=(i*19.7+9)%(LW+24)-12, r=8+(i*11%5);
+      ctx.strokeStyle='rgba(64,46,30,'+(0.45*tint)+')'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(x, yb+3); ctx.lineTo(x, yb-7); ctx.stroke();
+      ctx.fillStyle='rgba('+Math.round(56*tint)+','+Math.round(82*tint)+','+Math.round(50*tint)+',0.96)';
+      ctx.beginPath(); ctx.arc(x, yb-9, r, 0, 7); ctx.fill();
+      if(day>0.25){ ctx.fillStyle='rgba(190,212,140,'+(0.14*day)+')'; ctx.beginPath(); ctx.arc(x-r*0.35, yb-12, r*0.5, 0, 7); ctx.fill(); }
+    }
+  }
   function treeline(y,col,a,step,h){ ctx.fillStyle=col; ctx.globalAlpha=a; ctx.beginPath(); ctx.moveTo(0,y+h);
     for(let x=-10;x<=LW+10;x+=step){ const hh=h*(0.6+0.4*Math.sin(x*0.7)); ctx.lineTo(x,y-hh); ctx.lineTo(x+step/2,y-hh*0.5); }
     ctx.lineTo(LW+10,y+h); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
@@ -2040,7 +2084,9 @@
         }
         // else: untreated — health keeps falling and the morale/output debuffs grow
       } else {
-        if(p.health<100) p.health=Math.min(100, p.health + HEALTH_RECOVER);
+        const hcap = S.busUnlocked ? (100 - FUEL_HEALTH_CAP) : 100;       // charcoal smoke suppresses the healthy ceiling
+        if(p.health < hcap) p.health=Math.min(hcap, p.health + HEALTH_RECOVER);
+        else if(p.health > hcap) p.health=Math.max(hcap, p.health - HEALTH_RECOVER);
         // villagers only risk falling ill once the bus stop chapter is unlocked
         if(S.busUnlocked && Math.random() < (p.sickProb||0)){ p.sick=true; p.treatCost=Math.round(rnd(SICK_COST_MIN, SICK_COST_MAX)); }
       }
@@ -2747,6 +2793,25 @@
       + lrow('Evaluation Forecast', ok ? (S.allowImmigration ? 'immigrants arrive (+2)' : 'growth capped') : 'mortality shortage risk (−1)', ok ? 'pos' : 'neg');
     
     el('btn-toggle-immigration').textContent = S.allowImmigration ? 'Halt Immigration' : 'Allow Immigration';
+
+    const fuelG = nightlyFuel();
+    el('h-fuel').textContent = Math.floor(S.forestCharcoal).toLocaleString();
+    el('h-fuel-sub').textContent = '−' + (fuelG/1000).toFixed(2) + ' kg/nt';
+    const treesLeft = S.forestCharcoal / (WOOD_PER_TREE_KG*CHARCOAL_YIELD);
+    const fr = (lab,g)=> g>0 ? lrow(lab, g.toLocaleString()+' g') : '';
+    const fuelHands = roleCount('farm')+roleCount('tractor_driver')+roleCount('harvester_driver')+roleCount('combiner_driver');
+    const farmBurns = ((S.busUnlocked?isFarmSeason():!isHoliday()) && fuelHands>0);
+    el('hud-ledger-fuel').innerHTML =
+      lrow('Charcoal sourcable', Math.floor(S.forestCharcoal).toLocaleString()+' kg')
+      + lrow('Forest standing', '≈ '+Math.floor(treesLeft).toLocaleString()+' / '+FOREST_TREES.toLocaleString()+' trees')
+      + '<div class="row" style="border-top:1px solid var(--line);padding-top:7px;margin-top:2px"><span class="k" style="font-weight:600;color:var(--ink)">Burned each night</span><span class="v">'+fuelG.toLocaleString()+' g</span></div>'
+      + fr('· Dwellings', S.houses.reduce((sm,h)=> sm + (h.tier>=0?FUEL_HOUSE[h.tier]:0), 0))
+      + fr('· '+((S.built.dhaba&&S.activeCounter==='dhaba')?'Dhaba':'Shop'), S.built.shop ? ((S.built.dhaba&&S.activeCounter==='dhaba')?FUEL_DHABA:FUEL_SHOP) : 0)
+      + fr('· School', S.built.school?FUEL_SCHOOL:0)
+      + fr('· College', S.built.college?FUEL_COLLEGE:0)
+      + fr('· Bar', S.built.bar?FUEL_BAR:0)
+      + fr('· Farm', farmBurns?FUEL_FARM:0)
+      + '<div class="tip" style="margin-top:8px">Villagers gather charcoal from the forest themselves — no allocation needed. Burning it is a steady drag on <b>morale</b>'+(S.busUnlocked?', and a <b>health</b> cost (the healthy settle near <b>'+(100-FUEL_HEALTH_CAP)+'%</b>)':'')+'. No replanting — the forest only shrinks.</div>';
   }
 
   let toastN=0;
@@ -2796,7 +2861,7 @@
   function togglePause(){ if(S.over) return; setSpeed(S.speed===0 ? lastPlaySpeed : 0); }
 
 /* ============ UI TOGGLES ============ */
-  const popups = ['pop-build', 'pop-ledger', 'pop-graphs', 'pop-help', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census'];
+  const popups = ['pop-build', 'pop-ledger', 'pop-graphs', 'pop-help', 'pop-building-info', 'pop-hud-treasury', 'pop-hud-goods', 'pop-hud-people', 'pop-hud-morale', 'pop-hud-census', 'pop-hud-fuel'];
   
   function togglePopup(targetId) {
     popups.forEach(id => {
@@ -2824,6 +2889,7 @@
   el('chip-idle').addEventListener('click', () => { togglePopup('pop-hud-people'); el('sub-ribbon-build').classList.remove('active'); });
   el('chip-morale').addEventListener('click', () => { togglePopup('pop-hud-morale'); el('sub-ribbon-build').classList.remove('active'); });
   el('chip-census').addEventListener('click', () => { togglePopup('pop-hud-census'); el('sub-ribbon-build').classList.remove('active'); });
+  el('chip-fuel').addEventListener('click', () => { togglePopup('pop-hud-fuel'); el('sub-ribbon-build').classList.remove('active'); });
 
   document.addEventListener('pointerdown', e => {
     if (e.target && e.target.closest && (e.target.closest('.ribbon') || e.target.closest('.sub-ribbon'))) return;
